@@ -1,0 +1,14 @@
+/* Arctic White — white flaps, black type, a light grey frame. */
+:root {
+  --bg: #d9dde2;
+  --frame-color: #c3c9d0;
+  --frame-width: 3vmin;
+  --board-bg: #b7bec6;
+  --flap-bg: #f7f8fa;
+  --flap-text: #111;
+  --flap-split: rgba(0, 0, 0, 0.35);
+  --flap-font: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --flap-weight: 700;
+  --ui-fg: #111;
+  --ui-bg: rgba(255, 255, 255, 0.7);
+}

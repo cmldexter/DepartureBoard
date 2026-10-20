@@ -1,0 +1,14 @@
+/* Walnut — a wood-tone frame, dark flaps, cream type. The lobby board. */
+:root {
+  --bg: #1a120c;
+  --frame-color: #5a3a22;
+  --frame-width: 4vmin;
+  --board-bg: #241910;
+  --flap-bg: #2b1f16;
+  --flap-text: #f3e6c8;
+  --flap-split: rgba(0, 0, 0, 0.8);
+  --flap-font: "Nunito", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --flap-weight: 800;
+  --ui-fg: #f3e6c8;
+  --ui-bg: rgba(26, 18, 12, 0.7);
+}

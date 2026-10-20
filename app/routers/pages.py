@@ -6,6 +6,7 @@ from zoneinfo import ZoneInfo
 from fastapi import APIRouter, Form, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 
+from app.models import THEMES
 from app.services.auth import COOKIE_NAME, _presented_token, token_matches
 from app.services.display import display_settings, resolve_display
 
@@ -31,23 +32,35 @@ def board(request: Request):
         display = display_settings(session)
     demo = "demo" in request.query_params
     if demo:
-        overrides = {key: request.query_params.get(key) for key in ("rows", "cols", "animation")}
+        overrides = {
+            key: request.query_params.get(key) for key in ("rows", "cols", "animation", "theme")
+        }
         if "preset" in request.query_params:
             overrides["grid_preset"] = request.query_params["preset"]
         elif "rows" in request.query_params or "cols" in request.query_params:
             overrides["grid_preset"] = "custom"
         display = resolve_display({**display, **overrides})
     rows, cols = display["rows"], display["cols"]
+    theme = display["theme"] if display["theme"] in THEMES else THEMES[0]
     config = {
         "rows": rows,
         "cols": cols,
         "animation": display["animation"],
+        "sound_enabled": display["sound_enabled"],
+        "sound_volume": display["sound_volume"],
+        "theme": theme,
         "demo": demo,
     }
     return request.app.state.templates.TemplateResponse(
         request,
         "board.html",
-        {"rows": rows, "cols": cols, "grid": _placeholder_rows(rows, cols), "config": config},
+        {
+            "rows": rows,
+            "cols": cols,
+            "grid": _placeholder_rows(rows, cols),
+            "config": config,
+            "theme": theme,
+        },
     )
 
 
@@ -67,7 +80,7 @@ def settings_page(request: Request):
             "token": request.app.state.api_token,
             "tz": tz,
             "server_time": now.strftime("%Y-%m-%d %H:%M"),
-            "themes": ["classic-black", "walnut", "arctic-white", "midnight"],
+            "themes": list(THEMES),
         },
     )
 

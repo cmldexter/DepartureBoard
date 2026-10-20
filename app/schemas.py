@@ -6,6 +6,8 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from app.models import THEMES
+
 Repeat = Literal["none", "daily", "weekly"]
 State = Literal["live", "scheduled", "expired", "disabled"]
 Cell = str | dict[str, str]
@@ -132,10 +134,17 @@ class SettingsPatch(BaseModel):
     animation: int | None = Field(None, ge=0, le=100)
     sound_enabled: bool | None = None
     sound_volume: float | None = Field(None, ge=0, le=1)
-    theme: str | None = Field(None, pattern=r"^[a-z0-9][a-z0-9-]{0,39}$")
+    theme: str | None = Field(None, description=f"One of {', '.join(THEMES)}")
     poll_seconds: int | None = Field(None, ge=2, le=60)
     rotate_seconds: int | None = Field(None, ge=5, le=600)
     idle_text: str | None = Field(None, max_length=2000)
+
+    @field_validator("theme")
+    @classmethod
+    def _built_in(cls, v: str | None) -> str | None:
+        if v is not None and v not in THEMES:
+            raise ValueError(f"theme must be one of {', '.join(THEMES)}")
+        return v
 
 
 class BoardSettings(BaseModel):

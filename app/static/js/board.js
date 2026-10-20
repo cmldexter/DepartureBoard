@@ -25,7 +25,7 @@
   const STEP_MS_MAX = 50;
   const STAGGER_RATIO = 0.7;
 
-  const settings = { rows: 0, cols: 0, animation: 60 };
+  const settings = { rows: 0, cols: 0, animation: 60, theme: "classic-black" };
   let cells = []; // row-major cell records
   let target = []; // row-major sequence indices the board is heading to
   let active = new Map(); // cell position → { nextAt }
@@ -79,14 +79,17 @@
 
   function tick(now) {
     rafId = 0;
+    let stepped = false;
     active.forEach((entry, pos) => {
       const cell = cells[pos];
       while (entry.nextAt <= now && cell.current !== target[pos]) {
         Flap.setCell(cell, Flap.next(cell.current), true);
         entry.nextAt += entry.stepMs;
+        stepped = true;
       }
       if (cell.current === target[pos]) active.delete(pos);
     });
+    if (stepped && window.Sound) window.Sound.click(now); // throttled to one per frame inside
     if (active.size) rafId = requestAnimationFrame(tick);
   }
 
@@ -119,11 +122,22 @@
     if (active.size && !rafId) rafId = requestAnimationFrame(tick);
   }
 
+  // The theme is a stylesheet; swapping the link's href is the whole change.
+  function applyTheme(id) {
+    const link = document.getElementById("theme");
+    if (!link || !/^[a-z0-9-]+$/.test(id)) return;
+    const href = `/static/themes/${id}.css`;
+    if (link.getAttribute("href") !== href) link.setAttribute("href", href);
+    settings.theme = id;
+  }
+
   // New settings from a poll: a size change re-lays the grid, a pace change applies to the
-  // next show(). Returns true when the grid was rebuilt.
+  // next show(), sound and theme apply at once. Returns true when the grid was rebuilt.
   function applySettings(next) {
     if (!next) return false;
     if (next.animation !== undefined) settings.animation = Number(next.animation);
+    if (window.Sound) window.Sound.configure(next);
+    if (next.theme) applyTheme(next.theme);
     const rows = Number(next.rows) || settings.rows;
     const cols = Number(next.cols) || settings.cols;
     if (rows !== settings.rows || cols !== settings.cols) {
@@ -137,8 +151,13 @@
 
   layout(Number(config.rows), Number(config.cols));
   settings.animation = Number(config.animation);
+  settings.theme = config.theme || settings.theme;
+  if (window.Sound) window.Sound.configure(config);
 
-  window.Board = { show, applySettings, settings, stepMs };
+  // The sound just unlocked (fullscreen click): nothing to do now — the next cascade clicks.
+  function soundReady() {}
+
+  window.Board = { show, applySettings, applyTheme, settings, stepMs, soundReady };
 
   // ---- demo feed: built-in messages so the board can be seen before any message exists ----
   if (config.demo) {

@@ -1,0 +1,23 @@
+/* Bundled fonts, all under the SIL Open Font License (see OFL-*.txt beside them).
+   Latin subsets, woff2, one weight each — the board shows capitals at a few centimetres. */
+@font-face {
+  font-family: "Oswald";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/static/fonts/oswald.woff2") format("woff2");
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/static/fonts/jetbrains-mono.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Nunito";
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("/static/fonts/nunito.woff2") format("woff2");
+}
