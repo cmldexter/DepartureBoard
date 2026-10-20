@@ -57,6 +57,36 @@ html.board-page, .board-page { overflow: hidden; }
   overflow: hidden;
   background: var(--flap-bg);
 }
+:root {
+  --chip-red: #d7263d;
+  --chip-orange: #f46036;
+  --chip-yellow: #f2c14e;
+  --chip-green: #2e933c;
+  --chip-blue: #1b6ca8;
+  --chip-violet: #7b4fa0;
+  --chip-white: #f4f4f4;
+  --chip-black: #000;
+}
+/* Token cells: a chip colours the half, a picture is split across the two halves, an emoji is a glyph. */
+.cell [data-chip="red"] { background: var(--chip-red); }
+.cell [data-chip="orange"] { background: var(--chip-orange); }
+.cell [data-chip="yellow"] { background: var(--chip-yellow); }
+.cell [data-chip="green"] { background: var(--chip-green); }
+.cell [data-chip="blue"] { background: var(--chip-blue); }
+.cell [data-chip="violet"] { background: var(--chip-violet); }
+.cell [data-chip="white"] { background: var(--chip-white); }
+.cell [data-chip="black"] { background: var(--chip-black); }
+.cell .half,
+.cell .face { background-size: 100% 200%; background-repeat: no-repeat; }
+.cell .half.top,
+.cell .face.front { background-position: center top; }
+.cell .half.bottom,
+.cell .face.back { background-position: center bottom; }
+.cell .glyph.emoji {
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Twemoji Mozilla", sans-serif;
+  font-weight: 400;
+  font-size: 0.9em;
+}
 .cell .half.top { top: 0; border-radius: 0.5vmin 0.5vmin 0 0; }
 .cell .half.bottom { bottom: 0; border-radius: 0 0 0.5vmin 0.5vmin; }
 
@@ -149,3 +179,17 @@ html.board-page, .board-page { overflow: hidden; }
 }
 #status[hidden] { display: none; }
 #keep-awake { position: fixed; left: -10px; top: -10px; width: 1px; height: 1px; opacity: 0.01; pointer-events: none; }
+#net {
+  left: 2vmin;
+  bottom: 2vmin;
+  width: 1.6vmin;
+  height: 1.6vmin;
+  border-radius: 50%;
+  background: #d7263d;
+  border: 0;
+  opacity: 0.8;
+  pointer-events: auto;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+#net[hidden] { display: none; }
+@keyframes pulse { 50% { opacity: 0.25; } }

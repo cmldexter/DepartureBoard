@@ -38,10 +38,32 @@
     return i === undefined ? BLANK : i;
   }
 
-  // What a cell paints for a sequence index. Chips have no glyph until they are rendered as flaps.
+  // What a cell paints for a sequence index: chips are a colour, not a glyph.
   function glyphFor(index) {
     const ch = SEQUENCE[index];
     return ch === undefined || ch === " " || ch.charAt(0) === "{" ? "" : ch;
+  }
+
+  function chipOf(index) {
+    const ch = SEQUENCE[index];
+    return ch && ch.charAt(0) === "{" ? ch.slice(1, -1) : null;
+  }
+
+  // A face: what one half of a flap shows. `special` is a token cell the sequence has no
+  // index for — {emoji: "🎉"} (a glyph) or {img: "slug"} (a picture) — shown on a blank.
+  function faceOf(index, special) {
+    if (special && special.emoji) return { text: special.emoji, chip: null, img: null, emoji: true };
+    if (special && special.img) return { text: "", chip: null, img: special.img, emoji: false };
+    return { text: glyphFor(index), chip: chipOf(index), img: null, emoji: false };
+  }
+
+  function paint(halfEl, glyphEl, face) {
+    glyphEl.textContent = face.text;
+    glyphEl.classList.toggle("emoji", face.emoji);
+    if (face.chip) halfEl.setAttribute("data-chip", face.chip);
+    else halfEl.removeAttribute("data-chip");
+    const url = face.img ? `url("/images/${face.img}")` : "";
+    if (halfEl.style.backgroundImage !== url) halfEl.style.backgroundImage = url;
   }
 
   // Flaps only move forward and wrap; the number of steps from one index to another.
@@ -92,12 +114,18 @@
     const cell = {
       el,
       leaf: q(".leaf"),
+      topEl: q(".half.top"),
+      bottomEl: q(".half.bottom"),
+      frontEl: q(".face.front"),
+      backEl: q(".face.back"),
       top: q(".half.top .glyph"),
       bottom: q(".half.bottom .glyph"),
       front: q(".face.front .glyph"),
       back: q(".face.back .glyph"),
       current: index === undefined ? indexOf(q(".half.top .glyph").textContent) : index,
+      special: null,
       pending: null,
+      pendingSpecial: null,
       phase: 0,
     };
     cell.leaf.addEventListener("animationend", () => commit(cell));
@@ -107,38 +135,50 @@
   // The leaf has landed: the bottom half and the leaf's front now show the character.
   function commit(cell) {
     if (cell.pending === null) return;
-    const text = glyphFor(cell.pending);
-    cell.bottom.textContent = text;
-    cell.front.textContent = text;
+    const face = faceOf(cell.pending, cell.pendingSpecial);
+    paint(cell.bottomEl, cell.bottom, face);
+    paint(cell.frontEl, cell.front, face);
     cell.pending = null;
+    cell.pendingSpecial = null;
     cell.leaf.classList.remove("flip-a", "flip-b");
   }
 
-  // Show `index`. With flip=true the leaf animates from the current character; otherwise
-  // every half is painted directly.
-  function setCell(cell, index, flip) {
-    if (index === cell.current && cell.pending === null) return;
+  function sameSpecial(a, b) {
+    return (a && a.emoji) === (b && b.emoji) && (a && a.img) === (b && b.img);
+  }
+
+  // Show `index` (with an optional special token). With flip=true the leaf animates from the
+  // current face; otherwise every half is painted directly.
+  function setCell(cell, index, flip, special) {
+    special = special || null;
+    if (index === cell.current && sameSpecial(special, cell.special) && cell.pending === null) {
+      return;
+    }
     if (!flip) {
       cell.pending = null;
+      cell.pendingSpecial = null;
       cell.leaf.classList.remove("flip-a", "flip-b");
-      const text = glyphFor(index);
-      cell.top.textContent = text;
-      cell.bottom.textContent = text;
-      cell.front.textContent = text;
-      cell.back.textContent = text;
+      const face = faceOf(index, special);
+      paint(cell.topEl, cell.top, face);
+      paint(cell.bottomEl, cell.bottom, face);
+      paint(cell.frontEl, cell.front, face);
+      paint(cell.backEl, cell.back, face);
       cell.current = index;
+      cell.special = special;
       return;
     }
     // A flip still in the air lands first.
     commit(cell);
-    const from = glyphFor(cell.current);
-    const to = glyphFor(index);
-    cell.front.textContent = from;
-    cell.bottom.textContent = from;
-    cell.top.textContent = to;
-    cell.back.textContent = to;
+    const from = faceOf(cell.current, cell.special);
+    const to = faceOf(index, special);
+    paint(cell.frontEl, cell.front, from);
+    paint(cell.bottomEl, cell.bottom, from);
+    paint(cell.topEl, cell.top, to);
+    paint(cell.backEl, cell.back, to);
     cell.pending = index;
+    cell.pendingSpecial = special;
     cell.current = index;
+    cell.special = special;
     // Two identical animations, alternated, restart the flip without forcing a reflow.
     cell.phase ^= 1;
     cell.leaf.classList.remove(cell.phase ? "flip-a" : "flip-b");
@@ -152,6 +192,9 @@
     normalize,
     indexOf,
     glyphFor,
+    chipOf,
+    faceOf,
+    sameSpecial,
     stepsBetween,
     next,
     buildCell,
