@@ -4,22 +4,114 @@
 {% block body %}
 <main class="narrow">
   <header class="row">
-    <h1>Settings</h1>
-    <nav><a href="/">Board</a> · <a href="/docs">API docs</a>
+    <h1>DepartureBoard</h1>
+    <nav><a href="/">Board</a> · <a href="/?demo">Demo</a> · <a href="/docs">API docs</a>
       <form method="post" action="/settings/logout" class="inline"><button type="submit" class="link">Sign out</button></form>
     </nav>
   </header>
+  <p class="muted">Server time now: <span id="server-time">{{ server_time }}</span> ({{ tz }}). Schedules follow it.
+    Set <code>TZ</code> in <code>.env</code> to change it.</p>
+  <p id="toast" class="toast" hidden></p>
 
-  <section>
-    <h2>Your token</h2>
-    <p>Every write to the board needs it. Keep it out of screenshots.</p>
-    <details><summary>Show token</summary><pre class="token">{{ token }}</pre></details>
+  <section id="messages">
+    <div class="row"><h2>Messages</h2><button type="button" class="small" id="new-message">New message</button></div>
+    <table class="list" aria-label="Messages">
+      <thead><tr><th>State</th><th>Text</th><th>When</th><th></th></tr></thead>
+      <tbody id="message-rows"><tr><td colspan="4" class="muted">Loading…</td></tr></tbody>
+    </table>
+
+    <form id="message-form" class="card" hidden>
+      <h3 id="message-form-title">New message</h3>
+      <input type="hidden" name="id">
+      <label for="text">Text <span class="muted">— one line per row, or let it wrap</span></label>
+      <textarea id="text" name="text" rows="3" required maxlength="2000" placeholder="ZRH 0715 BOARDING {green}"></textarea>
+      <p class="hint">Tokens take one cell each: <code>{red}</code> <code>{orange}</code> <code>{yellow}</code> <code>{green}</code>
+        <code>{blue}</code> <code>{violet}</code> <code>{white}</code> <code>{black}</code>, any emoji 🎉, and
+        <code>{img:slug}</code> for a picture from the Images panel.</p>
+      <div class="preview">
+        <div id="preview-grid" class="mini-board" aria-label="Preview"></div>
+        <p id="preview-meta" class="muted"></p>
+      </div>
+      <div class="grid2">
+        <label>Priority <input type="number" name="priority" value="0" min="-100" max="100"></label>
+        <label class="check"><input type="checkbox" name="enabled" checked> Enabled</label>
+        <label>Starts <input type="datetime-local" name="starts_at"></label>
+        <label>Ends <input type="datetime-local" name="ends_at"></label>
+        <label>Repeat
+          <select name="repeat">
+            <option value="none">No repeat</option>
+            <option value="daily">Every day</option>
+            <option value="weekly">On weekdays…</option>
+          </select>
+        </label>
+        <div id="repeat-days" class="days" hidden>
+          <label><input type="checkbox" name="day" value="1"> Mon</label>
+          <label><input type="checkbox" name="day" value="2"> Tue</label>
+          <label><input type="checkbox" name="day" value="4"> Wed</label>
+          <label><input type="checkbox" name="day" value="8"> Thu</label>
+          <label><input type="checkbox" name="day" value="16"> Fri</label>
+          <label><input type="checkbox" name="day" value="32"> Sat</label>
+          <label><input type="checkbox" name="day" value="64"> Sun</label>
+        </div>
+        <label id="repeat-start-label" hidden>From <input type="time" name="repeat_start"></label>
+        <label id="repeat-end-label" hidden>Until <input type="time" name="repeat_end"></label>
+      </div>
+      <p class="hint" id="repeat-hint" hidden>A window that ends before it starts crosses midnight (22:00 → 06:00).</p>
+      <div class="row">
+        <button type="submit" id="message-save">Save</button>
+        <button type="button" class="link" id="message-cancel">Cancel</button>
+      </div>
+      <p class="error" id="message-error" hidden></p>
+    </form>
+  </section>
+
+  <section id="display">
+    <h2>Display</h2>
+    <form id="display-form" class="card">
+      <fieldset>
+        <legend>Preset</legend>
+        <label class="check"><input type="radio" name="grid_preset" value="compact"> Compact · 6 × 22 · 42–48" TV</label>
+        <label class="check"><input type="radio" name="grid_preset" value="large"> Large · 8 × 28 · 55–77" TV</label>
+        <label class="check"><input type="radio" name="grid_preset" value="custom"> Custom</label>
+        <div class="grid2" id="custom-size">
+          <label>Rows <input type="number" name="rows" min="4" max="10"></label>
+          <label>Columns <input type="number" name="cols" min="16" max="36"></label>
+        </div>
+      </fieldset>
+      <label>Animation <span class="muted">— 0 is instant, 100 the mechanical pace</span>
+        <span class="slider"><input type="range" name="animation" min="0" max="100"> <output id="animation-value"></output></span>
+      </label>
+      <div class="grid2">
+        <label class="check"><input type="checkbox" name="sound_enabled"> Sound</label>
+        <label>Volume <input type="range" name="sound_volume" min="0" max="1" step="0.05"></label>
+        <label>Theme
+          <select name="theme">
+            {% for t in themes %}<option value="{{ t }}">{{ t.replace('-', ' ').title() }}{% if not loop.first %} (soon){% endif %}</option>{% endfor %}
+          </select>
+        </label>
+        <label>Idle text <span class="muted">— when nothing is live</span><input type="text" name="idle_text" maxlength="2000"></label>
+        <label>Poll every (s) <input type="number" name="poll_seconds" min="2" max="60"></label>
+        <label>Rotate every (s) <input type="number" name="rotate_seconds" min="5" max="600"></label>
+      </div>
+      <div class="row"><button type="submit">Save display</button><span class="muted" id="display-status"></span></div>
+    </form>
+  </section>
+
+  <section id="images">
+    <h2>Images</h2>
+    <p class="muted">A picture takes one cell. PNG, JPEG, GIF or WebP up to 512 KB; it is shown cropped to the flap.</p>
+    <form id="image-form" class="card row">
+      <label>File <input type="file" name="file" accept="image/png,image/jpeg,image/gif,image/webp" required></label>
+      <label>Slug <span class="muted">(optional)</span> <input type="text" name="slug" pattern="[a-z0-9][a-z0-9\-]{0,39}" placeholder="my-cat"></label>
+      <button type="submit">Upload</button>
+    </form>
+    <ul id="image-list" class="images"></ul>
   </section>
 
   <section>
-    <h2>Messages</h2>
-    <p>The message organizer and the schedule arrive in the next release. Until then, the
-       <a href="/docs">API docs</a> describe what is there.</p>
+    <h2>Your token</h2>
+    <p>Every write to the board needs it. Keep it out of screenshots. The <a href="/docs">API docs</a> show every call.</p>
+    <details><summary>Show token</summary><pre class="token">{{ token }}</pre></details>
   </section>
 
   <footer>
@@ -27,4 +119,5 @@
        — “come find me when that exists.”</p>
   </footer>
 </main>
+<script src="/static/js/settings.js" defer></script>
 {% endblock %}
