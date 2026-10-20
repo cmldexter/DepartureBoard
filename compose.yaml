@@ -1,0 +1,28 @@
+# DepartureBoard — one command, one board.
+#
+#   docker compose up --build
+#   open http://<this machine>:8080 on the TV, and http://<this machine>:8080/settings on your laptop
+#
+# Optional: copy .env.example to .env to change the port, the timezone or bring your own token.
+
+services:
+  departureboard:
+    build: .
+    image: departureboard:local
+    ports:
+      - "${DEPARTUREBOARD_PORT:-8080}:8000"
+    volumes:
+      # The SQLite database and the generated token. A named volume so the container's
+      # non-root user can always write it. To keep it in a folder instead:
+      #   - ./data:/data   (and make sure uid 10001 can write that folder)
+      - departureboard_data:/data
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      TZ: ${TZ:-UTC}
+      DEPARTUREBOARD_TZ: ${TZ:-UTC}
+    restart: unless-stopped
+
+volumes:
+  departureboard_data:
