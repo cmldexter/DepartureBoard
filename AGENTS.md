@@ -17,7 +17,10 @@ volume. Vanilla JS and CSS on the board; no bundler, no SPA.
 | `app/db.py` · `app/models.py` | SQLAlchemy 2, two tables; Alembic in `migrations/` |
 | `app/routers/` | `pages.py` (HTML), `health.py`, and the API routers |
 | `app/services/auth.py` | The bearer token; `require_token` dependency |
-| `app/services/scheduler.py` | Which messages are live |
+| `app/services/scheduler.py` | Which messages are live; rotation among equals |
+| `app/services/text.py` | Message text → cells: the flap set (`static/flapset.json`), `{chip}` / `{img:slug}` / emoji tokens, word-wrap, capacity |
+| `app/services/images.py` | Uploaded images under `<data_dir>/images/`, shown with `{img:slug}` |
+| `app/deps.py` | `get_session`, `now` (tests set `app.state.clock`), `tz` |
 | `app/templates/` · `app/static/` | Jinja2 pages; CSS, JS, themes, fonts |
 | `integrations/` | curl examples, the Agent Skill, agent examples |
 | `tests/` | pytest + httpx `TestClient` |
@@ -40,5 +43,6 @@ Tests set `DEPARTUREBOARD_DATA_DIR` to a temp dir and build the app with `create
 - Every write endpoint uses `Depends(require_token)`. `GET /api/board/current` stays public.
 - New schema = a new Alembic revision; the app migrates on startup.
 - No CDN assets on the board page; it must work offline on a LAN.
+- The flap set is `app/static/flapset.json`; `flap.js` mirrors it and a test keeps them equal.
 - Keep the scope: two pages, zero configuration, one command (see `CONTRIBUTING.md`).
 - Never commit tokens, `.env`, or anything from `data/`.
