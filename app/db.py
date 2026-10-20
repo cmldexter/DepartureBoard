@@ -3,12 +3,12 @@
 from collections.abc import Iterator
 from pathlib import Path
 
+from alembic import command
 from alembic.config import Config
 from sqlalchemy import create_engine, event
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
-from alembic import command
 from app.config import Settings
 
 MIGRATIONS_DIR = Path(__file__).resolve().parent.parent / "migrations"
