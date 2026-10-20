@@ -1,6 +1,8 @@
 <div align="center">
   <h1>DepartureBoard</h1>
   <p><b>An open-source split-flap departure board for any TV. One command, one board.</b></p>
+  <img src="docs/board-demo.gif" alt="The board flipping from a departures list to a message, one column after another" width="800">
+  <p><sub>The Compact preset (6 × 22) running the built-in demo — <code>http://&lt;host&gt;:8080/?demo</code></sub></p>
 </div>
 
 ---
@@ -38,9 +40,9 @@ Optional: copy `.env.example` to `.env` to change the port, set your timezone, o
 - **The integrate page** (`/integrate`) — copy-paste `curl` lines pre-filled with your own host
   and token, so your calendar, your home automation or your agent can post to the board tonight.
 
-> Status: the project is being built in the open. The board skeleton, the token and the
-> container are here; the animation, the organizer and the integrate page land in the next
-> releases. Follow the [milestones](https://github.com/cmldexter/DepartureBoard/milestones).
+> Status: the project is being built in the open. The board, its flip animation, the token and
+> the container are here (try `/?demo`); sound, themes, the organizer and the integrate page
+> land in the next releases. Follow the [milestones](https://github.com/cmldexter/DepartureBoard/milestones).
 
 ## Bring your own integration
 
