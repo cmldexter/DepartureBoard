@@ -16,6 +16,10 @@ log = logging.getLogger("departureboard")
 
 TOKEN_FILE = "api_token"
 COOKIE_NAME = "db_session"
+# The settings page sends this on every API write. A cross-site form cannot, so the cookie
+# alone never changes anything (SameSite=Lax is the first wall; this is the second).
+PAGE_HEADER = "x-requested-with"
+PAGE_HEADER_VALUE = "DepartureBoard"
 
 
 def load_or_create_token(settings: Settings) -> str:
@@ -59,12 +63,25 @@ def token_matches(request: Request, candidate: str | None) -> bool:
 
 
 def require_token(request: Request) -> None:
-    """FastAPI dependency: 401 unless a valid bearer header or session cookie is present."""
+    """FastAPI dependency: 401 unless a valid bearer header or session cookie is present.
+
+    A write authorised by the cookie alone must also carry the settings page's header.
+    """
     if not token_matches(request, _presented_token(request)):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="A valid token is required (Authorization: Bearer <token>).",
             headers={"WWW-Authenticate": "Bearer"},
+        )
+    by_cookie = not request.headers.get("authorization", "").lower().startswith("bearer ")
+    if (
+        by_cookie
+        and request.method not in ("GET", "HEAD", "OPTIONS")
+        and request.headers.get(PAGE_HEADER) != PAGE_HEADER_VALUE
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Writes from the settings page carry X-Requested-With: DepartureBoard.",
         )
 
 

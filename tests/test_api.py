@@ -192,7 +192,32 @@ def test_openapi_builds(client):
     } <= set(paths)
 
 
+PAGE = {"X-Requested-With": "DepartureBoard"}
+
+
 def test_ui_source_from_cookie(client, token):
     client.post("/settings/login", data={"token": token}, follow_redirects=False)
-    r = client.post("/api/messages", json={"text": "FROM THE PAGE"})
+    r = client.post("/api/messages", json={"text": "FROM THE PAGE"}, headers=PAGE)
     assert r.status_code == 201 and r.json()["source"] == "ui"
+
+
+def test_cookie_write_needs_the_page_header(client, token):
+    client.post("/settings/login", data={"token": token}, follow_redirects=False)
+    assert client.get("/api/messages").status_code == 200, "reads are fine"
+    r = client.post("/api/messages", json={"text": "CROSS SITE"})
+    assert r.status_code == 403
+    assert client.get("/api/messages").json() == []
+
+
+def test_preview(client, auth):
+    r = client.post("/api/messages/preview", json={"text": "hello {img:nope} €"}, headers=auth)
+    assert r.status_code == 200
+    p = r.json()
+    assert p["rows"][0][:5] == list("HELLO")
+    assert (p["grid_rows"], p["grid_cols"], p["capacity"]) == (6, 22, 132)
+    assert p["unknown"] == ["€"] and p["missing_images"] == ["nope"] and not p["overflow"]
+    p = client.post(
+        "/api/messages/preview", json={"text": "\n".join("ABCDEFG")}, headers=auth
+    ).json()
+    assert p["overflow"] and p["used"] == 7
+    assert client.get("/api/messages", headers=auth).json() == [], "nothing stored"

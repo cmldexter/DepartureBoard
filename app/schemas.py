@@ -95,6 +95,23 @@ class MessageOut(BaseModel):
     unknown: list[str] = Field(default_factory=list, description="Characters shown as a blank")
 
 
+class PreviewIn(BaseModel):
+    text: str = Field("", max_length=2000)
+
+
+class PreviewOut(BaseModel):
+    """How a text lays out on the current board, for the organizer's live preview."""
+
+    rows: list[list[Cell]]
+    grid_rows: int
+    grid_cols: int
+    used: int
+    capacity: int
+    overflow: bool
+    unknown: list[str]
+    missing_images: list[str]
+
+
 class SettingsOut(BaseModel):
     grid_preset: Literal["compact", "large", "custom"]
     rows: int

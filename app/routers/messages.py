@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from app.config import Settings
 from app.deps import get_session, now, tz
 from app.models import Message
-from app.schemas import MessageIn, MessageOut, MessagePatch, NowIn, State
+from app.schemas import MessageIn, MessageOut, MessagePatch, NowIn, PreviewIn, PreviewOut, State
 from app.services import images
 from app.services.auth import Authenticated
 from app.services.display import display_settings
@@ -117,6 +117,28 @@ def post_now(
     session.refresh(m)
     response.headers["Location"] = f"/api/messages/{m.id}"
     return to_out(m, session, at, zone)
+
+
+@router.post(
+    "/preview",
+    summary="Preview a text on the board",
+    description="Nothing is stored. The organizer calls this as you type.",
+    response_model=PreviewOut,
+)
+def preview(body: PreviewIn, request: Request, session: Session = Depends(get_session)):
+    d = display_settings(session)
+    lay = layout(body.text, d["rows"], d["cols"])
+    settings = request.app.state.settings
+    return PreviewOut(
+        rows=lay.rows,
+        grid_rows=d["rows"],
+        grid_cols=d["cols"],
+        used=lay.used,
+        capacity=lay.capacity,
+        overflow=lay.overflow,
+        unknown=sorted(set(lay.unknown)),
+        missing_images=sorted({s for s in lay.images if images.find(settings, s) is None}),
+    )
 
 
 def _get(message_id: int, session: Session) -> Message:
