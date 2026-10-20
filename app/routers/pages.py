@@ -3,8 +3,8 @@
 from fastapi import APIRouter, Form, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 
-from app.models import PRESETS
 from app.services.auth import COOKIE_NAME, _presented_token, token_matches
+from app.services.display import display_settings, resolve_display
 
 router = APIRouter(include_in_schema=False)
 
@@ -19,11 +19,32 @@ def _placeholder_rows(rows: int, cols: int) -> list[str]:
 
 @router.get("/", response_class=HTMLResponse)
 def board(request: Request):
-    rows, cols = PRESETS["compact"]
+    """The board. Display settings come from the settings table.
+
+    `?demo` shows built-in messages so the board can be seen before any message exists; in demo
+    mode only, `preset`, `rows`, `cols` and `animation` may be overridden in the query string.
+    """
+    with next(request.app.state.db.session()) as session:
+        display = display_settings(session)
+    demo = "demo" in request.query_params
+    if demo:
+        overrides = {key: request.query_params.get(key) for key in ("rows", "cols", "animation")}
+        if "preset" in request.query_params:
+            overrides["grid_preset"] = request.query_params["preset"]
+        elif "rows" in request.query_params or "cols" in request.query_params:
+            overrides["grid_preset"] = "custom"
+        display = resolve_display({**display, **overrides})
+    rows, cols = display["rows"], display["cols"]
+    config = {
+        "rows": rows,
+        "cols": cols,
+        "animation": display["animation"],
+        "demo": demo,
+    }
     return request.app.state.templates.TemplateResponse(
         request,
         "board.html",
-        {"rows": rows, "cols": cols, "grid": _placeholder_rows(rows, cols)},
+        {"rows": rows, "cols": cols, "grid": _placeholder_rows(rows, cols), "config": config},
     )
 
 

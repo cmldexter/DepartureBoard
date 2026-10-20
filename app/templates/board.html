@@ -10,10 +10,20 @@
   <div class="board" id="board" aria-label="Departure board">
     {% for row in grid %}
       {% for ch in row %}
-        <div class="cell"><span class="glyph">{{ ch }}</span><span class="split"></span></div>
+        <div class="cell">
+          <div class="half top"><span class="glyph">{{ ch }}</span></div>
+          <div class="half bottom"><span class="glyph">{{ ch }}</span></div>
+          <div class="leaf">
+            <div class="face front"><span class="glyph">{{ ch }}</span></div>
+            <div class="face back"><span class="glyph">{{ ch }}</span></div>
+          </div>
+          <span class="split"></span>
+        </div>
       {% endfor %}
     {% endfor %}
   </div>
 </main>
+<script id="board-config" type="application/json">{{ config | tojson }}</script>
+<script src="/static/js/flap.js" defer></script>
 <script src="/static/js/board.js" defer></script>
 {% endblock %}
