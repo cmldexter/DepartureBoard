@@ -11,7 +11,8 @@ from fastapi.templating import Jinja2Templates
 from app import __version__
 from app.config import Settings, get_settings
 from app.db import Database, migrate
-from app.routers import health, pages
+from app.routers import board, health, images, messages, pages
+from app.routers import settings as settings_api
 from app.services.auth import load_or_create_token
 
 APP_DIR = Path(__file__).resolve().parent
@@ -22,6 +23,8 @@ An open-source split-flap departure board for any TV.
 * `GET /api/board/current` is public — the TV polls it and never holds a secret.
 * Everything that writes needs `Authorization: Bearer <token>`.
   The token is printed in the server log on first boot and shown on `/settings`.
+* Message text: rows split on newlines, else word-wrap. `{red}` … `{black}` are colour
+  chips, `{img:slug}` an uploaded image, and any emoji shows on one flap. Each is one cell.
 """
 
 
@@ -47,6 +50,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.templates = Jinja2Templates(directory=APP_DIR / "templates")
     app.mount("/static", StaticFiles(directory=APP_DIR / "static"), name="static")
     app.include_router(health.router)
+    app.include_router(board.router)
+    app.include_router(messages.router)
+    app.include_router(settings_api.router)
+    app.include_router(images.api)
+    app.include_router(images.public)
     app.include_router(pages.router)
     return app
 
