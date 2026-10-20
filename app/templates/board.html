@@ -1,8 +1,9 @@
 {% extends "base.html" %}
 {% block title %}DepartureBoard{% endblock %}
 {% block head %}
+  <link rel="stylesheet" href="/static/fonts/fonts.css">
   <link rel="stylesheet" href="/static/css/board.css">
-  <link rel="stylesheet" href="/static/themes/classic-black.css" id="theme">
+  <link rel="stylesheet" href="/static/themes/{{ theme }}.css" id="theme">
 {% endblock %}
 {% block body_class %}board-page{% endblock %}
 {% block body %}
@@ -23,7 +24,15 @@
     {% endfor %}
   </div>
 </main>
+<button type="button" id="fullscreen" class="hud" aria-label="Fullscreen and keep the screen awake" title="Fullscreen · keeps the TV awake · turns the sound on">⛶</button>
+<div id="status" class="hud" role="status" aria-live="polite" hidden></div>
+<video id="keep-awake" muted playsinline loop preload="none" width="1" height="1" aria-hidden="true" tabindex="-1">
+  <source src="/static/video/keep-awake.webm" type="video/webm">
+  <source src="/static/video/keep-awake.mp4" type="video/mp4">
+</video>
 <script id="board-config" type="application/json">{{ config | tojson }}</script>
 <script src="/static/js/flap.js" defer></script>
+<script src="/static/js/sound.js" defer></script>
+<script src="/static/js/wake.js" defer></script>
 <script src="/static/js/board.js" defer></script>
 {% endblock %}
