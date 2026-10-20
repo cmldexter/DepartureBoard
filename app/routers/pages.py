@@ -1,5 +1,8 @@
 """The HTML pages: the board, the settings page, the integrate page."""
 
+from datetime import UTC, datetime
+from zoneinfo import ZoneInfo
+
 from fastapi import APIRouter, Form, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 
@@ -55,8 +58,17 @@ def settings_page(request: Request):
         return templates.TemplateResponse(
             request, "login.html", {}, status_code=status.HTTP_401_UNAUTHORIZED
         )
+    tz = request.app.state.settings.tz
+    now = datetime.now(UTC).astimezone(ZoneInfo(tz))
     return templates.TemplateResponse(
-        request, "settings.html", {"token": request.app.state.api_token}
+        request,
+        "settings.html",
+        {
+            "token": request.app.state.api_token,
+            "tz": tz,
+            "server_time": now.strftime("%Y-%m-%d %H:%M"),
+            "themes": ["classic-black", "walnut", "arctic-white", "midnight"],
+        },
     )
 
 

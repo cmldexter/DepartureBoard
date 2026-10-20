@@ -33,3 +33,9 @@ def test_logout_clears_cookie(client, token):
     client.post("/settings/login", data={"token": token}, follow_redirects=False)
     client.post("/settings/logout", follow_redirects=False)
     assert client.get("/settings").status_code == 401
+
+
+def test_settings_page_panels(client, token):
+    r = client.get("/settings", headers={"Authorization": f"Bearer {token}"})
+    for needle in ("Messages", "Display", "Images", "settings.js", "Server time", "feltbykraft"):
+        assert needle in r.text, needle
