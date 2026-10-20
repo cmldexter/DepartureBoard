@@ -49,6 +49,7 @@ def board(request: Request):
         "sound_enabled": display["sound_enabled"],
         "sound_volume": display["sound_volume"],
         "theme": theme,
+        "poll_seconds": display["poll_seconds"],
         "demo": demo,
     }
     return request.app.state.templates.TemplateResponse(

@@ -28,8 +28,10 @@
   const settings = { rows: 0, cols: 0, animation: 60, theme: "classic-black" };
   let cells = []; // row-major cell records
   let target = []; // row-major sequence indices the board is heading to
+  let specials = []; // row-major token cells ({emoji} / {img}) shown once a cell lands, or null
   let active = new Map(); // cell position → { nextAt }
   let rafId = 0;
+  let shownSomething = false; // has any non-blank content been shown since load?
 
   function stepMs(animation) {
     const a = Math.max(0, Math.min(100, Number(animation) || 0));
@@ -62,19 +64,40 @@
     settings.rows = rows;
     settings.cols = cols;
     target = cells.map((c) => c.current);
+    specials = cells.map((c) => c.special);
     active = new Map();
   }
 
-  // Text rows → sequence indices, padded or cut to the grid.
-  function toIndices(rows) {
-    const out = new Array(settings.rows * settings.cols).fill(Flap.BLANK);
+  // One cell of input — a character, or a token {chip} / {emoji} / {img} — to (index, special).
+  function toCell(v) {
+    if (v && typeof v === "object") {
+      if (v.chip) return { index: Flap.indexOf(`{${v.chip}}`), special: null };
+      if (v.emoji) return { index: Flap.BLANK, special: { emoji: v.emoji } };
+      if (v.img) return { index: Flap.BLANK, special: { img: v.img } };
+      return { index: Flap.BLANK, special: null };
+    }
+    return { index: Flap.indexOf(v), special: null };
+  }
+
+  // Rows (strings, or arrays of cells as the API sends them) → targets, padded or cut.
+  function toTargets(rows) {
+    const n = settings.rows * settings.cols;
+    const idx = new Array(n).fill(Flap.BLANK);
+    const sp = new Array(n).fill(null);
     for (let r = 0; r < settings.rows; r += 1) {
-      const line = Array.from(rows[r] || "");
-      for (let c = 0; c < settings.cols; c += 1) {
-        out[r * settings.cols + c] = c < line.length ? Flap.indexOf(line[c]) : Flap.BLANK;
+      const line = Array.isArray(rows[r]) ? rows[r] : Array.from(rows[r] || "");
+      for (let c = 0; c < Math.min(settings.cols, line.length); c += 1) {
+        const t = toCell(line[c]);
+        idx[r * settings.cols + c] = t.index;
+        sp[r * settings.cols + c] = t.special;
       }
     }
-    return out;
+    return { idx, sp };
+  }
+
+  function landed(pos) {
+    const cell = cells[pos];
+    return cell.current === target[pos] && Flap.sameSpecial(cell.special, specials[pos]);
   }
 
   function tick(now) {
@@ -82,35 +105,40 @@
     let stepped = false;
     active.forEach((entry, pos) => {
       const cell = cells[pos];
-      while (entry.nextAt <= now && cell.current !== target[pos]) {
-        Flap.setCell(cell, Flap.next(cell.current), true);
+      while (entry.nextAt <= now && !landed(pos)) {
+        const nextIndex = cell.current === target[pos] ? target[pos] : Flap.next(cell.current);
+        // the special (emoji / picture) is shown on the step that lands on the target
+        Flap.setCell(cell, nextIndex, true, nextIndex === target[pos] ? specials[pos] : null);
         entry.nextAt += entry.stepMs;
         stepped = true;
       }
-      if (cell.current === target[pos]) active.delete(pos);
+      if (landed(pos)) active.delete(pos);
     });
     if (stepped && window.Sound) window.Sound.click(now); // throttled to one per frame inside
     if (active.size) rafId = requestAnimationFrame(tick);
   }
 
-  // Show these rows of text. Unchanged cells do not move.
+  // Show these rows (text, or the API's cell arrays). Unchanged cells do not move.
   function show(rows) {
-    const next = toIndices(rows);
+    const next = toTargets(rows);
+    shownSomething = shownSomething || next.idx.some((i) => i !== Flap.BLANK) || next.sp.some(Boolean);
     if (instant()) {
       active = new Map();
       if (rafId) cancelAnimationFrame(rafId);
       rafId = 0;
-      next.forEach((idx, pos) => Flap.setCell(cells[pos], idx, false));
-      target = next;
+      next.idx.forEach((idx, pos) => Flap.setCell(cells[pos], idx, false, next.sp[pos]));
+      target = next.idx;
+      specials = next.sp;
       return;
     }
     const step = stepMs(settings.animation);
     const stagger = step * STAGGER_RATIO;
     frameEl.style.setProperty("--flip-ms", `${Math.round(step)}ms`);
     const now = performance.now();
-    next.forEach((idx, pos) => {
+    next.idx.forEach((idx, pos) => {
       target[pos] = idx;
-      if (cells[pos].current === idx) {
+      specials[pos] = next.sp[pos];
+      if (landed(pos)) {
         active.delete(pos);
         return;
       }
@@ -157,7 +185,63 @@
   // The sound just unlocked (fullscreen click): nothing to do now — the next cascade clicks.
   function soundReady() {}
 
-  window.Board = { show, applySettings, applyTheme, settings, stepMs, soundReady };
+  // ---- live data: poll /api/board/current; 304 means nothing changed; errors back off.
+  const net = document.getElementById("net");
+  const poll = { etag: null, stamp: null, failures: 0, timer: 0, polls: 0, notModified: 0 };
+  const placeholderRows = cells.map((c) => c.current); // what the server rendered: keep it until there is content
+
+  function schedule(seconds) {
+    clearTimeout(poll.timer);
+    poll.timer = setTimeout(fetchBoard, Math.max(1, seconds) * 1000);
+  }
+
+  async function fetchBoard() {
+    poll.polls += 1;
+    try {
+      const headers = poll.etag ? { "If-None-Match": poll.etag } : {};
+      const r = await fetch("/api/board/current", { headers, cache: "no-store" });
+      if (r.status === 304) {
+        poll.notModified += 1;
+        online();
+        schedule(settings.poll_seconds);
+        return;
+      }
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const data = await r.json();
+      poll.etag = r.headers.get("ETag");
+      online();
+      if (data.settings && data.settings.poll_seconds) settings.poll_seconds = data.settings.poll_seconds;
+      if (data.stamp !== poll.stamp) {
+        poll.stamp = data.stamp;
+        applySettings(data.settings);
+        const idle = data.message_id === null && data.rows.every((row) => row.every((c) => c === " "));
+        // An idle board before anything has ever shown keeps the server's placeholder
+        // ("SET UP AT /SETTINGS"); after a message, idle means the idle text (or blank).
+        if (!(idle && !shownSomething)) show(data.rows);
+      }
+      schedule(settings.poll_seconds);
+    } catch (e) {
+      poll.failures += 1;
+      offline();
+      schedule(Math.min(60, 2 ** poll.failures));
+    }
+  }
+
+  function online() {
+    poll.failures = 0;
+    if (net) net.hidden = true;
+  }
+  function offline() {
+    if (net) {
+      net.hidden = false;
+      net.title = `Cannot reach the server (${poll.failures}); retrying`;
+    }
+  }
+
+  settings.poll_seconds = Number(config.poll_seconds) || 5;
+  if (!config.demo) fetchBoard();
+
+  window.Board = { show, applySettings, applyTheme, settings, stepMs, soundReady, poll, fetchBoard };
 
   // ---- demo feed: built-in messages so the board can be seen before any message exists ----
   if (config.demo) {
@@ -180,11 +264,20 @@
         "SPLIT FLAP ON A TV",
         "ONE COMMAND ONE BOARD",
       ],
+      [
+        "COLOUR CHIPS AND EMOJI",
+        ["red", "orange", "yellow", "green", "blue", "violet", "white", "black"].map((chip) => ({ chip })),
+        "",
+        [..."FLIGHT ", { emoji: "🛫" }, ..." ON TIME ", { emoji: "🎉" }],
+        [..."DINNER ", { emoji: "🍝" }, ..." AT 7"],
+        "",
+      ],
     ];
     const DEMO_EVERY_MS = 7000;
     const centered = (lines) =>
       lines.map((line) => {
         const pad = Math.max(0, Math.floor((settings.cols - line.length) / 2));
+        if (Array.isArray(line)) return new Array(pad).fill(" ").concat(line);
         return " ".repeat(pad) + line;
       });
     let i = 0;
