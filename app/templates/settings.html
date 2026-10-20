@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Settings · DepartureBoard{% endblock %}
+{% block body_class %}page{% endblock %}
+{% block body %}
+<main class="narrow">
+  <header class="row">
+    <h1>Settings</h1>
+    <nav><a href="/">Board</a> · <a href="/docs">API docs</a>
+      <form method="post" action="/settings/logout" class="inline"><button type="submit" class="link">Sign out</button></form>
+    </nav>
+  </header>
+
+  <section>
+    <h2>Your token</h2>
+    <p>Every write to the board needs it. Keep it out of screenshots.</p>
+    <details><summary>Show token</summary><pre class="token">{{ token }}</pre></details>
+  </section>
+
+  <section>
+    <h2>Messages</h2>
+    <p>The message organizer and the schedule arrive in the next release. Until then, the
+       <a href="/docs">API docs</a> describe what is there.</p>
+  </section>
+
+  <footer>
+    <p>Asked for by <a href="https://www.instagram.com/feltbykraft/" rel="noopener">@feltbykraft</a>
+       — “come find me when that exists.”</p>
+  </footer>
+</main>
+{% endblock %}

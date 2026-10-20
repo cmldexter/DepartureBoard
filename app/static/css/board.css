@@ -1,0 +1,52 @@
+/* The board. Cells are sized so the whole grid fits a 16:9 screen with a frame around it.
+   The split-flap animation, sound and keep-awake arrive with Epic 3; this is the static grid. */
+
+.board-page { overflow: hidden; background: var(--bg); }
+
+.frame {
+  --frame: 3vmin;
+  --gap: 0.35vmin;
+  --cell-w: min(
+    calc((100vw - 2 * var(--frame) - (var(--cols) - 1) * var(--gap)) / var(--cols)),
+    calc((100vh - 2 * var(--frame) - (var(--rows) - 1) * var(--gap)) / var(--rows) / 1.45)
+  );
+  --cell-h: calc(var(--cell-w) * 1.45);
+  height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: var(--frame);
+  background: var(--frame-color);
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), var(--cell-w));
+  grid-auto-rows: var(--cell-h);
+  gap: var(--gap);
+  padding: var(--gap);
+  background: var(--board-bg);
+  border-radius: 0.6vmin;
+}
+
+.cell {
+  position: relative;
+  background: var(--flap-bg);
+  color: var(--flap-text);
+  border-radius: 0.5vmin;
+  display: grid;
+  place-items: center;
+  font-family: var(--flap-font);
+  font-weight: 700;
+  font-size: calc(var(--cell-h) * 0.72);
+  line-height: 1;
+  overflow: hidden;
+  user-select: none;
+}
+
+.cell .split {
+  position: absolute;
+  left: 0; right: 0; top: 50%;
+  height: 1px;
+  background: var(--flap-split);
+  transform: translateY(-50%);
+}

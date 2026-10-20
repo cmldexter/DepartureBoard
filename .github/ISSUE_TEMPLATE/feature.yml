@@ -1,0 +1,41 @@
+name: Feature request
+description: Something the board should do.
+labels: ["feature"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        DepartureBoard stays small on purpose: **two pages, zero configuration, one command.**
+        New themes, repeat rules, shortcuts and display options fit. Accounts, dashboards,
+        per-service integrations and new apps do not — those are better as a
+        [discussion](https://github.com/cmldexter/DepartureBoard/discussions) first.
+        The API is the integration point: you can already power the board from anything that can run `curl`.
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope
+      options:
+        - label: This fits a two-page, zero-configuration board that runs from one command.
+          required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What you are trying to do and why the board does not let you today.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behaviour
+      description: What you would see on the board or the settings page.
+    validations:
+      required: true
+  - type: dropdown
+    id: build
+    attributes:
+      label: Would you build it?
+      options:
+        - Yes, with pointers
+        - Maybe
+        - No

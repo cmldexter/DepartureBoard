@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Sign in · DepartureBoard{% endblock %}
+{% block body_class %}page{% endblock %}
+{% block body %}
+<main class="narrow">
+  <h1>DepartureBoard</h1>
+  <p>Paste the API token to open the settings. It was printed in the server log on first boot
+     (<code>docker compose logs departureboard</code>) and is stored in the data volume as
+     <code>api_token</code>.</p>
+  {% if error %}<p class="error">{{ error }}</p>{% endif %}
+  <form method="post" action="/settings/login">
+    <label for="token">Token</label>
+    <input id="token" name="token" type="password" autocomplete="current-password" required autofocus>
+    <button type="submit">Open settings</button>
+  </form>
+</main>
+{% endblock %}

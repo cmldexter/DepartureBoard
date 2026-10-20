@@ -1,0 +1,10 @@
+/* Classic Black — black flaps, white type, dark frame. The default theme. */
+:root {
+  --bg: #000;
+  --frame-color: #1c1c1c;
+  --board-bg: #0a0a0a;
+  --flap-bg: #151515;
+  --flap-text: #f4f4f4;
+  --flap-split: rgba(0, 0, 0, 0.85);
+  --flap-font: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}

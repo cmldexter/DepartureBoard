@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Ideas, questions, show and tell
+    url: https://github.com/cmldexter/DepartureBoard/discussions
+    about: Bigger ideas and integration recipes start as a discussion.
+  - name: Security report
+    url: https://github.com/cmldexter/DepartureBoard/security/advisories/new
+    about: Please report vulnerabilities privately, not as a public issue.

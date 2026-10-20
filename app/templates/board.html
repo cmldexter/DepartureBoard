@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}DepartureBoard{% endblock %}
+{% block head %}
+  <link rel="stylesheet" href="/static/css/board.css">
+  <link rel="stylesheet" href="/static/themes/classic-black.css" id="theme">
+{% endblock %}
+{% block body_class %}board-page{% endblock %}
+{% block body %}
+<main class="frame" style="--rows: {{ rows }}; --cols: {{ cols }};">
+  <div class="board" id="board" aria-label="Departure board">
+    {% for row in grid %}
+      {% for ch in row %}
+        <div class="cell"><span class="glyph">{{ ch }}</span><span class="split"></span></div>
+      {% endfor %}
+    {% endfor %}
+  </div>
+</main>
+<script src="/static/js/board.js" defer></script>
+{% endblock %}
