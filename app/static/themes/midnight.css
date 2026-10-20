@@ -1,0 +1,14 @@
+/* Midnight — navy flaps, pale type, a deep blue frame. */
+:root {
+  --bg: #050a18;
+  --frame-color: #0f1d3d;
+  --frame-width: 3vmin;
+  --board-bg: #091430;
+  --flap-bg: #121f44;
+  --flap-text: #e8eefc;
+  --flap-split: rgba(0, 0, 0, 0.8);
+  --flap-font: "Oswald", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --flap-weight: 600;
+  --ui-fg: #e8eefc;
+  --ui-bg: rgba(5, 10, 24, 0.7);
+}

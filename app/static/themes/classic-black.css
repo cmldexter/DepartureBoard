@@ -2,9 +2,13 @@
 :root {
   --bg: #000;
   --frame-color: #1c1c1c;
+  --frame-width: 3vmin;
   --board-bg: #0a0a0a;
   --flap-bg: #151515;
   --flap-text: #f4f4f4;
   --flap-split: rgba(0, 0, 0, 0.85);
-  --flap-font: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --flap-font: "Oswald", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --flap-weight: 600;
+  --ui-fg: #f4f4f4;
+  --ui-bg: rgba(0, 0, 0, 0.6);
 }

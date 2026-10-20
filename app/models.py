@@ -49,6 +49,9 @@ PRESETS = {"compact": (6, 22), "large": (8, 28)}
 ROWS_BOUNDS = (4, 10)
 COLS_BOUNDS = (16, 36)
 
+# Built-in themes: app/static/themes/<id>.css. The first is the default.
+THEMES = ("classic-black", "walnut", "arctic-white", "midnight")
+
 DEFAULT_SETTINGS = {
     "grid_preset": "compact",
     "rows": "6",

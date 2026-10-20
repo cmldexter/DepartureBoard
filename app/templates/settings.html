@@ -86,7 +86,7 @@
         <label>Volume <input type="range" name="sound_volume" min="0" max="1" step="0.05"></label>
         <label>Theme
           <select name="theme">
-            {% for t in themes %}<option value="{{ t }}">{{ t.replace('-', ' ').title() }}{% if not loop.first %} (soon){% endif %}</option>{% endfor %}
+            {% for t in themes %}<option value="{{ t }}">{{ t.replace('-', ' ').title() }}</option>{% endfor %}
           </select>
         </label>
         <label>Idle text <span class="muted">— when nothing is live</span><input type="text" name="idle_text" maxlength="2000"></label>
