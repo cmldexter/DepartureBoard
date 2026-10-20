@@ -39,3 +39,38 @@ def test_settings_page_panels(client, token):
     r = client.get("/settings", headers={"Authorization": f"Bearer {token}"})
     for needle in ("Messages", "Display", "Images", "settings.js", "Server time", "feltbykraft"):
         assert needle in r.text, needle
+
+
+def test_integrate_page(client, token):
+    assert client.get("/integrate").status_code == 401
+    r = client.get("/integrate", headers={"Authorization": f"Bearer {token}"})
+    assert r.status_code == 200
+    assert 'data-base="http://testserver"' in r.text
+    assert f'data-token="{token}"' in r.text
+    for kind in (
+        "now",
+        "now-plain",
+        "window",
+        "daily",
+        "weekly",
+        "image",
+        "list",
+        "delete",
+        "preset",
+        "board",
+    ):
+        assert f'data-kind="{kind}"' in r.text, kind
+    assert "integrate.js" in r.text and "/llms.txt" in r.text
+
+
+def test_login_redirects_to_next(client, token):
+    r = client.post(
+        "/settings/login", data={"token": token, "next": "/integrate"}, follow_redirects=False
+    )
+    assert r.status_code == 303 and r.headers["location"] == "/integrate"
+    r = client.post(
+        "/settings/login",
+        data={"token": token, "next": "https://evil.example.com"},
+        follow_redirects=False,
+    )
+    assert r.headers["location"] == "/settings"

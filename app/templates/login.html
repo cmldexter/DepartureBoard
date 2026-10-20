@@ -6,9 +6,11 @@
   <h1>DepartureBoard</h1>
   <p>Paste the API token to open the settings. It was printed in the server log on first boot
      (<code>docker compose logs departureboard</code>) and is stored in the data volume as
-     <code>api_token</code>.</p>
+     <code>api_token</code>. On a Mac, <code>pbcopy &lt; data/api_token</code> puts it on the
+     clipboard; with the container, <code>docker compose exec departureboard cat /data/api_token</code>.</p>
   {% if error %}<p class="error">{{ error }}</p>{% endif %}
   <form method="post" action="/settings/login">
+    <input type="hidden" name="next" value="{{ next or '/settings' }}">
     <label for="token">Token</label>
     <input id="token" name="token" type="password" autocomplete="current-password" required autofocus>
     <button type="submit">Open settings</button>
