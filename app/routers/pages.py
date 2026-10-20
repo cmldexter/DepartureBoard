@@ -1,10 +1,11 @@
 """The HTML pages: the board, the settings page, the integrate page."""
 
 from datetime import UTC, datetime
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Form, Request, status
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
 
 from app import __version__
 from app.models import THEMES
@@ -12,6 +13,7 @@ from app.services.auth import COOKIE_NAME, _presented_token, token_matches
 from app.services.display import display_settings, resolve_display
 
 router = APIRouter(include_in_schema=False)
+LLMS_TXT = Path(__file__).resolve().parent.parent.parent / "llms.txt"
 
 
 def _placeholder_rows(rows: int, cols: int) -> list[str]:
@@ -101,6 +103,12 @@ def integrate_page(request: Request):
         "integrate.html",
         {"token": request.app.state.api_token, "base_url": base, "version": __version__},
     )
+
+
+@router.get("/llms.txt", response_class=PlainTextResponse)
+def llms_txt():
+    """The repo's llms.txt, for anything that reads the web before acting."""
+    return PlainTextResponse(LLMS_TXT.read_text(), media_type="text/plain; charset=utf-8")
 
 
 @router.post("/settings/login")

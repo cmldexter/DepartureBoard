@@ -27,7 +27,7 @@ RUN uv sync --frozen --no-dev --python /usr/local/bin/python3
 
 COPY --chown=board:board app ./app
 COPY --chown=board:board migrations ./migrations
-COPY --chown=board:board alembic.ini ./
+COPY --chown=board:board alembic.ini llms.txt ./
 
 VOLUME ["/data"]
 EXPOSE 8000
