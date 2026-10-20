@@ -15,6 +15,13 @@ class Settings(BaseSettings):
     api_token: str | None = None
     # Timezone schedules are evaluated in (IANA name). The TZ env var is also honoured.
     tz: str = "UTC"
+    # CORS is off. To let a browser app on another origin call the API, list the origins,
+    # comma-separated: "https://dash.example.com,http://localhost:5173".
+    cors_origins: str = ""
+
+    @property
+    def cors_origin_list(self) -> list[str]:
+        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
 
     @property
     def database_url(self) -> str:

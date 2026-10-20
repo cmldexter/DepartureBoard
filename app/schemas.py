@@ -34,6 +34,33 @@ class MessageIn(BaseModel):
     repeat_end: str | None = Field(None, examples=["09:30"])
     created_by: str | None = Field(None, max_length=80)
 
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {"text": "DINNER AT 7\nBRING A COAT"},
+                {
+                    "text": "HAPPY BIRTHDAY NICK {yellow}",
+                    "starts_at": "2026-10-21T07:00:00-04:00",
+                    "ends_at": "2026-10-21T23:00:00-04:00",
+                    "priority": 5,
+                },
+                {
+                    "text": "STANDUP 09:30 {blue}",
+                    "repeat": "daily",
+                    "repeat_start": "09:00",
+                    "repeat_end": "10:00",
+                },
+                {
+                    "text": "BINS OUT TONIGHT",
+                    "repeat": "weekly",
+                    "repeat_days": 4,
+                    "repeat_start": "18:00",
+                    "repeat_end": "23:00",
+                },
+            ]
+        }
+    )
+
     @field_validator("repeat_start", "repeat_end")
     @classmethod
     def _hhmm(cls, v: str | None) -> str | None:
@@ -128,6 +155,16 @@ class SettingsOut(BaseModel):
 
 
 class SettingsPatch(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {"grid_preset": "large"},
+                {"grid_preset": "custom", "rows": 7, "cols": 30},
+                {"animation": 0, "sound_enabled": False},
+                {"theme": "walnut", "idle_text": "WELCOME HOME"},
+            ]
+        }
+    )
     grid_preset: Literal["compact", "large", "custom"] | None = None
     rows: int | None = Field(None, ge=4, le=10)
     cols: int | None = Field(None, ge=16, le=36)
