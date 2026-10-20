@@ -1,21 +1,26 @@
 /* The board. Cells are sized so the whole grid fits a 16:9 screen with a frame around it.
-   The split-flap animation, sound and keep-awake arrive with Epic 3; this is the static grid. */
+   Each cell is a split-flap: two static halves and a leaf that rotates down over the bottom
+   half (see static/js/flap.js for the markup). Sound, themes and keep-awake arrive later. */
 
-.board-page { overflow: hidden; background: var(--bg); }
+html.board-page, .board-page { overflow: hidden; }
+.board-page { background: var(--bg); }
 
 .frame {
   --frame: 3vmin;
   --gap: 0.35vmin;
   --cell-w: min(
-    calc((100vw - 2 * var(--frame) - (var(--cols) - 1) * var(--gap)) / var(--cols)),
-    calc((100vh - 2 * var(--frame) - (var(--rows) - 1) * var(--gap)) / var(--rows) / 1.45)
+    calc((100vw - 2 * var(--frame) - 2 * var(--gap) - (var(--cols) - 1) * var(--gap)) / var(--cols)),
+    calc((100vh - 2 * var(--frame) - 2 * var(--gap) - (var(--rows) - 1) * var(--gap)) / var(--rows) / 1.45)
   );
   --cell-h: calc(var(--cell-w) * 1.45);
+  --flip-ms: 70ms;
   height: 100vh;
+  width: 100vw;
   display: grid;
   place-items: center;
   padding: var(--frame);
   background: var(--frame-color);
+  overflow: hidden;
 }
 
 .board {
@@ -30,23 +35,80 @@
 
 .cell {
   position: relative;
-  background: var(--flap-bg);
-  color: var(--flap-text);
+  width: var(--cell-w);
+  height: var(--cell-h);
   border-radius: 0.5vmin;
-  display: grid;
-  place-items: center;
+  overflow: hidden;
+  perspective: calc(var(--cell-h) * 4);
   font-family: var(--flap-font);
   font-weight: 700;
-  font-size: calc(var(--cell-h) * 0.72);
-  line-height: 1;
-  overflow: hidden;
+  font-size: calc(var(--cell-h) * 0.74);
+  color: var(--flap-text);
   user-select: none;
 }
 
+/* Every half is the full cell's height, clipped to its own half. */
+.cell .half,
+.cell .face {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 50%;
+  overflow: hidden;
+  background: var(--flap-bg);
+}
+.cell .half.top { top: 0; border-radius: 0.5vmin 0.5vmin 0 0; }
+.cell .half.bottom { bottom: 0; border-radius: 0 0 0.5vmin 0.5vmin; }
+
+.cell .glyph {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: var(--cell-h);
+  line-height: var(--cell-h);
+  text-align: center;
+  white-space: pre;
+}
+.cell .half.top .glyph,
+.cell .face.front .glyph { top: 0; }
+.cell .half.bottom .glyph,
+.cell .face.back .glyph { bottom: 0; }
+
+/* The leaf covers the top half and rotates about the cell's midline. */
+.cell .leaf {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 50%;
+  transform-origin: 50% 100%;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+.cell .face {
+  top: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.cell .face.front { border-radius: 0.5vmin 0.5vmin 0 0; }
+/* The far side is pre-rotated so it reads upright once the leaf has turned over. */
+.cell .face.back {
+  transform: rotateX(180deg);
+  border-radius: 0 0 0.5vmin 0.5vmin;
+}
+
+.cell .leaf.flip-a { animation: flip-a var(--flip-ms) ease-in forwards; }
+.cell .leaf.flip-b { animation: flip-b var(--flip-ms) ease-in forwards; }
+@keyframes flip-a { from { transform: rotateX(0); } to { transform: rotateX(-180deg); } }
+@keyframes flip-b { from { transform: rotateX(0); } to { transform: rotateX(-180deg); } }
+
 .cell .split {
   position: absolute;
-  left: 0; right: 0; top: 50%;
+  left: 0;
+  right: 0;
+  top: 50%;
   height: 1px;
   background: var(--flap-split);
   transform: translateY(-50%);
+  z-index: 2;
 }

@@ -12,7 +12,8 @@ def test_health(client):
 def test_board_renders_placeholder(client):
     r = client.get("/")
     assert r.status_code == 200
-    glyphs = "".join(re.findall(r'<span class="glyph">(.?)</span>', r.text))
+    assert len(re.findall(r'<div class="cell">', r.text)) == 6 * 22
+    glyphs = "".join(re.findall(r'<div class="half top"><span class="glyph">(.?)</span>', r.text))
     assert len(glyphs) == 6 * 22
     assert "DEPARTUREBOARD" in glyphs
     assert "SET UP AT /SETTINGS" in glyphs
