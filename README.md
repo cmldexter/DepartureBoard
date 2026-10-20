@@ -24,7 +24,13 @@ Then:
 
 - On the TV, open `http://<this machine>:8080` and go fullscreen.
 - On your laptop, open `http://<this machine>:8080/settings`. The token it asks for was printed
-  in the server log on first boot — `docker compose logs departureboard`.
+  in the server log on first boot. To get it again without reading logs:
+
+  ```bash
+  docker compose exec departureboard cat /data/api_token            # the container
+  pbcopy < data/api_token                                            # a `uv run` dev server, macOS: straight to the clipboard
+  xclip -selection clipboard < data/api_token                        # Linux
+  ```
 
 Optional: copy `.env.example` to `.env` to change the port, set your timezone, or bring your own token.
 
@@ -40,17 +46,35 @@ Optional: copy `.env.example` to `.env` to change the port, set your timezone, o
 - **The integrate page** (`/integrate`) — copy-paste `curl` lines pre-filled with your own host
   and token, so your calendar, your home automation or your agent can post to the board tonight.
 
-> Status: the project is being built in the open. The board, its flip animation, the token and
-> the container are here (try `/?demo`); sound, themes, the organizer and the integrate page
-> land in the next releases. Follow the [milestones](https://github.com/cmldexter/DepartureBoard/milestones).
+> Status: the project is being built in the open and the loop is closed — a message written on
+> the settings page (or posted with one curl) flips onto the TV, with sound, four themes, a
+> fullscreen button that keeps the TV awake, schedules, colour chips, emoji and your own
+> pictures. What remains before `v0.1.0`: the published container image and the TV setup guide. Follow the [milestones](https://github.com/cmldexter/DepartureBoard/milestones).
 
 ## Bring your own integration
 
 We will not add a calendar panel, a chat bot or a weather widget to the UI. The board has an
-API, a page that writes the `curl` for you, and an **Agent Skill** plus examples under
-[`integrations/`](integrations/) so that your own agent, script or automation can drive it.
-That keeps the app small and keeps your integrations yours. Share what you build in
-[Discussions](https://github.com/cmldexter/DepartureBoard/discussions).
+API, and we ship three things so that your own agent, script or automation can drive it:
+
+1. **The integrate page** — `http://<this machine>:8080/integrate`, behind the same token as
+   settings: copy-paste `curl` lines pre-filled with your host and your token, one per task
+   (post now, a window, daily, weekly, a picture, list, delete, the display), with the expected
+   response under each. The complete reference is `/docs` (Swagger, generated from the code).
+2. **The shortest call** — `POST /api/messages/now` takes a plain-text body, so a cron line,
+   Home Assistant's `rest_command` or an n8n node is one line:
+
+   ```bash
+   curl -X POST http://<this machine>:8080/api/messages/now \
+     -H "Authorization: Bearer $TOKEN" -H "Content-Type: text/plain" --data 'DINNER AT 7'
+   ```
+3. **The agent bundle** under [`integrations/`](integrations/): runnable `curl` examples, an
+   **Agent Skill** (`SKILL.md`, the format Claude Code, Hermes Agent and others read) and
+   `llms.txt` (also served at `/llms.txt`).
+
+That keeps the app small and keeps your integrations yours. CORS is off; set
+`DEPARTUREBOARD_CORS_ORIGINS` to a comma-separated list of origins if a browser app elsewhere
+must call the API. Share what you build in
+[Discussions → Show and tell](https://github.com/cmldexter/DepartureBoard/discussions/categories/show-and-tell).
 
 ## Requests and bugs
 
