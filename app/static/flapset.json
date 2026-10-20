@@ -1,0 +1,9 @@
+{
+  "sequence": [" ", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "!", "@", "#", "$", "(", ")", "-", "+", "&", "=", ";", ":", "'", "\"", "%", ",", ".", "/", "?", "°"],
+  "chips": ["red", "orange", "yellow", "green", "blue", "violet", "white", "black"],
+  "tokens": {
+    "chip": "{<colour>} — one cell, a solid flap in that colour",
+    "img": "{img:<slug>} — one cell showing an uploaded image (POST /api/images)",
+    "emoji": "any emoji in the text — one cell showing the emoji on a flap"
+  }
+}
