@@ -8,6 +8,8 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; }
 body { background: var(--bg); color: var(--fg); font-family: var(--font); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 
 .page .narrow { max-width: 42rem; margin: 0 auto; padding: 2rem 1rem; }
 .page h1 { margin: 0 0 .5rem; }
@@ -43,6 +45,8 @@ body { background: var(--bg); color: var(--fg); font-family: var(--font); }
 .page .slider input { padding: 0; }
 .page .slider output { min-width: 2.5rem; text-align: right; }
 .page .days { display: flex; flex-wrap: wrap; gap: .25rem .75rem; margin: .75rem 0 .25rem; grid-column: 1 / -1; }
+.page .days[hidden] { display: none; }
+.page .days legend { margin: 0 0 .25rem; padding: 0; width: 100%; font-size: .9rem; color: var(--muted); }
 .page .days label { display: flex; align-items: center; gap: .25rem; margin: 0; }
 .page .days input { width: auto; }
 .page input:disabled { opacity: .4; }
@@ -61,15 +65,11 @@ body { background: var(--bg); color: var(--fg); font-family: var(--font); }
 .page .badge.expired { background: #4a4a4a; color: #bbb; }
 .page .badge.disabled { background: #333; color: #999; }
 .page .preview { margin: .5rem 0 .25rem; }
-.page .mini-board { --cols: 22; display: grid; grid-template-columns: repeat(var(--cols), 1fr); gap: 2px; padding: 4px; background: #000; border-radius: .3rem; aspect-ratio: calc(var(--cols) / 6 * 1 / 1.45); }
-.page .mini-board.overflow { outline: 2px solid #ff6b6b; }
-.page .mc { display: grid; place-items: center; background: #151515; color: #f4f4f4; font-weight: 700; font-size: clamp(.5rem, 1.6vw, .95rem); line-height: 1; border-radius: 2px; overflow: hidden; aspect-ratio: 1 / 1.45; }
-.page .mc.empty { background: #0e0e0e; }
-.page .mc.img { background-size: cover; background-position: center; }
-.page .mc.emoji { font-size: clamp(.55rem, 1.8vw, 1.1rem); }
-.page .mc.chip-red { background: #d7263d; } .page .mc.chip-orange { background: #f46036; } .page .mc.chip-yellow { background: #f2c14e; }
-.page .mc.chip-green { background: #2e933c; } .page .mc.chip-blue { background: #1b6ca8; } .page .mc.chip-violet { background: #7b4fa0; }
-.page .mc.chip-white { background: #f4f4f4; } .page .mc.chip-black { background: #000; outline: 1px solid #333; }
+/* the board itself, in a frame: it lays itself out for the frame's size, so a 16:9 box is the TV */
+.page .screen { aspect-ratio: 16 / 9; width: 100%; background: #000; border-radius: .6rem; overflow: hidden; }
+.page .screen iframe { display: block; width: 100%; height: 100%; border: 0; pointer-events: none; }
+.page #live h2 { margin-top: 1rem; }
+.page #live-now { margin: .5rem 0 0; }
 .page ul.images { list-style: none; padding: 0; margin: .5rem 0; }
 .page ul.images li { display: flex; align-items: center; gap: .75rem; padding: .4rem 0; border-bottom: 1px solid #222; }
 .page ul.images img { width: 2.2rem; height: 3.2rem; object-fit: cover; border-radius: .25rem; background: #000; }
