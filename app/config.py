@@ -1,10 +1,15 @@
 """Runtime configuration, read from the environment (prefix DEPARTUREBOARD_)."""
 
+import re
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# A bare hostname: labels of letters, digits and dashes, joined by dots. No scheme, port or path.
+_HOSTNAME = re.compile(r"^(?!-)[a-z0-9-]{1,63}(?<!-)(\.(?!-)[a-z0-9-]{1,63}(?<!-))*$")
 
 
 class Settings(BaseSettings):
@@ -29,6 +34,22 @@ class Settings(BaseSettings):
     # Extra names and addresses the self-signed certificate is valid for, comma-separated:
     # "board.local,192.168.1.20". The address the TV types belongs here.
     tls_hosts: str = ""
+    # A name for the board, e.g. "dboard.localhost" (Chrome and Edge resolve *.localhost to this
+    # machine with no setup) or "board.local" (a LAN name your router or Bonjour resolves). Shown
+    # on the settings page, pre-filled on the integrate page, added to the self-signed
+    # certificate. The app does not make the name resolve; see docs/tv-setup.md.
+    host: str = ""
+
+    @field_validator("host")
+    @classmethod
+    def _bare_hostname(cls, value: str) -> str:
+        value = value.strip().lower()
+        if value and not _HOSTNAME.match(value):
+            raise ValueError(
+                "DEPARTUREBOARD_HOST is a bare name such as dboard.localhost or board.local: "
+                "no http://, no port, no path"
+            )
+        return value
 
     @property
     def cors_origin_list(self) -> list[str]:

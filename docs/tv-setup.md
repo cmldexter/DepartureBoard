@@ -36,9 +36,32 @@ Two things make this painless:
 - **Type the address once, then bookmark it** or set it as the browser's home page. TV remotes
   are terrible keyboards; a short hostname (`http://board.local:8080`) works on devices that
   resolve `.local` names (Macs, iPhones, most Android TV and Fire TV sticks), but a plain IP
-  address works everywhere.
+  address works everywhere. See *Giving the board a name*, next.
 
-The port is 8080 unless you changed `DEPARTUREBOARD_PORT` in `.env`.
+The port is 8080 unless you changed `DEPARTUREBOARD_PORT` in `.env`. The settings page lists
+the addresses it knows under **Your board is at**, each with a Copy button.
+
+### Giving the board a name
+
+`DEPARTUREBOARD_HOST=dboard.localhost` in `.env` names the board. The name shows first under
+*Your board is at*, pre-fills the host on the integrate page, and goes into the self-signed
+certificate (HTTPS, below). **The app does not make the name resolve**; the network does, and
+what works depends on where you type it:
+
+| Name | Resolves where | Good for |
+|---|---|---|
+| `dboard.localhost` (any `*.localhost`) | **Only on the machine running the server**, in Chrome and Edge, which answer `*.localhost` themselves with no `/etc/hosts` entry. Safari, Firefox and `curl` ask the OS, which usually does not. | A tidy address on your laptop. Browsers treat `http://*.localhost` as **secure**, like `https://`: the wake lock and the **Cast button** work on plain `http://` there. The TV cannot open it. |
+| `board.local` (any `.local`) | Across the LAN, via **Bonjour / mDNS**: automatic when the server runs on a Mac or a Raspberry Pi (set the machine's hostname to `board`). The container itself cannot advertise a name. | The TV, phones and laptops that resolve `.local` (most do; Fire TV and Android TV usually, Windows since 10). |
+| `board.home` or similar | Your **router's DNS** (a "local DNS record" or "hostname" entry pointing at the server's fixed address). | Everything on the LAN, including devices that do not do mDNS. |
+
+Casting from the name: open `http://dboard.localhost:8080/settings` in Chrome on the server
+machine and press **Cast to TV**; Chrome allows presenting the board from that address without
+a certificate (it refuses the same thing from `http://192.168…`). The TV receives pictures from
+Chrome, so the board never has to be reachable from the TV for this path.
+
+For a TV that opens the board itself, a name only helps if the TV resolves it; a plain address
+always works. With HTTPS on, the name is in the certificate automatically; any *other* name or
+address the TV types still belongs in `DEPARTUREBOARD_TLS_HOSTS`.
 
 ## Fullscreen and staying awake
 

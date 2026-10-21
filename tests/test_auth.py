@@ -1,5 +1,6 @@
 from fastapi.testclient import TestClient
 
+from app.config import Settings
 from app.main import create_app
 
 
@@ -107,3 +108,48 @@ def test_settings_page_has_the_cast_button(client, token):
     assert 'id="cast"' in html and 'aria-pressed="false"' in html
     assert '<dialog id="cast-help"' in html and 'id="cast-help-why"' in html
     assert "/static/js/cast.js" in html
+
+
+def test_settings_page_lists_the_addresses(monkeypatch, client, token):
+    """Without a name: the addresses the server sees, and a hint to name the board."""
+    from app.routers import pages
+
+    monkeypatch.setattr(pages, "local_ipv4s", lambda: ["10.0.0.5"])
+    html = client.get("/settings", headers={"Authorization": f"Bearer {token}"}).text
+    assert "Your board is at" in html
+    assert 'data-copy="http://10.0.0.5"' in html and "as this server sees it" in html
+    assert "DEPARTUREBOARD_HOST=dboard.localhost" in html
+    assert "by name" not in html
+
+
+def test_settings_page_shows_the_name(monkeypatch, tmp_path, token):
+    from app.routers import pages
+
+    monkeypatch.setattr(pages, "local_ipv4s", lambda: ["10.0.0.5", "10.0.0.5"])
+    s = Settings(data_dir=tmp_path / "named", host="dboard.localhost", _env_file=None)
+    with TestClient(create_app(s), base_url="http://192.168.1.20:8085") as c:
+        tok = c.app.state.api_token
+        html = c.get("/settings", headers={"Authorization": f"Bearer {tok}"}).text
+        assert html.index('data-copy="http://dboard.localhost:8085"') < html.index(
+            'data-copy="http://192.168.1.20:8085"'
+        )
+        assert "by name" in html and "the address you are using" in html
+        assert html.count('data-copy="http://10.0.0.5:8085"') == 1
+        assert "DEPARTUREBOARD_HOST=dboard.localhost" not in html
+        # The integrate page pre-fills the name, with the request's scheme and port.
+        r = c.get("/integrate", headers={"Authorization": f"Bearer {tok}"})
+        assert 'data-base="http://dboard.localhost:8085"' in r.text
+
+
+def test_host_must_be_a_bare_name(tmp_path):
+    import pytest
+    from pydantic import ValidationError
+
+    for bad in ("http://dboard.localhost", "dboard.localhost:8080", "a b", "-x.localhost", "x/"):
+        with pytest.raises(ValidationError, match="bare name"):
+            Settings(data_dir=tmp_path, host=bad, _env_file=None)
+    assert (
+        Settings(data_dir=tmp_path, host=" DBoard.LocalHost ", _env_file=None).host
+        == "dboard.localhost"
+    )
+    assert Settings(data_dir=tmp_path, host="", _env_file=None).host == ""

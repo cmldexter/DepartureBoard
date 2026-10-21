@@ -7,6 +7,16 @@ and a container image `ghcr.io/cmldexter/departureboard:X.Y.Z`.
 
 ## [Unreleased]
 
+### Added
+
+- **A name for the board** (#80, #81, #82). `DEPARTUREBOARD_HOST=dboard.localhost` (or
+  `board.local`, or a name your router resolves) names the board: the settings page lists
+  **Your board is at** with the name, the address you are using and the addresses the server
+  sees, each with a Copy button; the integrate page pre-fills the name; the self-signed
+  certificate carries it. `docs/tv-setup.md` says what resolves where. The Cast button now asks
+  the browser whether the page is a secure context instead of guessing from the URL, so on
+  `http://dboard.localhost` it casts without a certificate.
+
 ### Changed
 
 - **README: a tour of the settings page** (#71, #72, #73). Screenshots of every panel (captured by

@@ -86,6 +86,11 @@ body { background: var(--bg); color: var(--fg); font-family: var(--font); }
 .page dialog h3 { margin: 0 0 .5rem; }
 .page dialog form { margin-top: .5rem; text-align: right; }
 .page #live-now { margin: .5rem 0 0; }
+.page #addresses { margin: 1rem 0 0; }
+.page #addresses-heading { margin: 0 0 .25rem; }
+.page ul.addresses { list-style: none; padding: 0; margin: 0; }
+.page ul.addresses li { display: flex; align-items: baseline; gap: .6rem; padding: .2rem 0; flex-wrap: wrap; }
+.page ul.addresses .muted { font-size: .9rem; }
 .page ul.images { list-style: none; padding: 0; margin: .5rem 0; }
 .page ul.images li { display: flex; align-items: center; gap: .75rem; padding: .4rem 0; border-bottom: 1px solid #222; }
 .page ul.images img { width: 2.2rem; height: 3.2rem; object-fit: cover; border-radius: .25rem; background: #000; }

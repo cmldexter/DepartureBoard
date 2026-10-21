@@ -61,12 +61,15 @@ def local_ipv4s() -> list[str]:
 
 def san_entries(settings: Settings) -> list[str]:
     """Subject alternative names for a self-signed certificate: localhost, this host's name and
-    addresses, and whatever DEPARTUREBOARD_TLS_HOSTS adds (the address the TV types)."""
+    addresses, the board's name (DEPARTUREBOARD_HOST) and whatever DEPARTUREBOARD_TLS_HOSTS adds
+    (the address the TV types)."""
     names = ["DNS:localhost", "IP:127.0.0.1"]
     host = socket.gethostname()
     if host and not _CONTAINER_ID.match(host):
         names.append(f"DNS:{host}")
     names.extend(f"IP:{ip}" for ip in local_ipv4s())
+    if settings.host:
+        names.append(f"DNS:{settings.host}")
     for h in settings.tls_host_list:
         try:
             ipaddress.ip_address(h)

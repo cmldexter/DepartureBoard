@@ -11,6 +11,19 @@
   </header>
   <p class="muted">Server time now: <span id="server-time">{{ server_time }}</span> ({{ tz }}). Schedules follow it.
     Set <code>TZ</code> in <code>.env</code> to change it.</p>
+  <section id="addresses" aria-labelledby="addresses-heading">
+    <p id="addresses-heading" class="muted">Your board is at</p>
+    <ul class="addresses">
+      {% for a in addresses %}
+      <li><code class="token">{{ a.url }}</code> <button type="button" class="link copy" data-copy="{{ a.url }}">Copy</button> <span class="muted">{{ a.label }}</span></li>
+      {% endfor %}
+    </ul>
+    {% if not named %}
+    <p class="hint">Give it a name: <code>DEPARTUREBOARD_HOST=dboard.localhost</code> in <code>.env</code> (Chrome and Edge
+      open <code>*.localhost</code> names on this machine with no setup) or a name your network resolves, such as
+      <code>board.local</code>. The <a href="https://github.com/cmldexter/DepartureBoard/blob/main/docs/tv-setup.md#giving-the-board-a-name" rel="noopener" target="_blank">TV guide</a> says what a name does.</p>
+    {% endif %}
+  </section>
   <p id="toast" class="toast" role="status" aria-live="polite" hidden></p>
 
   <section id="live" aria-labelledby="live-heading">
@@ -28,9 +41,11 @@
     <p>Casting sends pictures of the board from this computer to a Chromecast or Google TV, so this
       computer stays on while it casts. A stick or a small computer plugged into the TV runs the
       board by itself; the <a href="https://github.com/cmldexter/DepartureBoard/blob/main/docs/tv-setup.md" rel="noopener" target="_blank">TV guide</a> has both.</p>
-    <p><strong>One click from this button</strong> needs the board on <code>https://</code>: put
-      <code>DEPARTUREBOARD_TLS=self-signed</code> in <code>.env</code> and restart, then open the
-      settings page at its <code>https://</code> address in Chrome or Edge. The button then opens the TV picker.</p>
+    <p><strong>One click from this button</strong> needs this page in a secure context in Chrome or Edge:
+      either the board on <code>https://</code> (put <code>DEPARTUREBOARD_TLS=self-signed</code> in
+      <code>.env</code>, restart, open the settings page at its <code>https://</code> address), or, on the
+      computer running the server, a <code>*.localhost</code> name such as
+      <code>http://dboard.localhost:8080/settings</code> (<code>DEPARTUREBOARD_HOST</code>). The button then opens the TV picker.</p>
     <p><strong>Right now, with no change:</strong> in Chrome, open the board, then ⋮ → <strong>Cast…</strong>
       → <em>Cast tab</em> and pick the TV.</p>
     <p id="cast-help-why" class="muted"></p>
