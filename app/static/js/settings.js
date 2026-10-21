@@ -131,11 +131,15 @@
     for (const m of messages) {
       const tr = document.createElement("tr");
       tr.dataset.id = m.id;
-      tr.innerHTML = `<td><span class="badge ${m.state}">${m.state}</span></td>
+      tr.innerHTML = `<td class="state"><label class="switch"><input type="checkbox" role="switch"><span class="track" aria-hidden="true"></span></label><span class="badge ${m.state}">${m.state}</span></td>
         <td class="text"></td><td class="muted"></td>
         <td class="actions"><button type="button" class="link edit">Edit</button> <button type="button" class="link delete">Delete</button></td>`;
       $(".text", tr).textContent = m.text;
       $(".muted", tr).textContent = `${fmtWhen(m)} · p${m.priority}`;
+      const sw = $(".switch input", tr);
+      sw.checked = m.enabled;
+      sw.setAttribute("aria-label", `Enabled: ${firstLine(m.text) || "blank message"}`);
+      sw.addEventListener("change", () => toggleEnabled(m, tr, sw));
       $(".edit", tr).addEventListener("click", (ev) => openForm(m, ev.currentTarget));
       $(".delete", tr).addEventListener("click", async () => {
         if (!confirm(`Delete “${m.text.slice(0, 40)}”?`)) return;
@@ -152,6 +156,24 @@
       rowsEl.appendChild(tr);
     }
     renderLive();
+  }
+
+  // The row switch: PATCH {enabled} alone; the state badge follows the response. The row is
+  // updated in place so focus stays on the switch; on error the switch goes back and says why.
+  async function toggleEnabled(m, tr, sw) {
+    const enabled = sw.checked;
+    try {
+      const saved = await api(`/api/messages/${m.id}`, { method: "PATCH", body: { enabled } });
+      Object.assign(m, saved); // the edit form opens on the new state
+      const badge = $(".badge", tr);
+      badge.className = `badge ${saved.state}`;
+      badge.textContent = saved.state;
+      toast(enabled ? `Enabled — now ${saved.state}.` : "Disabled.");
+      refreshLive();
+    } catch (e) {
+      sw.checked = !enabled;
+      toast(e.message, true);
+    }
   }
 
   // Focus the Edit button of a row (after the list was rebuilt), else "New message".

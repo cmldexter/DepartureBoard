@@ -59,6 +59,15 @@ body { background: var(--bg); color: var(--fg); font-family: var(--font); }
 .page table.list td { padding: .5rem; border-bottom: 1px solid #222; vertical-align: top; }
 .page table.list td.text { white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 .page table.list td.actions { white-space: nowrap; text-align: right; }
+.page table.list td.state { white-space: nowrap; }
+/* the row switch: a real checkbox (role=switch) over a drawn track; the outline lands on the track */
+.page .switch { position: relative; display: inline-block; width: 2.4rem; height: 1.3rem; margin: 0 .5rem 0 0; vertical-align: middle; }
+.page .switch input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; opacity: 0; cursor: pointer; }
+.page .switch .track { position: absolute; inset: 0; border-radius: 1rem; background: #444; transition: background .15s; pointer-events: none; }
+.page .switch .track::after { content: ""; position: absolute; top: .15rem; left: .15rem; width: 1rem; height: 1rem; border-radius: 50%; background: #eee; transition: transform .15s; }
+.page .switch input:checked + .track { background: #2f6b3a; }
+.page .switch input:checked + .track::after { transform: translateX(1.1rem); }
+.page .switch input:focus-visible + .track { outline: 2px solid var(--accent); outline-offset: 2px; }
 .page .badge { display: inline-block; padding: .1rem .5rem; border-radius: 1rem; font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; background: #333; }
 .page .badge.live { background: #2f6b3a; }
 .page .badge.scheduled { background: #2f4f6b; }
@@ -76,7 +85,8 @@ body { background: var(--bg); color: var(--fg); font-family: var(--font); }
 .page #image-form { align-items: end; }
 .page #image-form label { margin: 0; flex: 1; }
 .page #image-form button { margin: 0; }
-@media (max-width: 36rem) { .page .grid2 { grid-template-columns: 1fr; } }
+@media (max-width: 36rem) { .page .grid2 { grid-template-columns: 1fr; } .page .switch { display: block; margin: 0 0 .3rem; } }
+@media (prefers-reduced-motion: reduce) { .page .switch .track, .page .switch .track::after { transition: none; } }
 
 /* ---- integrate page */
 .page .integrate h2 { margin-top: 2rem; }

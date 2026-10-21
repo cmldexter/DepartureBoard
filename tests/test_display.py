@@ -136,6 +136,7 @@ CONFIG_KEYS = {
 }
 
 HUD = (
+    'id="settings-link"',
     'id="fullscreen"',
     'id="keep-awake"',
     'id="status"',
@@ -172,3 +173,19 @@ def test_preview_page_never_polls_or_demos(client):
     assert _cells(html) == 6 * 22
     for needle in HUD:
         assert needle not in html, needle
+
+
+def test_board_page_has_the_settings_link(client):
+    html = client.get("/").text
+    m = re.search(r'<a id="settings-link"[^>]*>', html)
+    assert m, "⚙ opposite ⛶"
+    tag = m.group(0)
+    for needle in (
+        'class="hud"',
+        'href="/settings"',
+        'target="_blank"',
+        'rel="noopener"',
+        "aria-label=",
+    ):
+        assert needle in tag, needle
+    assert 'id="settings-link"' not in client.get("/?embed").text
