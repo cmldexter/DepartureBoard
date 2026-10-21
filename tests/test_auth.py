@@ -100,3 +100,10 @@ def test_login_cookie_is_secure_only_over_https(settings, client, token):
         r = https.post("/settings/login", data={"token": token}, follow_redirects=False)
     cookie = r.headers["set-cookie"].lower()
     assert "secure" in cookie and "httponly" in cookie
+
+
+def test_settings_page_has_the_cast_button(client, token):
+    html = client.get("/settings", headers={"Authorization": f"Bearer {token}"}).text
+    assert 'id="cast"' in html and 'aria-pressed="false"' in html
+    assert '<dialog id="cast-help"' in html and 'id="cast-help-why"' in html
+    assert "/static/js/cast.js" in html

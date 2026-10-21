@@ -157,9 +157,9 @@ html.board-page, .board-page { overflow: hidden; }
   pointer-events: none;
 }
 .hud-visible .hud { opacity: 1; pointer-events: auto; }
-.fullscreen #fullscreen, .kiosk #fullscreen, .fullscreen #settings-link, .kiosk #settings-link { opacity: 0; pointer-events: none; }
-.fullscreen.hud-visible #fullscreen, .fullscreen.hud-visible #settings-link { opacity: 0.35; pointer-events: auto; }
-#fullscreen, #settings-link {
+.fullscreen #fullscreen, .kiosk #fullscreen, .fullscreen #settings-link, .kiosk #settings-link, .fullscreen #cast, .kiosk #cast { opacity: 0; pointer-events: none; }
+.fullscreen.hud-visible #fullscreen, .fullscreen.hud-visible #settings-link, .fullscreen.hud-visible #cast { opacity: 0.35; pointer-events: auto; }
+#fullscreen, #settings-link, #cast {
   bottom: 2vmin;
   width: 6vmin;
   height: 6vmin;
@@ -170,6 +170,11 @@ html.board-page, .board-page { overflow: hidden; }
 }
 #fullscreen { right: 2vmin; }
 #settings-link { left: 2vmin; text-decoration: none; }
+#cast { left: 9vmin; } /* beside ⚙; shown only where casting works (cast.js) */
+#cast[hidden] { display: none; }
+#cast svg { width: 3.2vmin; height: 3.2vmin; }
+#cast[data-state="connected"] { color: #7ad27a; border-color: #2e933c; }
+#cast[data-state="connecting"] { opacity: 0.6; }
 #status {
   left: 50%;
   bottom: 2vmin;
@@ -180,6 +185,7 @@ html.board-page, .board-page { overflow: hidden; }
 }
 #status[hidden] { display: none; }
 #keep-awake { position: fixed; left: -10px; top: -10px; width: 1px; height: 1px; opacity: 0.01; pointer-events: none; }
+#cast:not([hidden]) ~ #net { left: 16vmin; } /* past the Cast button when it is there */
 #net {
   left: 9vmin; /* beside ⚙, centred on its height */
   bottom: 4.2vmin;

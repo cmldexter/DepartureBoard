@@ -136,6 +136,8 @@ CONFIG_KEYS = {
 }
 
 HUD = (
+    'id="cast"',
+    "/static/js/cast.js",
     'id="settings-link"',
     'id="fullscreen"',
     'id="keep-awake"',
@@ -189,3 +191,12 @@ def test_board_page_has_the_settings_link(client):
     ):
         assert needle in tag, needle
     assert 'id="settings-link"' not in client.get("/?embed").text
+
+
+def test_board_page_has_a_hidden_cast_button(client):
+    html = client.get("/").text
+    m = re.search(r'<button type="button" id="cast"[^>]*>', html)
+    assert m, "the Cast button is in the HUD"
+    assert "hidden" in m.group(0), "hidden until cast.js finds the API and https"
+    assert "/static/js/cast.js" in html
+    assert 'id="cast"' not in client.get("/?embed").text
