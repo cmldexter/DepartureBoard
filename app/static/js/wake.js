@@ -1,5 +1,6 @@
 // Fullscreen and keep-awake. The button is the one user gesture the page needs: it goes
-// fullscreen, keeps the screen awake, and unlocks the sound.
+// fullscreen, keeps the screen awake, and unlocks the sound. Also the HUD's fade and the `s`
+// shortcut to the settings page.
 //
 // Keep-awake: navigator.wakeLock (secure contexts only — localhost or HTTPS) when it works,
 // otherwise a muted, looped, inline, 1-second video kept playing (what NoSleep.js does); a TV
@@ -131,6 +132,13 @@
     document.addEventListener(e, wake, { passive: true })
   );
   wake();
+
+  // `s` opens the settings page in a new tab — for a keyboard or a TV remote without a pointer.
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "s" || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+    if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+    window.open("/settings", "_blank", "noopener");
+  });
 
   window.Wake = { enter, exit, state };
 })();

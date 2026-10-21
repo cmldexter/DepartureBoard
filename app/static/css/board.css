@@ -143,7 +143,7 @@ html.board-page, .board-page { overflow: hidden; }
   z-index: 2;
 }
 
-/* ---- the little chrome: a fullscreen button and a status line, shown on activity, hidden in fullscreen */
+/* ---- the little chrome: ⚙ settings bottom-left, ⛶ fullscreen bottom-right, a status line between, the net dot beside ⚙; shown on activity, hidden in fullscreen */
 .hud {
   position: fixed;
   z-index: 10;
@@ -157,10 +157,9 @@ html.board-page, .board-page { overflow: hidden; }
   pointer-events: none;
 }
 .hud-visible .hud { opacity: 1; pointer-events: auto; }
-.fullscreen #fullscreen, .kiosk #fullscreen { opacity: 0; pointer-events: none; }
-.fullscreen.hud-visible #fullscreen { opacity: 0.35; pointer-events: auto; }
-#fullscreen {
-  right: 2vmin;
+.fullscreen #fullscreen, .kiosk #fullscreen, .fullscreen #settings-link, .kiosk #settings-link { opacity: 0; pointer-events: none; }
+.fullscreen.hud-visible #fullscreen, .fullscreen.hud-visible #settings-link { opacity: 0.35; pointer-events: auto; }
+#fullscreen, #settings-link {
   bottom: 2vmin;
   width: 6vmin;
   height: 6vmin;
@@ -169,6 +168,8 @@ html.board-page, .board-page { overflow: hidden; }
   display: grid;
   place-items: center;
 }
+#fullscreen { right: 2vmin; }
+#settings-link { left: 2vmin; text-decoration: none; }
 #status {
   left: 50%;
   bottom: 2vmin;
@@ -180,8 +181,8 @@ html.board-page, .board-page { overflow: hidden; }
 #status[hidden] { display: none; }
 #keep-awake { position: fixed; left: -10px; top: -10px; width: 1px; height: 1px; opacity: 0.01; pointer-events: none; }
 #net {
-  left: 2vmin;
-  bottom: 2vmin;
+  left: 9vmin; /* beside ⚙, centred on its height */
+  bottom: 4.2vmin;
   width: 1.6vmin;
   height: 1.6vmin;
   border-radius: 50%;
