@@ -58,7 +58,7 @@ the browser took:
 | Where the board is open | Path | Notes |
 |---|---|---|
 | Any browser at `http://<address>:8080` over the LAN | video | The common case. Works on every browser we have tried that plays video at all. |
-| Chrome / Edge / Chromium 84+, Safari 16.4+, Firefox 126+ at `http://localhost:8080` or over HTTPS | wake lock | The browser-native way. A Pi that hosts the board *and* shows it on `localhost` gets this path. |
+| Chrome / Edge / Chromium 84+, Safari 16.4+, Firefox 126+ at `http://localhost:8080` or over HTTPS (*HTTPS (optional)* below) | wake lock | The browser-native way. A Pi that hosts the board *and* shows it on `localhost` gets this path. |
 | Chromium in **kiosk mode** (`--kiosk`) | wake lock or video, as above | A headed kiosk window takes the lock on `localhost`; the page is already fullscreen without the button. Headless Chromium refuses the lock. |
 | A TV's built-in browser (Samsung, LG) | video, sometimes none | Old engines; some block muted autoplay. Expect to need a stick. |
 
@@ -72,6 +72,32 @@ Two things the page cannot control:
 
 If you want the TV to also *turn itself on and off* at set times, use the TV's own on/off timer
 or a smart plug. The board resumes where it was.
+
+### HTTPS (optional)
+
+The wake lock in the table needs `https://` or `localhost`. The server can serve `https://` itself:
+
+1. In `.env`, set `DEPARTUREBOARD_TLS=self-signed` and `DEPARTUREBOARD_TLS_HOSTS=<address>`, the
+   address the TV will type (`192.168.1.20`, `board.local`). Then `docker compose up -d`.
+2. The first boot makes a certificate and key in the data volume (`/data/tls/`; the key is readable
+   by the server only) and says so in the log. The board is now at `https://<address>:8080`; the
+   same port no longer answers plain `http://`, so retype the TV's bookmark.
+3. On the TV, open `https://<address>:8080`. The browser warns that it does not know the
+   certificate; continue (Chrome and Silk: *Advanced → Proceed*). Press **⛶**: the status line
+   should read *Screen stays awake* without "(video)".
+
+A browser that offers no way past the warning (some TV sets) needs the certificate installed as
+trusted: `docker compose cp departureboard:/data/tls/cert.pem .`, then import it on the device
+(Android TV and Fire TV: Settings → Security → Install certificate; a Mac: Keychain Access). An
+installed certificate is only accepted for the names it carries, which is why
+`DEPARTUREBOARD_TLS_HOSTS` must hold the address you type. To change the names, or when the
+certificate expires (825 days, the most Apple devices accept): `docker compose exec departureboard
+rm -r /data/tls` and restart.
+
+Your own certificate works too (from a local CA, your router, or Let's Encrypt by DNS challenge):
+mount the files and set `DEPARTUREBOARD_TLS_CERT` and `DEPARTUREBOARD_TLS_KEY` to their paths
+inside the container; uid 10001 must be able to read both. The `curl` lines on `/integrate`
+already say `https://`; with a self-signed certificate add `-k` (or `--cacert cert.pem`).
 
 ## Devices
 
@@ -181,3 +207,5 @@ console, **Arctic white** for a bright kitchen.
 | No clicks | Sound needs the one click on **⛶**. Also check *Sound* on the settings page. |
 | The TV turned off anyway | The TV's own eco / auto-off timer or the stick's screensaver. See *Fullscreen and staying awake*. |
 | A message is late by a few seconds | The TV polls every few seconds (`poll_seconds` on the settings page). That is expected. |
+| "Your connection is not private" | Expected with the self-signed certificate; continue, or install it on the device (*HTTPS (optional)*). |
+| Nothing loads at all after turning HTTPS on | The TV still has `http://` bookmarked; the port now speaks only `https://`. Retype the address. |

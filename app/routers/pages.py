@@ -133,7 +133,12 @@ def settings_login(request: Request, token: str = Form(...), next: str = Form("/
     target = next if next in ("/settings", "/integrate") else "/settings"
     response = RedirectResponse(target, status_code=status.HTTP_303_SEE_OTHER)
     response.set_cookie(
-        COOKIE_NAME, token.strip(), httponly=True, samesite="lax", max_age=60 * 60 * 24 * 365
+        COOKIE_NAME,
+        token.strip(),
+        httponly=True,
+        samesite="lax",
+        secure=request.url.scheme == "https",
+        max_age=60 * 60 * 24 * 365,
     )
     return response
 

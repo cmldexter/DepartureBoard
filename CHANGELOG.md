@@ -7,6 +7,15 @@ and a container image `ghcr.io/cmldexter/departureboard:X.Y.Z`.
 
 ## [Unreleased]
 
+### Added
+
+- **Optional HTTPS** (#68). `DEPARTUREBOARD_TLS=self-signed` makes a certificate on first boot
+  (kept under `/data/tls/`, valid for `DEPARTUREBOARD_TLS_HOSTS` plus the container's own names)
+  and serves `https://` on the same port, so a TV browser can take the native wake lock.
+  `DEPARTUREBOARD_TLS_CERT` / `DEPARTUREBOARD_TLS_KEY` use your own pair. Off by default; without
+  it nothing changes. The login cookie is `Secure` when served over https. The container starts
+  through `python -m app`.
+
 ## [0.1.0] — 2026-10-21
 
 The first release: a board anyone can run tonight. It exists because

@@ -1,3 +1,8 @@
+from fastapi.testclient import TestClient
+
+from app.main import create_app
+
+
 def test_settings_requires_token(client):
     r = client.get("/settings")
     assert r.status_code == 401
@@ -86,3 +91,12 @@ def test_settings_page_embeds_the_board(client, token):
     assert 'id="message-error" role="alert"' in html
     assert html.count('<th scope="col">') == 4
     assert '<fieldset id="repeat-days"' in html and "<legend>Days</legend>" in html
+
+
+def test_login_cookie_is_secure_only_over_https(settings, client, token):
+    r = client.post("/settings/login", data={"token": token}, follow_redirects=False)
+    assert "secure" not in r.headers["set-cookie"].lower()
+    with TestClient(create_app(settings), base_url="https://testserver") as https:
+        r = https.post("/settings/login", data={"token": token}, follow_redirects=False)
+    cookie = r.headers["set-cookie"].lower()
+    assert "secure" in cookie and "httponly" in cookie

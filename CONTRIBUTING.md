@@ -37,6 +37,7 @@ Most of them are better done *outside* the app through the API, which is the poi
 ```bash
 uv sync
 uv run fastapi dev app/main.py        # http://localhost:8000, reloads on change
+DEPARTUREBOARD_TLS=self-signed uv run python -m app   # the container's start, with HTTPS (no reload)
 uv run pytest
 uv run ruff check . && uv run ruff format .
 ```
