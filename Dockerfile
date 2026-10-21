@@ -32,7 +32,9 @@ COPY --chown=board:board alembic.ini llms.txt ./
 VOLUME ["/data"]
 EXPOSE 8000
 
+# The probe speaks https when DEPARTUREBOARD_TLS / _TLS_CERT is set (python -m app serves TLS then).
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s \
-  CMD python -c "import sys, urllib.request; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=2).status == 200 else 1)"
+  CMD python -c "import os, ssl, sys, urllib.request as u; t = os.environ.get('DEPARTUREBOARD_TLS') or os.environ.get('DEPARTUREBOARD_TLS_CERT'); sys.exit(0 if u.urlopen(('https' if t else 'http') + '://127.0.0.1:8000/api/health', timeout=2, context=ssl._create_unverified_context() if t else None).status == 200 else 1)"
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# app/__main__.py: uvicorn on :8000, with the certificate when DEPARTUREBOARD_TLS* is set.
+CMD ["python", "-m", "app"]
