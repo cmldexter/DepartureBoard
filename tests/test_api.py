@@ -286,3 +286,15 @@ def test_cors_off_by_default_and_on_by_env(client, tmp_path):
         assert r.headers["access-control-allow-origin"] == "https://dash.example.com"
         r = c.get("/api/board/current", headers={"Origin": "https://evil.example.com"})
         assert "access-control-allow-origin" not in r.headers
+
+
+def test_patch_enabled_alone_keeps_everything_else(client, auth):
+    body = {"text": "SWITCH ME", "priority": 5, "ends_at": "2099-01-01T00:00:00Z"}
+    m = client.post("/api/messages", json=body, headers=auth).json()
+    assert m["state"] == "live"
+    off = client.patch(f"/api/messages/{m['id']}", json={"enabled": False}, headers=auth).json()
+    assert (off["state"], off["enabled"]) == ("disabled", False)
+    for key in ("text", "priority", "ends_at", "repeat", "starts_at", "source"):
+        assert off[key] == m[key], key
+    on = client.patch(f"/api/messages/{m['id']}", json={"enabled": True}, headers=auth).json()
+    assert (on["state"], on["enabled"], on["text"]) == ("live", True, "SWITCH ME")
