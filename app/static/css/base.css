@@ -78,6 +78,13 @@ body { background: var(--bg); color: var(--fg); font-family: var(--font); }
 .page .screen { aspect-ratio: 16 / 9; width: 100%; background: #000; border-radius: .6rem; overflow: hidden; }
 .page .screen iframe { display: block; width: 100%; height: 100%; border: 0; pointer-events: none; }
 .page #live h2 { margin-top: 1rem; }
+.page #live .row { align-items: center; }
+.page #cast[data-state="connected"] { background: #2f6b3a; color: #fff; }
+.page #cast[data-state="connecting"] { opacity: .7; }
+.page dialog { background: #1a1a1a; color: var(--fg); border: 1px solid #2a2a2a; border-radius: .6rem; padding: 1.25rem 1.5rem; max-width: 34rem; line-height: 1.5; }
+.page dialog::backdrop { background: rgba(0, 0, 0, .65); }
+.page dialog h3 { margin: 0 0 .5rem; }
+.page dialog form { margin-top: .5rem; text-align: right; }
 .page #live-now { margin: .5rem 0 0; }
 .page ul.images { list-style: none; padding: 0; margin: .5rem 0; }
 .page ul.images li { display: flex; align-items: center; gap: .75rem; padding: .4rem 0; border-bottom: 1px solid #222; }

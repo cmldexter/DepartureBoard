@@ -14,10 +14,28 @@
   <p id="toast" class="toast" role="status" aria-live="polite" hidden></p>
 
   <section id="live" aria-labelledby="live-heading">
-    <h2 id="live-heading">On the TV</h2>
+    <div class="row">
+      <h2 id="live-heading">On the TV</h2>
+      <button type="button" class="small" id="cast" aria-pressed="false"><span class="label">Cast to TV</span></button>
+    </div>
     <div class="screen" aria-hidden="true"><iframe id="live-board" src="/?embed" title="The board, live" tabindex="-1"></iframe></div>
     <p id="live-now" class="muted">Waiting for the board…</p>
+    <p id="cast-note" class="muted" role="status" hidden></p>
   </section>
+
+  <dialog id="cast-help" aria-labelledby="cast-help-title">
+    <h3 id="cast-help-title">Cast to the TV</h3>
+    <p>Casting sends pictures of the board from this computer to a Chromecast or Google TV, so this
+      computer stays on while it casts. A stick or a small computer plugged into the TV runs the
+      board by itself; the <a href="https://github.com/cmldexter/DepartureBoard/blob/main/docs/tv-setup.md" rel="noopener" target="_blank">TV guide</a> has both.</p>
+    <p><strong>One click from this button</strong> needs the board on <code>https://</code>: put
+      <code>DEPARTUREBOARD_TLS=self-signed</code> in <code>.env</code> and restart, then open the
+      settings page at its <code>https://</code> address in Chrome or Edge. The button then opens the TV picker.</p>
+    <p><strong>Right now, with no change:</strong> in Chrome, open the board, then ⋮ → <strong>Cast…</strong>
+      → <em>Cast tab</em> and pick the TV.</p>
+    <p id="cast-help-why" class="muted"></p>
+    <form method="dialog"><button type="submit">Close</button></form>
+  </dialog>
 
   <section id="messages">
     <div class="row"><h2>Messages</h2><button type="button" class="small" id="new-message">New message</button></div>
@@ -127,4 +145,5 @@
   </footer>
 </main>
 <script src="/static/js/settings.js" defer></script>
+<script src="/static/js/cast.js" defer></script>
 {% endblock %}

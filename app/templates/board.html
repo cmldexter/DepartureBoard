@@ -26,6 +26,7 @@
 </main>
 {% if not embed %}
 <a id="settings-link" class="hud" href="/settings" target="_blank" rel="noopener" aria-label="Settings (opens in a new tab)" title="Settings · opens in a new tab · or press s">⚙</a>
+<button type="button" id="cast" class="hud" aria-label="Cast to the TV" title="Cast to the TV · this computer stays on" aria-pressed="false" hidden><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-7"/><path d="M3 12a9 9 0 0 1 9 9"/><path d="M3 16a5 5 0 0 1 5 5"/><path d="M3 20h.01"/></svg></button>
 <button type="button" id="fullscreen" class="hud" aria-label="Fullscreen and keep the screen awake" title="Fullscreen · keeps the TV awake · turns the sound on">⛶</button>
 <div id="status" class="hud" role="status" aria-live="polite" hidden></div>
 <div id="net" class="hud" role="status" aria-label="Cannot reach the server; retrying" hidden></div>
@@ -39,6 +40,7 @@
 {% if not embed %}
 <script src="/static/js/sound.js" defer></script>
 <script src="/static/js/wake.js" defer></script>
+<script src="/static/js/cast.js" defer></script>
 {% endif %}
 <script src="/static/js/board.js" defer></script>
 {% endblock %}

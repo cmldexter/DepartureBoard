@@ -50,6 +50,9 @@ or `uv sync && uv run fastapi dev app/main.py` for a dev server on port 8000.
   flaps, and a fullscreen button that keeps the TV awake.
 - **The settings page** (`/settings`) — write messages, preview them, schedule them (a window,
   a daily or weekly repeat), choose the preset, theme, animation and sound, upload pictures.
+- **Cast to the TV** — a Cast button on the settings page and the board sends the board to a
+  Chromecast or Google TV from Chrome (the board on `https://`, one line in `.env`); Chrome's own
+  Cast menu works on any board. The laptop stays on; a stick or a Pi runs the board alone.
 - **The API** — everything the settings page does. Swagger at `/docs`.
 - **The integrate page** (`/integrate`) — copy-paste `curl` lines pre-filled with your own host
   and token, so your calendar, your home automation or your agent can post to the board tonight.

@@ -61,6 +61,7 @@ the browser took:
 | Chrome / Edge / Chromium 84+, Safari 16.4+, Firefox 126+ at `http://localhost:8080` or over HTTPS (*HTTPS (optional)* below) | wake lock | The browser-native way. A Pi that hosts the board *and* shows it on `localhost` gets this path. |
 | Chromium in **kiosk mode** (`--kiosk`) | wake lock or video, as above | A headed kiosk window takes the lock on `localhost`; the page is already fullscreen without the button. Headless Chromium refuses the lock. |
 | A TV's built-in browser (Samsung, LG) | video, sometimes none | Old engines; some block muted autoplay. Expect to need a stick. |
+| **Cast from a laptop** to a Chromecast / Google TV | n/a | The TV shows pictures streamed from the laptop, which stays on (Chrome keeps it awake while casting). See *Casting from a laptop*. |
 
 Two things the page cannot control:
 
@@ -170,6 +171,8 @@ Fully Kiosk Browser does the kiosk job as on Fire TV), open the address, press *
 System → Screen saver → "When to start" → the longest interval offered, or "Energy saver" →
 "Turn off display" → never on devices that have it.
 
+Or run nothing on it: cast the board from a laptop (*Casting from a laptop*, below).
+
 ### The TV's built-in browser (Samsung Tizen, LG webOS, Android TV sets)
 
 Try it: open the address, press **⛶**, see what the status line says. On recent sets it works
@@ -184,6 +187,27 @@ No browser, so mirror the page from a Mac, iPhone or iPad with AirPlay (Control 
 Mirroring), open the address in Safari or Chrome there and press **⛶**. The wake lock runs on
 the device doing the mirroring; keep it plugged in and set its auto-lock to never. A stick in
 the TV's other HDMI port is the better long-term setup.
+
+## Casting from a laptop (Chromecast, Google TV)
+
+Casting is the other way round from everything above: nothing runs on the TV. Chrome on your
+laptop renders the board and streams pictures of it to the Chromecast, the same way it casts a
+tab. It is one click and needs no setup on the TV, and the laptop stays on and on the network
+while it casts (lid closed is fine; Chrome keeps it awake). For a board that runs by itself on a
+wall, use a stick or a Pi from the sections above instead.
+
+Two ways, both from Chrome or Edge:
+
+1. **The Cast button** on the settings page (next to *On the TV*) and on the board (bottom-left,
+   beside ⚙). It opens the browser's TV picker; pick the TV and the board appears. The button
+   turns into *Stop casting*; a reload of the page reconnects to the running cast. The button
+   needs the board on **`https://`** (*HTTPS (optional)* above): Chrome only presents a secure
+   page from a secure page. On a plain `http://` board the button explains this instead.
+2. **Chrome's own menu**, on any board: open the board, then ⋮ → **Cast…** → *Cast tab* → pick
+   the TV. Press **⛶** first so the board is fullscreen in the tab.
+
+Stop with the button, or ⋮ → Cast → *Stop casting*. Safari and Firefox have no Presentation
+API and no Cast menu; use Chrome or Edge for casting, or AirPlay mirroring to an Apple TV.
 
 ## Which preset
 
@@ -207,5 +231,7 @@ console, **Arctic white** for a bright kitchen.
 | No clicks | Sound needs the one click on **⛶**. Also check *Sound* on the settings page. |
 | The TV turned off anyway | The TV's own eco / auto-off timer or the stick's screensaver. See *Fullscreen and staying awake*. |
 | A message is late by a few seconds | The TV polls every few seconds (`poll_seconds` on the settings page). That is expected. |
+| The Cast button opens a panel instead of the TV picker | The board is on `http://`, or the browser has no Presentation API (Safari, Firefox); the panel says which. Turn on HTTPS, or use Chrome's ⋮ → Cast → *Cast tab*. |
+| The cast stops when the laptop is shut | Casting streams from the laptop. Closing the lid is fine; shutting down is not. A stick or a Pi on the TV runs alone. |
 | "Your connection is not private" | Expected with the self-signed certificate; continue, or install it on the device (*HTTPS (optional)*). |
 | Nothing loads at all after turning HTTPS on | The TV still has `http://` bookmarked; the port now speaks only `https://`. Retype the address. |
