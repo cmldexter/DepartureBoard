@@ -7,8 +7,18 @@ and a container image `ghcr.io/cmldexter/departureboard:X.Y.Z`.
 
 ## [Unreleased]
 
+_Nothing yet._
+
+## [0.2.0] — 2026-10-21
+
 ### Added
 
+- **The settings page shows the TV** (#62, #63, #64, #65, #74). The live board sits in a card at
+  the top of the settings page (the real board page in a frame, so every theme and preset is
+  exact), the message form previews what you type in the same renderer, every message row has
+  an enable switch, the board's HUD gains a ⚙ button (and the `s` key) that opens the settings
+  page, and the page had an accessibility pass: named controls, live regions, a focus order
+  that follows the layout, and a layout that holds on a phone.
 - **A name for the board** (#80, #81, #82). `DEPARTUREBOARD_HOST=dboard.localhost` (or
   `board.local`, or a name your router resolves) names the board: the settings page lists
   **Your board is at** with the name, the address you are using and the addresses the server
@@ -79,5 +89,6 @@ can afford — *"come find me when that exists."*
 - The board endpoint and the pictures are public so the TV never holds a secret; everything
   else needs the token. CORS is off unless origins are listed.
 
-[Unreleased]: https://github.com/cmldexter/DepartureBoard/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/cmldexter/DepartureBoard/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/cmldexter/DepartureBoard/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/cmldexter/DepartureBoard/releases/tag/v0.1.0
