@@ -4,10 +4,8 @@
 {% block body %}
 <main class="narrow">
   <h1>DepartureBoard</h1>
-  <p>Paste the API token to open the settings. It was printed in the server log on first boot
-     (<code>docker compose logs departureboard</code>) and is stored in the data volume as
-     <code>api_token</code>. On a Mac, <code>pbcopy &lt; data/api_token</code> puts it on the
-     clipboard; with the container, <code>docker compose exec departureboard cat /data/api_token</code>.</p>
+  <p>Paste the API token to open the settings. The board made it on first boot and keeps it next
+     to its data, so every server has its own. The lines below print it.</p>
   {% if error %}<p class="error">{{ error }}</p>{% endif %}
   <form method="post" action="/settings/login">
     <input type="hidden" name="next" value="{{ next or '/settings' }}">
@@ -15,5 +13,30 @@
     <input id="token" name="token" type="password" autocomplete="current-password" required autofocus>
     <button type="submit">Open settings</button>
   </form>
+
+  <section id="where-token" aria-labelledby="where-token-heading">
+    <h2 id="where-token-heading">Where the token is</h2>
+    <p class="muted">Run the line for how this board is running, in a terminal on the machine
+      that runs it. Add <code>| pbcopy</code> on a Mac or <code>| xclip -selection clipboard</code>
+      on Linux to put it straight on the clipboard instead of on the screen.</p>
+    <div class="snippet">
+      <div class="row"><h3>The container · <code>docker compose up</code></h3>
+        <button type="button" class="link copy" data-copy="docker compose exec departureboard cat /data/api_token">Copy</button></div>
+      <pre class="code"><span class="prompt" aria-hidden="true">$ </span>docker compose exec departureboard cat /data/api_token</pre>
+    </div>
+    <div class="snippet">
+      <div class="row"><h3>A server started from the checkout · <code>uv run</code></h3>
+        <button type="button" class="link copy" data-copy="cat data/api_token">Copy</button></div>
+      <pre class="code"><span class="prompt" aria-hidden="true">$ </span>cat data/api_token</pre>
+    </div>
+    <div class="snippet">
+      <div class="row"><h3>Or the first-boot log, where it was printed once</h3>
+        <button type="button" class="link copy" data-copy="docker compose logs departureboard | grep -A 1 &quot;API token&quot;">Copy</button></div>
+      <pre class="code"><span class="prompt" aria-hidden="true">$ </span>docker compose logs departureboard | grep -A 1 "API token"</pre>
+    </div>
+    <p class="muted">A token from one server does not open another: a <code>uv run</code> server
+      keeps its own under <code>data/</code>, the container keeps its own in the data volume.</p>
+  </section>
 </main>
+<script src="/static/js/login.js" defer></script>
 {% endblock %}
