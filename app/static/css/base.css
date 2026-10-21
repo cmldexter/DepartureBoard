@@ -26,6 +26,7 @@ body { background: var(--bg); color: var(--fg); font-family: var(--font); }
 .page .row { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap; }
 .page .error { color: #ff6b6b; }
 .page footer { margin-top: 3rem; color: var(--muted); font-size: .9rem; }
+.page #give { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #222; line-height: 1.5; }
 
 /* ---- settings page */
 .page .muted { color: var(--muted); }
