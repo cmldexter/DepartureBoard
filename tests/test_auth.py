@@ -153,3 +153,19 @@ def test_host_must_be_a_bare_name(tmp_path):
         == "dboard.localhost"
     )
     assert Settings(data_dir=tmp_path, host="", _env_file=None).host == ""
+
+
+def test_login_page_says_where_the_token_is(client):
+    """Three commands, one per way of running the board, each with a Copy button and a prompt
+    that is not part of the copied text."""
+    html = client.get("/settings").text
+    assert 'id="where-token"' in html and "/static/js/login.js" in html
+    for cmd in (
+        "docker compose exec departureboard cat /data/api_token",
+        "cat data/api_token",
+        'docker compose logs departureboard | grep -A 1 "API token"',
+    ):
+        assert cmd in html, cmd
+    assert html.count('class="link copy"') == 3
+    assert html.count('<span class="prompt" aria-hidden="true">$ </span>') == 3
+    assert "pbcopy &lt; data/api_token" not in html  # the old line that mixed the two servers up

@@ -7,7 +7,13 @@ and a container image `ghcr.io/cmldexter/departureboard:X.Y.Z`.
 
 ## [Unreleased]
 
-_Nothing yet._
+### Changed
+
+- **The sign-in page says where the token is, as commands.** One labelled terminal line per way
+  of running the board (the container, a `uv run` server, the first-boot log), each with a Copy
+  button, and a note that every server has its own token. The old sentence offered
+  `pbcopy < data/api_token` next to the container line, which pastes a dev server's token into
+  the container's sign-in on a machine that has run both.
 
 ## [0.2.0] — 2026-10-21
 
