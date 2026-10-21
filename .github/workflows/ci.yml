@@ -68,6 +68,26 @@ jobs:
           done
           docker logs db
           test "${ok:-0}" = 1
+      - name: Smoke test the image with HTTPS (self-signed on first boot; the healthcheck must agree)
+        run: |
+          docker run -d --name tls -e DEPARTUREBOARD_TLS=self-signed -e DEPARTUREBOARD_TLS_HOSTS=board.local -p 8443:8000 departureboard:ci
+          for i in $(seq 1 20); do
+            if curl -fsSk https://127.0.0.1:8443/api/health; then ok=1; break; fi
+            sleep 1
+          done
+          docker logs tls
+          test "${ok:-0}" = 1
+          docker logs tls 2>&1 | grep -q "self-signed certificate"
+          docker logs tls 2>&1 | grep -q "DNS:board.local"
+          for i in $(seq 1 60); do
+            status=$(docker inspect --format '{{.State.Health.Status}}' tls)
+            if [ "$status" = healthy ]; then break; fi
+            sleep 1
+          done
+          echo "health: $status"
+          test "$status" = healthy
+          # plain http on the same port is gone
+          if curl -fsS --max-time 3 http://127.0.0.1:8443/api/health; then echo "http still answers"; exit 1; fi
 
   # The one check the branch ruleset requires.
   ci:
