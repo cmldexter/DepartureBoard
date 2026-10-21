@@ -169,3 +169,12 @@ def test_login_page_says_where_the_token_is(client):
     assert html.count('class="link copy"') == 3
     assert html.count('<span class="prompt" aria-hidden="true">$ </span>') == 3
     assert "pbcopy &lt; data/api_token" not in html  # the old line that mixed the two servers up
+
+
+def test_login_page_asks_for_a_fraction(client):
+    """One muted line, one link, to a named relief effort; outside the form and the token help."""
+    html = client.get("/settings").text
+    assert 'id="give"' in html
+    assert "https://www.directrelief.org/emergency/venezuela-earthquakes-2026/" in html
+    assert 'rel="noopener" target="_blank"' in html
+    assert html.index('id="where-token"') < html.index('id="give"')

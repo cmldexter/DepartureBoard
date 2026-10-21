@@ -7,6 +7,12 @@ and a container image `ghcr.io/cmldexter/departureboard:X.Y.Z`.
 
 ## [Unreleased]
 
+### Added
+
+- **A line on the sign-in page**, under the token help: this board is free, the mechanical one it
+  imitates costs about $3,500, and a fraction of that is worth more to people still rebuilding
+  after the June 2026 earthquakes in Venezuela, with a link to Direct Relief's response.
+
 ### Changed
 
 - **The sign-in page says where the token is, as commands.** One labelled terminal line per way
