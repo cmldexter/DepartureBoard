@@ -30,10 +30,16 @@ def board(request: Request):
 
     `?demo` shows built-in messages so the board can be seen before any message exists; in demo
     mode only, `preset`, `rows`, `cols` and `animation` may be overridden in the query string.
+
+    `?embed` is the board for a frame on the settings page: no HUD, no fullscreen, no wake lock,
+    no sound, still polling. `?embed&preview` is the same page as a renderer only: a blank grid
+    that never polls (and never runs the demo); the settings page posts rows and settings into it.
     """
     with next(request.app.state.db.session()) as session:
         display = display_settings(session)
-    demo = "demo" in request.query_params
+    embed = "embed" in request.query_params
+    preview = "preview" in request.query_params
+    demo = "demo" in request.query_params and not preview
     if demo:
         overrides = {
             key: request.query_params.get(key) for key in ("rows", "cols", "animation", "theme")
@@ -54,16 +60,20 @@ def board(request: Request):
         "theme": theme,
         "poll_seconds": display["poll_seconds"],
         "demo": demo,
+        "embed": embed,
+        "preview": preview,
     }
+    grid = [" " * cols for _ in range(rows)] if preview else _placeholder_rows(rows, cols)
     return request.app.state.templates.TemplateResponse(
         request,
         "board.html",
         {
             "rows": rows,
             "cols": cols,
-            "grid": _placeholder_rows(rows, cols),
+            "grid": grid,
             "config": config,
             "theme": theme,
+            "embed": embed,
         },
     )
 

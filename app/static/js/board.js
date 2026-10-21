@@ -5,6 +5,11 @@
 // Data arrives as { rows: ["…", …], settings: { rows, cols, animation } } — the shape of
 // GET /api/board/current. Until the board polls it, ?demo feeds built-in messages.
 //
+// Framed by the settings page (same origin only): `?embed` polls as usual and reports what it
+// shows; `?embed&preview` never polls and paints what the parent posts. Messages:
+//   parent → board   board:show { rows, settings }   (preview)   board:refresh   (live)
+//   board → parent   board:ready { preview }         board:current { message_id, stamp }
+//
 // Exposes window.Board = { show, applySettings, settings }. Plain script, no modules.
 (() => {
   "use strict";
@@ -185,9 +190,15 @@
   // The sound just unlocked (fullscreen click): nothing to do now — the next cascade clicks.
   function soundReady() {}
 
+  // ---- framed by the settings page? Tell it what we show; take rows from it in preview mode.
+  const framed = window.parent !== window;
+  function tellParent(msg) {
+    if (framed) window.parent.postMessage(msg, location.origin);
+  }
+
   // ---- live data: poll /api/board/current; 304 means nothing changed; errors back off.
   const net = document.getElementById("net");
-  const poll = { etag: null, stamp: null, failures: 0, timer: 0, polls: 0, notModified: 0 };
+  const poll = { etag: null, stamp: null, failures: 0, timer: 0, polls: 0, notModified: 0, inFlight: false };
   const placeholderRows = cells.map((c) => c.current); // what the server rendered: keep it until there is content
 
   function schedule(seconds) {
@@ -196,6 +207,8 @@
   }
 
   async function fetchBoard() {
+    if (poll.inFlight) return; // a refresh asked for mid-poll: the running one reschedules
+    poll.inFlight = true;
     poll.polls += 1;
     try {
       const headers = poll.etag ? { "If-None-Match": poll.etag } : {};
@@ -213,6 +226,7 @@
       if (data.settings && data.settings.poll_seconds) settings.poll_seconds = data.settings.poll_seconds;
       if (data.stamp !== poll.stamp) {
         poll.stamp = data.stamp;
+        tellParent({ type: "board:current", message_id: data.message_id, stamp: data.stamp });
         applySettings(data.settings);
         const idle = data.message_id === null && data.rows.every((row) => row.every((c) => c === " "));
         // An idle board before anything has ever shown keeps the server's placeholder
@@ -224,6 +238,8 @@
       poll.failures += 1;
       offline();
       schedule(Math.min(60, 2 ** poll.failures));
+    } finally {
+      poll.inFlight = false;
     }
   }
 
@@ -239,9 +255,23 @@
   }
 
   settings.poll_seconds = Number(config.poll_seconds) || 5;
-  if (!config.demo) fetchBoard();
+  if (!config.demo && !config.preview) fetchBoard();
 
   window.Board = { show, applySettings, applyTheme, settings, stepMs, soundReady, poll, fetchBoard };
+
+  if (framed) {
+    window.addEventListener("message", (e) => {
+      if (e.origin !== location.origin || e.source !== window.parent || !e.data) return;
+      if (e.data.type === "board:show" && config.preview && Array.isArray(e.data.rows)) {
+        applySettings(e.data.settings);
+        show(e.data.rows);
+      } else if (e.data.type === "board:refresh" && !config.preview && !config.demo) {
+        clearTimeout(poll.timer);
+        fetchBoard();
+      }
+    });
+    tellParent({ type: "board:ready", preview: !!config.preview });
+  }
 
   // ---- demo feed: built-in messages so the board can be seen before any message exists ----
   if (config.demo) {

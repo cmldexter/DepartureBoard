@@ -3,7 +3,7 @@
    half (see static/js/flap.js for the markup). Sound, themes and keep-awake arrive later. */
 
 html.board-page, .board-page { overflow: hidden; }
-.board-page { background: var(--bg); }
+.board-page { background: var(--bg); text-size-adjust: none; -webkit-text-size-adjust: none; }
 
 .frame {
   --frame: var(--frame-width, 3vmin);
@@ -193,3 +193,8 @@ html.board-page, .board-page { overflow: hidden; }
 }
 #net[hidden] { display: none; }
 @keyframes pulse { 50% { opacity: 0.25; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .hud { transition: none; }
+  #net { animation: none; }
+}
