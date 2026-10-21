@@ -18,12 +18,13 @@
   const KEY = "cast-presentation-id";
   const state = { status: "idle", id: null, available: null, reason: "" };
 
-  // Chrome refuses to present an insecure URL from a secure page, and the API itself only
-  // exists in a secure context. So: https (or localhost) and the API, else the panel.
+  // The API only exists in a secure context, and Chrome refuses to present an insecure URL
+  // from a secure page. The browser knows which contexts it trusts (https://, localhost and
+  // *.localhost names are all secure), so ask it rather than guess from the URL.
   if (!navigator.presentation || typeof PresentationRequest === "undefined") {
-    state.reason = "This browser has no Presentation API (Chrome and Edge have it; Safari and Firefox do not).";
-  } else if (location.protocol !== "https:" && location.hostname !== "localhost") {
-    state.reason = "This page is on http://; one-click casting needs the board on https://.";
+    state.reason = window.isSecureContext
+      ? "This browser has no Presentation API (Chrome and Edge have it; Safari and Firefox do not)."
+      : "This page is on http://; one-click casting needs the board on https:// or on a *.localhost name on this computer.";
   }
   let request = null;
   if (!state.reason) {
