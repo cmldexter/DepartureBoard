@@ -9,6 +9,11 @@ and a container image `ghcr.io/cmldexter/departureboard:X.Y.Z`.
 
 ### Added
 
+- **Cast to the TV** (#67, #70). A Cast button on the settings page (next to *On the TV*) and on
+  the board's HUD (beside ⚙): on an `https://` board in Chrome or Edge it opens the TV picker and
+  presents the board (pictures streamed from the computer, which stays on), shows the casting
+  state, and reconnects after a reload. Elsewhere it opens a panel with the two ways: turn on
+  HTTPS, or Chrome's ⋮ → Cast → *Cast tab*. `docs/tv-setup.md` gains *Casting from a laptop*.
 - **Optional HTTPS** (#68). `DEPARTUREBOARD_TLS=self-signed` makes a certificate on first boot
   (kept under `/data/tls/`, valid for `DEPARTUREBOARD_TLS_HOSTS` plus the container's own names)
   and serves `https://` on the same port, so a TV browser can take the native wake lock.
