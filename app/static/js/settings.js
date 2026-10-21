@@ -35,6 +35,18 @@
     toastTimer = setTimeout(() => (el.hidden = true), 4000);
   }
 
+  // ---- the addresses under the header: one Copy per line.
+  for (const b of $$("#addresses .copy")) {
+    b.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(b.dataset.copy);
+        toast(`${b.dataset.copy} copied.`);
+      } catch {
+        toast(b.dataset.copy);
+      }
+    });
+  }
+
   // ---- helpers for dates: the API speaks UTC ISO; inputs speak local wall time.
   const toLocalInput = (iso) => {
     if (!iso) return "";

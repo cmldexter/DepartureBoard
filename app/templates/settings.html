@@ -11,6 +11,19 @@
   </header>
   <p class="muted">Server time now: <span id="server-time">{{ server_time }}</span> ({{ tz }}). Schedules follow it.
     Set <code>TZ</code> in <code>.env</code> to change it.</p>
+  <section id="addresses" aria-labelledby="addresses-heading">
+    <p id="addresses-heading" class="muted">Your board is at</p>
+    <ul class="addresses">
+      {% for a in addresses %}
+      <li><code class="token">{{ a.url }}</code> <button type="button" class="link copy" data-copy="{{ a.url }}">Copy</button> <span class="muted">{{ a.label }}</span></li>
+      {% endfor %}
+    </ul>
+    {% if not named %}
+    <p class="hint">Give it a name: <code>DEPARTUREBOARD_HOST=dboard.localhost</code> in <code>.env</code> (Chrome and Edge
+      open <code>*.localhost</code> names on this machine with no setup) or a name your network resolves, such as
+      <code>board.local</code>. The <a href="https://github.com/cmldexter/DepartureBoard/blob/main/docs/tv-setup.md#giving-the-board-a-name" rel="noopener" target="_blank">TV guide</a> says what a name does.</p>
+    {% endif %}
+  </section>
   <p id="toast" class="toast" role="status" aria-live="polite" hidden></p>
 
   <section id="live" aria-labelledby="live-heading">

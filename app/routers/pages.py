@@ -11,9 +11,35 @@ from app import __version__
 from app.models import THEMES
 from app.services.auth import COOKIE_NAME, _presented_token, token_matches
 from app.services.display import display_settings, resolve_display
+from app.services.tls import local_ipv4s
 
 router = APIRouter(include_in_schema=False)
 LLMS_TXT = Path(__file__).resolve().parent.parent.parent / "llms.txt"
+_LOOPBACK = {"localhost", "127.0.0.1", "::1"}
+
+
+def board_addresses(request: Request) -> list[dict[str, str]]:
+    """Where the board can be opened, as `{label, url}`: the name the owner gave it
+    (DEPARTUREBOARD_HOST) first, then the address this request came on, then the addresses this
+    server sees on its own interfaces (inside a container those are the container's, not the
+    LAN's). The scheme and port are the request's: the port the browser used is the published
+    one, whatever the container listens on."""
+    scheme, port = request.url.scheme, request.url.port
+    suffix = f":{port}" if port else ""
+    name = request.app.state.settings.host
+    entries: list[tuple[str, str]] = []
+    if name:
+        entries.append(("by name", name))
+    here = request.url.hostname or ""
+    if here and here not in _LOOPBACK and here != name:
+        entries.append(("the address you are using", here))
+    entries.extend(("as this server sees it", ip) for ip in local_ipv4s())
+    out: list[dict[str, str]] = []
+    for label, host in entries:
+        url = f"{scheme}://{host}{suffix}"
+        if all(e["url"] != url for e in out):
+            out.append({"label": label, "url": url})
+    return out
 
 
 def _placeholder_rows(rows: int, cols: int) -> list[str]:
@@ -85,29 +111,34 @@ def settings_page(request: Request):
         return templates.TemplateResponse(
             request, "login.html", {}, status_code=status.HTTP_401_UNAUTHORIZED
         )
-    tz = request.app.state.settings.tz
-    now = datetime.now(UTC).astimezone(ZoneInfo(tz))
+    settings = request.app.state.settings
+    now = datetime.now(UTC).astimezone(ZoneInfo(settings.tz))
     return templates.TemplateResponse(
         request,
         "settings.html",
         {
             "token": request.app.state.api_token,
-            "tz": tz,
+            "tz": settings.tz,
             "server_time": now.strftime("%Y-%m-%d %H:%M"),
             "themes": list(THEMES),
+            "addresses": board_addresses(request),
+            "named": bool(settings.host),
         },
     )
 
 
 @router.get("/integrate", response_class=HTMLResponse)
 def integrate_page(request: Request):
-    """Copy-paste lines filled with this host and this install's token. Same cookie as settings."""
+    """Copy-paste lines filled with this host and this install's token. Same cookie as settings.
+    The host is the board's name when it has one, else whatever the browser used to get here."""
     templates = request.app.state.templates
     if not token_matches(request, _presented_token(request)):
         return templates.TemplateResponse(
             request, "login.html", {"next": "/integrate"}, status_code=status.HTTP_401_UNAUTHORIZED
         )
     base = str(request.base_url).rstrip("/")
+    if request.app.state.settings.host:
+        base = board_addresses(request)[0]["url"]
     return templates.TemplateResponse(
         request,
         "integrate.html",

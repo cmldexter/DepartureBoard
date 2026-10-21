@@ -67,6 +67,15 @@ def test_san_entries(monkeypatch, tmp_path):
     ]
 
 
+def test_san_carries_the_board_name(monkeypatch, tmp_path):
+    monkeypatch.setattr(tls.socket, "gethostname", lambda: "0123456789ab")
+    monkeypatch.setattr(tls, "local_ipv4s", lambda: [])
+    s = Settings(
+        data_dir=tmp_path, host="DBoard.localhost", tls_hosts="dboard.localhost", _env_file=None
+    )
+    assert tls.san_entries(s) == ["DNS:localhost", "IP:127.0.0.1", "DNS:dboard.localhost"]
+
+
 def test_container_hostname_is_left_out(monkeypatch, tmp_path):
     monkeypatch.setattr(tls.socket, "gethostname", lambda: "0123456789ab")
     monkeypatch.setattr(tls, "local_ipv4s", lambda: [])
