@@ -1,0 +1,105 @@
+name: release
+
+# A tag `v*` (made by `gh release create vX.Y.Z`) builds the image for amd64 and arm64, pushes
+# it to ghcr.io/cmldexter/departureboard as X.Y.Z, X.Y and latest, attests its provenance, then
+# pulls it back on a clean runner and checks the running app reports the tag's version.
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+env:
+  IMAGE: ghcr.io/cmldexter/departureboard
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      digest: ${{ steps.push.outputs.digest }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: The tag names the version the code carries
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          code="$(sed -n 's/^__version__ = "\(.*\)"$/\1/p' app/__init__.py)"
+          echo "tag=$tag code=$code"
+          test "$tag" = "$code"
+
+      - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4
+        with:
+          platforms: arm64
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6
+        env:
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+          labels: |
+            org.opencontainers.image.title=DepartureBoard
+            org.opencontainers.image.description=An open-source split-flap departure board for any TV. One command, one board.
+            org.opencontainers.image.licenses=GPL-3.0-or-later
+
+      - id: push
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          annotations: ${{ steps.meta.outputs.annotations }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
+        with:
+          subject-name: ${{ env.IMAGE }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
+
+  # What a user gets: a machine that never built the image pulls it and the board comes up.
+  smoke:
+    needs: image
+    runs-on: ubuntu-latest
+    permissions:
+      packages: read
+    steps:
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pull the published image and check the version it reports
+        env:
+          VERSION: ${{ needs.image.outputs.version }}
+          DIGEST: ${{ needs.image.outputs.digest }}
+        run: |
+          docker run -d --name db -p 8000:8000 "$IMAGE@$DIGEST"
+          for i in $(seq 1 30); do
+            if health="$(curl -fsS http://127.0.0.1:8000/api/health)"; then ok=1; break; fi
+            sleep 1
+          done
+          docker logs db
+          test "${ok:-0}" = 1
+          echo "$health"
+          echo "$health" | jq -e --arg v "$VERSION" '.ok == true and .version == $v'

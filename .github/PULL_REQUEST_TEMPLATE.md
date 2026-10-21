@@ -8,7 +8,7 @@
 
 - [ ] `uv run pytest` passes
 - [ ] `uv run ruff check . && uv run ruff format --check .` passes
-- [ ] Ran it (`uv run fastapi dev app/main.py` or `docker compose up --build`)
+- [ ] Ran it (`uv run fastapi dev app/main.py` or `docker compose -f compose.yaml -f compose.dev.yaml up --build`)
 - [ ] For board changes: checked in a real browser at 1920×1080 (say which browser)
 
 ## Checklist

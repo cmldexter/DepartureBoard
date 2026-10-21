@@ -1,19 +1,22 @@
 # DepartureBoard — one command, one board.
 #
-#   docker compose up --build
+#   docker compose up -d
 #   open http://<this machine>:8080 on the TV, and http://<this machine>:8080/settings on your laptop
 #
-# Optional: copy .env.example to .env to change the port, the timezone or bring your own token.
+# This pulls the published image. For a board on a wall, pin a version instead of `latest`:
+# put DEPARTUREBOARD_IMAGE=ghcr.io/cmldexter/departureboard:0.1.0 in .env (see .env.example).
+#
+# Contributors build from this checkout instead:
+#   docker compose -f compose.yaml -f compose.dev.yaml up --build
 
 services:
   departureboard:
-    build: .
-    image: departureboard:local
+    image: ${DEPARTUREBOARD_IMAGE:-ghcr.io/cmldexter/departureboard:latest}
     ports:
       - "${DEPARTUREBOARD_PORT:-8080}:8000"
     volumes:
-      # The SQLite database and the generated token. A named volume so the container's
-      # non-root user can always write it. To keep it in a folder instead:
+      # The SQLite database, the generated token and uploaded pictures. A named volume so the
+      # container's non-root user can always write it. To keep it in a folder instead:
       #   - ./data:/data   (and make sure uid 10001 can write that folder)
       - departureboard_data:/data
     env_file:

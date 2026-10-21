@@ -1,0 +1,10 @@
+# Build the image from this checkout instead of pulling the published one.
+#
+#   docker compose -f compose.yaml -f compose.dev.yaml up --build
+#
+# Or put COMPOSE_FILE=compose.yaml:compose.dev.yaml in .env and keep typing `docker compose up --build`.
+
+services:
+  departureboard:
+    build: .
+    image: departureboard:local

@@ -55,6 +55,10 @@ jobs:
           tags: departureboard:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      - name: The compose files parse, with and without the dev overlay
+        run: |
+          docker compose config -q
+          docker compose -f compose.yaml -f compose.dev.yaml config -q
       - name: Smoke test the image
         run: |
           docker run -d --name db -p 8000:8000 departureboard:ci

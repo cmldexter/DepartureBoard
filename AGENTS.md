@@ -32,7 +32,7 @@ uv sync
 uv run fastapi dev app/main.py       # http://localhost:8000
 uv run pytest -q
 uv run ruff check . && uv run ruff format .
-docker compose up --build            # http://localhost:8080
+docker compose -f compose.yaml -f compose.dev.yaml up --build   # http://localhost:8080 (compose.yaml alone pulls the published image)
 ```
 
 Tests set `DEPARTUREBOARD_DATA_DIR` to a temp dir and build the app with `create_app()`.
