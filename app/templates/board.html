@@ -5,7 +5,7 @@
   <link rel="stylesheet" href="/static/css/board.css">
   <link rel="stylesheet" href="/static/themes/{{ theme }}.css" id="theme">
 {% endblock %}
-{% block body_class %}board-page{% endblock %}
+{% block body_class %}board-page{% if embed %} embed{% endif %}{% endblock %}
 {% block body %}
 <main class="frame" style="--rows: {{ rows }}; --cols: {{ cols }};">
   <div class="board" id="board" aria-label="Departure board">
@@ -24,6 +24,7 @@
     {% endfor %}
   </div>
 </main>
+{% if not embed %}
 <button type="button" id="fullscreen" class="hud" aria-label="Fullscreen and keep the screen awake" title="Fullscreen · keeps the TV awake · turns the sound on">⛶</button>
 <div id="status" class="hud" role="status" aria-live="polite" hidden></div>
 <div id="net" class="hud" role="status" aria-label="Cannot reach the server; retrying" hidden></div>
@@ -31,9 +32,12 @@
   <source src="/static/video/keep-awake.webm" type="video/webm">
   <source src="/static/video/keep-awake.mp4" type="video/mp4">
 </video>
+{% endif %}
 <script id="board-config" type="application/json">{{ config | tojson }}</script>
 <script src="/static/js/flap.js" defer></script>
+{% if not embed %}
 <script src="/static/js/sound.js" defer></script>
 <script src="/static/js/wake.js" defer></script>
+{% endif %}
 <script src="/static/js/board.js" defer></script>
 {% endblock %}

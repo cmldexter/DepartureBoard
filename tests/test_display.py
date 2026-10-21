@@ -27,6 +27,11 @@ def _cells(html: str) -> int:
     return len(re.findall(r'<div class="cell"', html))
 
 
+def _text(html: str) -> str:
+    """The server-rendered glyphs, one per cell (each cell carries its glyph four times)."""
+    return "".join(re.findall(r'<span class="glyph">(.*?)</span>', html)[::4])
+
+
 def test_defaults_are_compact():
     d = resolve_display({})
     assert (d["grid_preset"], d["rows"], d["cols"]) == ("compact", 6, 22)
@@ -115,3 +120,55 @@ def test_theme_assets_exist(client):
         assert client.get(f"/static/fonts/{f}.woff2").status_code == 200, f
     for v in ("keep-awake.mp4", "keep-awake.webm"):
         assert client.get(f"/static/video/{v}").status_code == 200, v
+
+
+CONFIG_KEYS = {
+    "rows",
+    "cols",
+    "animation",
+    "sound_enabled",
+    "sound_volume",
+    "theme",
+    "poll_seconds",
+    "demo",
+    "embed",
+    "preview",
+}
+
+HUD = (
+    'id="fullscreen"',
+    'id="keep-awake"',
+    'id="status"',
+    'id="net"',
+    "/static/js/wake.js",
+    "/static/js/sound.js",
+)
+
+
+def test_board_config_keys(client):
+    c = _config(client.get("/").text)
+    assert set(c) == CONFIG_KEYS
+    assert (c["embed"], c["preview"]) == (False, False)
+
+
+def test_embed_page_has_no_hud(client):
+    html = client.get("/?embed").text
+    for needle in HUD:
+        assert needle not in html, needle
+    assert "/static/js/board.js" in html and "/static/js/flap.js" in html
+    assert 'class="board-page embed"' in html
+    assert _cells(html) == 6 * 22
+    c = _config(html)
+    assert (c["embed"], c["preview"], c["demo"]) == (True, False, False)
+    assert "SET UP AT /SETTINGS" in _text(html), "the live frame still starts on the placeholder"
+
+
+def test_preview_page_never_polls_or_demos(client):
+    html = client.get("/?embed&preview&demo&preset=large").text
+    c = _config(html)
+    assert (c["embed"], c["preview"], c["demo"]) == (True, True, False)
+    assert (c["rows"], c["cols"]) == (6, 22), "demo overrides do not apply in preview"
+    assert _text(html).strip() == "", "a preview starts blank"
+    assert _cells(html) == 6 * 22
+    for needle in HUD:
+        assert needle not in html, needle

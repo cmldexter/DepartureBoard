@@ -74,3 +74,15 @@ def test_login_redirects_to_next(client, token):
         follow_redirects=False,
     )
     assert r.headers["location"] == "/settings"
+
+
+def test_settings_page_embeds_the_board(client, token):
+    html = client.get("/settings", headers={"Authorization": f"Bearer {token}"}).text
+    assert 'id="live-board"' in html and 'src="/?embed"' in html
+    assert 'id="preview-board"' in html and 'id="live-now"' in html
+    assert "mini-board" not in html and "preview-grid" not in html
+    # the accessibility pass
+    assert 'id="toast" class="toast" role="status" aria-live="polite"' in html
+    assert 'id="message-error" role="alert"' in html
+    assert html.count('<th scope="col">') == 4
+    assert '<fieldset id="repeat-days"' in html and "<legend>Days</legend>" in html

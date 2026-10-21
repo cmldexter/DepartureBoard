@@ -57,70 +57,107 @@
     return parts.join(" · ") || "always";
   };
 
-  // ---- cells → a mini board
-  function cellText(c) {
-    if (typeof c === "string") return c;
-    if (c.chip) return "";
-    if (c.emoji) return c.emoji;
-    return "";
+  // ---- the board in a frame: the live card polls on its own and tells us what it shows; the
+  // form preview never polls and paints the rows we post. Both are this origin's board page.
+  const liveFrame = $("#live-board");
+  const previewFrame = $("#preview-board");
+  const liveNow = $("#live-now");
+  let liveId = null; // message id the live frame shows; null = idle
+  let liveKnown = false; // has the live frame reported yet?
+  let liveLookedUp = undefined; // an id we reloaded the list for (a message made via the API)
+  let lastPreview = null; // the last board:show; resent when the preview frame says it is ready
+
+  function post(frame, msg) {
+    if (frame && frame.contentWindow) frame.contentWindow.postMessage(msg, location.origin);
   }
-  function renderGrid(el, rows, gridRows, gridCols) {
-    el.style.setProperty("--cols", gridCols);
-    el.textContent = "";
-    for (let r = 0; r < gridRows; r += 1) {
-      const row = rows[r] || [];
-      for (let c = 0; c < gridCols; c += 1) {
-        const cell = document.createElement("span");
-        const v = row[c];
-        cell.className = "mc";
-        if (v && typeof v === "object") {
-          if (v.chip) cell.classList.add("chip", `chip-${v.chip}`);
-          if (v.img) {
-            cell.classList.add("img");
-            cell.style.backgroundImage = `url(/images/${v.img})`;
-          }
-          if (v.emoji) cell.classList.add("emoji");
-        }
-        if (r >= rows.length) cell.classList.add("empty");
-        cell.textContent = v === undefined ? "" : cellText(v);
-        el.appendChild(cell);
-      }
+  const refreshLive = () => post(liveFrame, { type: "board:refresh" });
+
+  window.addEventListener("message", (e) => {
+    if (e.origin !== location.origin || !e.data || typeof e.data.type !== "string") return;
+    const fromLive = !!liveFrame && e.source === liveFrame.contentWindow;
+    const fromPreview = !!previewFrame && e.source === previewFrame.contentWindow;
+    if (e.data.type === "board:current" && fromLive) {
+      liveId = e.data.message_id;
+      liveKnown = true;
+      renderLive();
+    } else if (e.data.type === "board:ready" && fromPreview && lastPreview) {
+      post(previewFrame, lastPreview);
     }
-    el.classList.toggle("overflow", rows.length > gridRows);
+  });
+
+  const firstLine = (text) => (text.split("\n").find((l) => l.trim()) || text).trim();
+  const fmtUntil = (m) => {
+    if (m.ends_at) return `until ${new Date(m.ends_at).toLocaleString([], { dateStyle: "short", timeStyle: "short" })}`;
+    if (m.repeat !== "none" && m.repeat_end) return `until ${m.repeat_end}`;
+    return "until it is replaced";
+  };
+  function renderLive() {
+    if (!liveNow) return;
+    if (!liveKnown) {
+      liveNow.textContent = "Waiting for the board…";
+      return;
+    }
+    if (liveId === null) {
+      liveNow.textContent = "Nothing is live — the board shows the idle text.";
+      return;
+    }
+    const m = messages.find((x) => x.id === liveId);
+    if (!m) {
+      liveNow.textContent = "Live now: a message that is not in the list yet…";
+      if (liveLookedUp !== liveId) {
+        liveLookedUp = liveId;
+        loadMessages().catch(() => {});
+      }
+      return;
+    }
+    liveNow.textContent = `Live now: ${firstLine(m.text)} · ${fmtUntil(m)}`;
   }
 
   // ---- messages
   const form = $("#message-form");
   const rowsEl = $("#message-rows");
+  const display = $("#display-form");
   let messages = [];
+  let formOpener = null; // the button that opened the form; focus goes back to it on close
 
   async function loadMessages() {
     messages = await api("/api/messages");
     if (!messages.length) {
       rowsEl.innerHTML = '<tr><td colspan="4" class="muted">No messages yet. The board shows the idle text.</td></tr>';
+      renderLive();
       return;
     }
     rowsEl.textContent = "";
     for (const m of messages) {
       const tr = document.createElement("tr");
+      tr.dataset.id = m.id;
       tr.innerHTML = `<td><span class="badge ${m.state}">${m.state}</span></td>
         <td class="text"></td><td class="muted"></td>
         <td class="actions"><button type="button" class="link edit">Edit</button> <button type="button" class="link delete">Delete</button></td>`;
       $(".text", tr).textContent = m.text;
       $(".muted", tr).textContent = `${fmtWhen(m)} · p${m.priority}`;
-      $(".edit", tr).addEventListener("click", () => openForm(m));
+      $(".edit", tr).addEventListener("click", (ev) => openForm(m, ev.currentTarget));
       $(".delete", tr).addEventListener("click", async () => {
         if (!confirm(`Delete “${m.text.slice(0, 40)}”?`)) return;
         try {
           await api(`/api/messages/${m.id}`, { method: "DELETE" });
           toast("Deleted.");
           await loadMessages();
+          refreshLive();
+          $("#new-message").focus();
         } catch (e) {
           toast(e.message, true);
         }
       });
       rowsEl.appendChild(tr);
     }
+    renderLive();
+  }
+
+  // Focus the Edit button of a row (after the list was rebuilt), else "New message".
+  function focusRow(id) {
+    const btn = id && $(`tr[data-id="${id}"] .edit`, rowsEl);
+    (btn || $("#new-message")).focus();
   }
 
   function syncRepeatUi() {
@@ -132,7 +169,9 @@
     $("#repeat-hint").hidden = !timed;
   }
 
-  function openForm(m) {
+  function openForm(m, opener) {
+    formOpener = opener || null;
+    if (previewFrame && !previewFrame.getAttribute("src")) previewFrame.src = "/?embed&preview";
     form.hidden = false;
     $("#message-error").hidden = true;
     $("#message-form-title").textContent = m ? "Edit message" : "New message";
@@ -152,8 +191,15 @@
     form.scrollIntoView({ block: "nearest" });
   }
 
-  $("#new-message").addEventListener("click", () => openForm(null));
-  $("#message-cancel").addEventListener("click", () => (form.hidden = true));
+  function closeForm() {
+    form.hidden = true;
+    if (formOpener && formOpener.isConnected) formOpener.focus();
+    else focusRow(Number(form.id.value) || 0);
+    formOpener = null;
+  }
+
+  $("#new-message").addEventListener("click", (ev) => openForm(null, ev.currentTarget));
+  $("#message-cancel").addEventListener("click", closeForm);
   form.repeat.addEventListener("change", syncRepeatUi);
 
   form.addEventListener("submit", async (ev) => {
@@ -171,11 +217,16 @@
       repeat_end: form.repeat.value !== "none" && form.repeat_end.value ? form.repeat_end.value : null,
     };
     try {
-      if (form.id.value) await api(`/api/messages/${form.id.value}`, { method: "PATCH", body });
-      else await api("/api/messages", { method: "POST", body });
+      const id = form.id.value;
+      const saved = id
+        ? await api(`/api/messages/${id}`, { method: "PATCH", body })
+        : await api("/api/messages", { method: "POST", body });
       form.hidden = true;
-      toast(form.id.value ? "Saved." : "On the board.");
+      toast(id ? "Saved." : "On the board.");
       await loadMessages();
+      refreshLive();
+      focusRow(saved && saved.id);
+      formOpener = null;
     } catch (e) {
       const err = $("#message-error");
       err.textContent = e.message;
@@ -189,7 +240,12 @@
     const text = form.text.value;
     try {
       const p = await api("/api/messages/preview", { method: "POST", body: { text } });
-      renderGrid($("#preview-grid"), p.rows, p.grid_rows, p.grid_cols);
+      lastPreview = {
+        type: "board:show",
+        rows: p.rows,
+        settings: { rows: p.grid_rows, cols: p.grid_cols, animation: 0, theme: display.theme.value },
+      };
+      post(previewFrame, lastPreview);
       const bits = [`${p.used} / ${p.capacity} cells`];
       if (p.overflow) bits.push(`too long by ${p.rows.length - p.grid_rows} row${p.rows.length - p.grid_rows > 1 ? "s" : ""}`);
       if (p.unknown.length) bits.push(`shown blank: ${p.unknown.join(" ")}`);
@@ -206,9 +262,15 @@
     clearTimeout(previewTimer);
     previewTimer = setTimeout(preview, 150);
   });
+  // The theme select previews before it is saved; the grid stays the saved one (saving checks
+  // the text against it).
+  display.theme.addEventListener("change", () => {
+    if (form.hidden || !lastPreview) return;
+    lastPreview.settings.theme = display.theme.value;
+    post(previewFrame, lastPreview);
+  });
 
   // ---- display
-  const display = $("#display-form");
   function syncCustom() {
     const custom = display.grid_preset.value === "custom";
     display.rows.disabled = !custom;
@@ -253,6 +315,7 @@
       await loadDisplay();
       if (!form.hidden) preview();
       await loadMessages(); // capacity may have changed the states' layout
+      refreshLive();
     } catch (e) {
       toast(e.message, true);
     }
