@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Integrate · DepartureBoard{% endblock %}
+{% block body_class %}page{% endblock %}
+{% block body %}
+<main class="narrow integrate" data-base="{{ base_url }}" data-token="{{ token }}">
+  <header class="row">
+    <h1>Integrate</h1>
+    <nav><a href="/settings">Settings</a> · <a href="/">Board</a> · <a href="/docs">API docs</a> · <a href="/llms.txt">llms.txt</a></nav>
+  </header>
+  <p>Everything the settings page does, the API does. We do not build a calendar panel or a chat
+     bot into the board; you point your own script, automation or agent at these lines. Each is
+     pre-filled with <strong>this host</strong> and <strong>this install's token</strong>.</p>
+
+  <div class="card row" id="connection">
+    <label>Host <input type="text" id="host" value="{{ base_url }}" spellcheck="false"></label>
+    <label class="check"><input type="checkbox" id="reveal"> Show the token in the lines</label>
+    <button type="button" class="small" id="test">Test it</button>
+    <span class="muted" id="test-result"></span>
+  </div>
+  <p class="hint">The host is what <em>another</em> machine uses to reach this board — on a LAN
+     usually <code>http://&lt;this machine's IP&gt;:8080</code>. Edit it if the lines will run elsewhere.
+     Every copied line carries your token: it is a secret, keep it out of shared documents.</p>
+
+  <section>
+    <h2>Put something on the board now</h2>
+    <p class="muted">The shortest call. Live immediately, above everything else. JSON or plain text.</p>
+    <div class="snippet" data-kind="now"></div>
+    <div class="snippet" data-kind="now-plain"></div>
+  </section>
+
+  <section>
+    <h2>Show it for a while</h2>
+    <p class="muted">A window. Either end may be left out. Times are ISO-8601 with your offset.</p>
+    <div class="snippet" data-kind="window"></div>
+  </section>
+
+  <section>
+    <h2>Every day at a time</h2>
+    <p class="muted">A window that ends before it starts crosses midnight (<code>22:00</code> → <code>06:00</code>).</p>
+    <div class="snippet" data-kind="daily"></div>
+  </section>
+
+  <section>
+    <h2>On certain weekdays</h2>
+    <p class="muted"><code>repeat_days</code> is a sum: Mon 1 · Tue 2 · Wed 4 · Thu 8 · Fri 16 · Sat 32 · Sun 64. Weekdays = 31.</p>
+    <div class="snippet" data-kind="weekly"></div>
+  </section>
+
+  <section>
+    <h2>A picture on the board</h2>
+    <p class="muted">Upload once, then use the token the response gives you. One cell, cropped to the flap.</p>
+    <div class="snippet" data-kind="image"></div>
+  </section>
+
+  <section>
+    <h2>What is live, and clearing it</h2>
+    <div class="snippet" data-kind="list"></div>
+    <div class="snippet" data-kind="delete"></div>
+  </section>
+
+  <section>
+    <h2>The display</h2>
+    <p class="muted">Preset, animation, sound, theme, idle text. The TV picks it up on its next poll.</p>
+    <div class="snippet" data-kind="preset"></div>
+  </section>
+
+  <section>
+    <h2>What the TV sees</h2>
+    <p class="muted">Public, no token. Poll it with <code>If-None-Match</code> and you get <code>304</code> until something changes.</p>
+    <div class="snippet" data-kind="board"></div>
+  </section>
+
+  <section>
+    <h2>Bring your own integration</h2>
+    <p>The complete reference is <a href="/docs">the API docs</a> (Swagger, generated from the code, with examples).
+       In the repository, <code>integrations/</code> carries runnable curl examples, an <strong>Agent Skill</strong>
+       your coding agent or a Hermes agent can install, and <a href="/llms.txt"><code>llms.txt</code></a> for anything
+       that reads the web. Built something? Share it in
+       <a href="https://github.com/cmldexter/DepartureBoard/discussions/categories/show-and-tell" rel="noopener">Show and tell</a>.</p>
+  </section>
+
+  <footer><p class="muted">DepartureBoard {{ version }}</p></footer>
+</main>
+<script src="/static/js/integrate.js" defer></script>
+{% endblock %}

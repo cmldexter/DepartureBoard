@@ -221,3 +221,68 @@ def test_preview(client, auth):
     ).json()
     assert p["overflow"] and p["used"] == 7
     assert client.get("/api/messages", headers=auth).json() == [], "nothing stored"
+
+
+def test_now_accepts_plain_text(client, auth):
+    r = client.post(
+        "/api/messages/now",
+        content=b"DINNER AT 7 {orange}",
+        headers={**auth, "Content-Type": "text/plain; charset=utf-8"},
+    )
+    assert r.status_code == 201
+    assert (
+        "".join(c if isinstance(c, str) else "#" for c in r.json()["rows"][0]).strip()
+        == "DINNER AT 7 #"
+    )
+    r = client.post(
+        "/api/messages/now", content=b"   ", headers={**auth, "Content-Type": "text/plain"}
+    )
+    assert r.status_code == 422
+    r = client.post(
+        "/api/messages/now",
+        content=b"not json",
+        headers={**auth, "Content-Type": "application/json"},
+    )
+    assert r.status_code == 422
+
+
+def test_openapi_reads_as_docs(client):
+    spec = client.get("/openapi.json").json()
+    assert {t["name"] for t in spec["tags"]} == {
+        "messages",
+        "board",
+        "settings",
+        "images",
+        "system",
+    }
+    assert "Bearer" in spec["info"]["description"]
+    now = spec["paths"]["/api/messages/now"]["post"]
+    assert "text/plain" in now["requestBody"]["content"]
+    assert "application/json" in now["requestBody"]["content"]
+    assert spec["components"]["schemas"]["MessageIn"]["examples"][0]["text"].startswith("DINNER")
+    assert all("summary" in op for p in spec["paths"].values() for op in p.values())
+
+
+def test_cors_off_by_default_and_on_by_env(client, tmp_path):
+    r = client.options(
+        "/api/board/current",
+        headers={"Origin": "https://dash.example.com", "Access-Control-Request-Method": "GET"},
+    )
+    assert "access-control-allow-origin" not in r.headers
+
+    from fastapi.testclient import TestClient
+
+    from app.config import Settings
+    from app.main import create_app
+
+    s = Settings(
+        data_dir=tmp_path,
+        cors_origins="https://dash.example.com, http://localhost:5173",
+        _env_file=None,
+    )
+    assert s.cors_origin_list == ["https://dash.example.com", "http://localhost:5173"]
+    with TestClient(create_app(s)) as c:
+        r = c.get("/api/board/current", headers={"Origin": "https://dash.example.com"})
+        assert r.headers["access-control-allow-origin"] == "https://dash.example.com"
+        r = c.get("/api/board/current", headers={"Origin": "https://evil.example.com"})
+        assert "access-control-allow-origin" not in r.headers

@@ -92,18 +92,44 @@ def create_message(
 @router.post(
     "/now",
     summary="Show this now",
-    description="Text only. Live immediately, above everything else that is live.",
+    description=(
+        "Text only. Live immediately, above everything else that is live. Send JSON "
+        '`{"text": "…"}`, or a `text/plain` body — the shortest one-liner for a cron job, '
+        "Home Assistant's `rest_command` or n8n:\n\n"
+        "    curl -X POST http://board:8080/api/messages/now -H 'Authorization: Bearer $TOKEN' "
+        "-H 'Content-Type: text/plain' --data 'DINNER AT 7'"
+    ),
     response_model=MessageOut,
     status_code=status.HTTP_201_CREATED,
+    openapi_extra={
+        "requestBody": {
+            "content": {
+                "application/json": {"schema": {"$ref": "#/components/schemas/NowIn"}},
+                "text/plain": {"schema": {"type": "string", "example": "DINNER AT 7"}},
+            },
+            "required": True,
+        }
+    },
 )
-def post_now(
-    body: NowIn,
+async def post_now(
     request: Request,
     response: Response,
     session: Session = Depends(get_session),
     at: datetime = Depends(now),
     zone: ZoneInfo = Depends(tz),
 ):
+    content_type = request.headers.get("content-type", "").split(";")[0].strip().lower()
+    if content_type == "text/plain":
+        raw = (await request.body()).decode("utf-8", errors="replace").strip()
+        try:
+            body = NowIn(text=raw)
+        except ValueError as e:
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(e)) from e
+    else:
+        try:
+            body = NowIn.model_validate(await request.json())
+        except ValueError as e:
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(e)) from e
     check_text(body.text, session, request.app.state.settings)
     top = max((m.priority for m in session.scalars(select(Message))), default=0)
     m = Message(

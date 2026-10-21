@@ -48,3 +48,10 @@ def test_env_token_wins(tmp_path):
     with TestClient(create_app(s)) as c:
         assert c.app.state.api_token == "my-own-token"
         assert not (tmp_path / "api_token").exists()
+
+
+def test_llms_txt_served(client):
+    r = client.get("/llms.txt")
+    assert r.status_code == 200
+    assert r.headers["content-type"].startswith("text/plain")
+    assert r.text.startswith("# DepartureBoard") and "/api/messages/now" in r.text

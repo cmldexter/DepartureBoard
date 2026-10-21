@@ -1,16 +1,19 @@
 """The HTML pages: the board, the settings page, the integrate page."""
 
 from datetime import UTC, datetime
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Form, Request, status
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
 
+from app import __version__
 from app.models import THEMES
 from app.services.auth import COOKIE_NAME, _presented_token, token_matches
 from app.services.display import display_settings, resolve_display
 
 router = APIRouter(include_in_schema=False)
+LLMS_TXT = Path(__file__).resolve().parent.parent.parent / "llms.txt"
 
 
 def _placeholder_rows(rows: int, cols: int) -> list[str]:
@@ -86,16 +89,39 @@ def settings_page(request: Request):
     )
 
 
+@router.get("/integrate", response_class=HTMLResponse)
+def integrate_page(request: Request):
+    """Copy-paste lines filled with this host and this install's token. Same cookie as settings."""
+    templates = request.app.state.templates
+    if not token_matches(request, _presented_token(request)):
+        return templates.TemplateResponse(
+            request, "login.html", {"next": "/integrate"}, status_code=status.HTTP_401_UNAUTHORIZED
+        )
+    base = str(request.base_url).rstrip("/")
+    return templates.TemplateResponse(
+        request,
+        "integrate.html",
+        {"token": request.app.state.api_token, "base_url": base, "version": __version__},
+    )
+
+
+@router.get("/llms.txt", response_class=PlainTextResponse)
+def llms_txt():
+    """The repo's llms.txt, for anything that reads the web before acting."""
+    return PlainTextResponse(LLMS_TXT.read_text(), media_type="text/plain; charset=utf-8")
+
+
 @router.post("/settings/login")
-def settings_login(request: Request, token: str = Form(...)):
+def settings_login(request: Request, token: str = Form(...), next: str = Form("/settings")):
     if not token_matches(request, token.strip()):
         return request.app.state.templates.TemplateResponse(
             request,
             "login.html",
-            {"error": "That token did not match."},
+            {"error": "That token did not match.", "next": next},
             status_code=status.HTTP_401_UNAUTHORIZED,
         )
-    response = RedirectResponse("/settings", status_code=status.HTTP_303_SEE_OTHER)
+    target = next if next in ("/settings", "/integrate") else "/settings"
+    response = RedirectResponse(target, status_code=status.HTTP_303_SEE_OTHER)
     response.set_cookie(
         COOKIE_NAME, token.strip(), httponly=True, samesite="lax", max_age=60 * 60 * 24 * 365
     )

@@ -77,3 +77,14 @@ body { background: var(--bg); color: var(--fg); font-family: var(--font); }
 .page #image-form label { margin: 0; flex: 1; }
 .page #image-form button { margin: 0; }
 @media (max-width: 36rem) { .page .grid2 { grid-template-columns: 1fr; } }
+
+/* ---- integrate page */
+.page .integrate h2 { margin-top: 2rem; }
+.page .snippet { margin: .75rem 0 1.25rem; }
+.page .snippet h3 { margin: 0; font-size: .95rem; font-weight: 600; }
+.page pre.code { margin: .4rem 0; padding: .75rem; background: #000; border-radius: .4rem; overflow-x: auto; font-size: .9rem; line-height: 1.5; white-space: pre; }
+.page .snippet .response { font-size: .85rem; margin: 0; }
+.page #connection label { flex: 1; margin: 0; }
+.page #connection label.check { flex: 0 0 auto; }
+.page #connection button { margin: 0; }
+.page #test-result { flex-basis: 100%; }
