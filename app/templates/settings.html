@@ -41,9 +41,11 @@
     <p>Casting sends pictures of the board from this computer to a Chromecast or Google TV, so this
       computer stays on while it casts. A stick or a small computer plugged into the TV runs the
       board by itself; the <a href="https://github.com/cmldexter/DepartureBoard/blob/main/docs/tv-setup.md" rel="noopener" target="_blank">TV guide</a> has both.</p>
-    <p><strong>One click from this button</strong> needs the board on <code>https://</code>: put
-      <code>DEPARTUREBOARD_TLS=self-signed</code> in <code>.env</code> and restart, then open the
-      settings page at its <code>https://</code> address in Chrome or Edge. The button then opens the TV picker.</p>
+    <p><strong>One click from this button</strong> needs this page in a secure context in Chrome or Edge:
+      either the board on <code>https://</code> (put <code>DEPARTUREBOARD_TLS=self-signed</code> in
+      <code>.env</code>, restart, open the settings page at its <code>https://</code> address), or, on the
+      computer running the server, a <code>*.localhost</code> name such as
+      <code>http://dboard.localhost:8080/settings</code> (<code>DEPARTUREBOARD_HOST</code>). The button then opens the TV picker.</p>
     <p><strong>Right now, with no change:</strong> in Chrome, open the board, then ⋮ → <strong>Cast…</strong>
       → <em>Cast tab</em> and pick the TV.</p>
     <p id="cast-help-why" class="muted"></p>
