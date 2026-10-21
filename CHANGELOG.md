@@ -7,6 +7,13 @@ and a container image `ghcr.io/cmldexter/departureboard:X.Y.Z`.
 
 ## [Unreleased]
 
+### Changed
+
+- **README: a tour of the settings page** (#71, #72, #73). Screenshots of every panel (captured by
+  a rig from fixture data, so they can be retaken), a short paragraph each, a side-by-side GIF of
+  a message going from the form to the board, and the integrate page pictured. Casting feedback
+  is invited in #79.
+
 ### Added
 
 - **Cast to the TV** (#67, #70). A Cast button on the settings page (next to *On the TV*) and on

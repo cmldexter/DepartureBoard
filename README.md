@@ -57,6 +57,53 @@ or `uv sync && uv run fastapi dev app/main.py` for a dev server on port 8000.
 - **The integrate page** (`/integrate`) — copy-paste `curl` lines pre-filled with your own host
   and token, so your calendar, your home automation or your agent can post to the board tonight.
 
+## The settings page
+
+Everything on the board comes from `/settings`: one page, on a laptop or a phone, signed in with
+the token the first boot printed.
+
+<img src="docs/media/settings-live.png" alt="The top of the settings page: the board as the TV shows it, a Cast button, and the line naming the live message" width="800">
+
+**On the TV.** The page opens with the board as the TV sees it, live, and the message that is
+showing now. **Cast to TV** sends the board to a Chromecast or Google TV from Chrome (with the
+board on `https://`; otherwise the button explains the two ways). Casting is new and we have one
+TV to try it on: tell us how it holds up for you in [#79](https://github.com/cmldexter/DepartureBoard/issues/79).
+
+<img src="docs/media/settings-messages.png" alt="The messages table: a switch and a state badge, the text, when it shows, Edit and Delete" width="800">
+
+**Messages.** One row each: a switch that turns the message off and on without opening it, its
+state (live, scheduled, expired, disabled), the text, when it shows, Edit and Delete.
+
+<img src="docs/media/settings-form.png" alt="The edit form with the preview rendered as the board, the schedule fields and the capacity line" width="800">
+
+**Writing one.** The preview is the board itself: your theme, the chips, emoji and pictures,
+and a line that says how many cells the message uses and what cannot be shown. One line per
+row, or let it wrap. Three kinds of schedule: a window from one date and time to another, every
+day between two times, or chosen weekdays between two times (a window that ends before it starts
+crosses midnight). When several messages are live the highest priority wins and equals take
+turns.
+
+<img src="docs/media/form-to-tv.gif" alt="Typing a message on the settings page; on the next poll the board flips to it" width="800">
+
+<img src="docs/media/settings-display.png" alt="The display form: preset, animation, sound, theme, idle text, poll and rotate intervals" width="800">
+
+**Display.** The preset for your TV size (Compact 6 × 22, Large 8 × 28, or your own), the
+animation pace from instant to the mechanical click, sound and volume, the theme, the idle text
+for when nothing is live, and how often the TV polls and rotates.
+
+<img src="docs/media/settings-images.png" alt="The images panel: upload a picture, get a token" width="800">
+
+**Pictures.** Upload a PNG, JPEG, GIF or WebP and it becomes a token like `{img:cat}` that takes
+one cell, cropped to the flap.
+
+**The token.** At the bottom of the page, generated on first boot (or set with
+`DEPARTUREBOARD_API_TOKEN`). The TV needs none; the settings page and every write to the API do.
+
+<img src="docs/media/settings-phone.png" alt="The messages table on a phone" width="300">
+
+The page works on a phone. For the TV side, read [docs/tv-setup.md](docs/tv-setup.md); to
+post from a script, a calendar or an agent, open `/integrate` (pictured below).
+
 ## Themes
 
 | | |
@@ -68,6 +115,8 @@ Each theme is one stylesheet under `app/static/themes/` with its font bundled, s
 works on a LAN with no internet. A new theme is a welcome pull request.
 
 ## Bring your own integration
+
+<img src="docs/media/integrate.png" alt="The integrate page: curl lines pre-filled with this host and token, with a Test it button" width="800">
 
 We will not add a calendar panel, a chat bot or a weather widget to the UI. The board has an
 API, and we ship three things so that your own agent, script or automation can drive it:
