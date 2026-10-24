@@ -158,11 +158,13 @@ def set_size(path: Path, w: int | None, h: int | None, fit: str | None) -> None:
     """Change how the picture sits on the board; unset fields keep their value."""
     meta = _read_meta(path)
     current = _size_of(meta)
+    if fit is None:  # a legacy picture sized for the first time keeps its shape from now on
+        fit = current["fit"] if meta else "contain"
     meta.update(
         {
             "w": w if w is not None else current["w"],
             "h": h if h is not None else current["h"],
-            "fit": fit if fit is not None else current["fit"],
+            "fit": fit,
             "px": _px(path, meta),
         }
     )
