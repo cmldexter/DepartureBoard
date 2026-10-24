@@ -52,6 +52,8 @@ def test_settings_page_panels(client, token):
         "feltbykraft",
         'name="show_seconds"',
         'name="timer_ring"',
+        "at the size set there",
+        "give it a size below",
     ):
         assert needle in r.text, needle
 

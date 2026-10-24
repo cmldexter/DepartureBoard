@@ -64,9 +64,9 @@
       <input type="hidden" name="id">
       <label for="text">Text <span class="muted">— one line per row, or let it wrap</span></label>
       <textarea id="text" name="text" rows="3" required maxlength="2000" placeholder="ZRH 0715 BOARDING {green}"></textarea>
-      <p class="hint">Tokens take one cell each: <code>{red}</code> <code>{orange}</code> <code>{yellow}</code> <code>{green}</code>
-        <code>{blue}</code> <code>{violet}</code> <code>{white}</code> <code>{black}</code>, any emoji 🎉, and
-        <code>{img:slug}</code> for a picture from the Images panel.</p>
+      <p class="hint">Chips take one cell each: <code>{red}</code> <code>{orange}</code> <code>{yellow}</code> <code>{green}</code>
+        <code>{blue}</code> <code>{violet}</code> <code>{white}</code> <code>{black}</code>; so does any emoji 🎉.
+        <code>{img:slug}</code> puts a picture from the Images panel at the size set there (or <code>{img:slug@9x1}</code> for this message only).</p>
       <div class="preview">
         <div class="screen" aria-hidden="true"><iframe id="preview-board" title="Preview" tabindex="-1"></iframe></div>
         <p id="preview-meta" class="muted" aria-live="polite"></p>
@@ -147,7 +147,7 @@
 
   <section id="images">
     <h2>Images</h2>
-    <p class="muted">A picture takes one cell. PNG, JPEG, GIF or WebP up to 512 KB; it is shown cropped to the flap.</p>
+    <p class="muted">PNG, JPEG, GIF or WebP up to 512 KB. A new picture takes one cell; give it a size below — a wide one reads best across a row — and it keeps its shape inside that block unless you choose otherwise.</p>
     <form id="image-form" class="card row">
       <label>File <input type="file" name="file" accept="image/png,image/jpeg,image/gif,image/webp" required></label>
       <label>Slug <span class="muted">(optional)</span> <input type="text" name="slug" pattern="[a-z0-9][a-z0-9\-]{0,39}" placeholder="my-cat"></label>

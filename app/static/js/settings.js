@@ -382,12 +382,68 @@
     }
     for (const img of items) {
       const li = document.createElement("li");
-      li.innerHTML = `<img alt=""> <code class="token"></code>
+      li.innerHTML = `<img alt=""><div class="meta"><code class="token"></code>
         <button type="button" class="link copy">Copy token</button> <button type="button" class="link delete">Delete</button>
-        <span class="muted size"></span>`;
+        <span class="muted size"></span></div>
+        <form class="sizing" aria-label="Size on the board">
+          <label>Wide <input type="number" name="w" min="1" max="36" required></label>
+          <span class="muted">×</span>
+          <label>Tall <input type="number" name="h" min="1" max="10" required></label>
+          <label>Fit <select name="fit"><option value="contain">keep its shape</option><option value="cover">fill, crop</option><option value="stretch">stretch</option></select></label>
+          <span class="chips" role="group" aria-label="Sizes that keep its shape"></span>
+          <button type="submit" class="small">Save size</button>
+          <span class="muted applied" role="status"></span>
+        </form>`;
       $("img", li).src = `${img.url}?v=${Date.now()}`;
       $(".token", li).textContent = img.token;
-      $(".size", li).textContent = `${Math.round(img.bytes / 1024)} KB`;
+      $(".size", li).textContent = `${Math.round(img.bytes / 1024)} KB${img.width ? ` · ${img.width} × ${img.height} px` : ""}`;
+      const sizing = $(".sizing", li);
+      sizing.setAttribute("aria-label", `Size of ${img.token} on the board`);
+      sizing.w.value = img.w;
+      sizing.h.value = img.h;
+      sizing.fit.value = img.fit;
+      sizing.w.setAttribute("aria-label", `${img.token}: cells wide`);
+      sizing.h.setAttribute("aria-label", `${img.token}: cells tall`);
+      sizing.fit.setAttribute("aria-label", `${img.token}: fit`);
+      const chips = $(".chips", li);
+      if (img.suggested.length) {
+        chips.append("Keeps its shape at ");
+        img.suggested.forEach(([w, h], i) => {
+          const b = document.createElement("button");
+          b.type = "button";
+          b.className = "chip";
+          b.textContent = `${w} × ${h}`;
+          b.setAttribute("aria-label", `${w} wide by ${h} tall`);
+          b.setAttribute("aria-pressed", String(w === img.w && h === img.h));
+          b.addEventListener("click", () => {
+            sizing.w.value = w;
+            sizing.h.value = h;
+            sizing.fit.value = "contain";
+            sizing.requestSubmit();
+          });
+          if (i) chips.append(" · ");
+          chips.append(b);
+        });
+        if (img.w === 1 && img.h === 1 && img.width && img.width / img.height > 1.6) $(".applied", li).textContent = "This picture is wide — try the first size.";
+      } else if (img.width === null) {
+        chips.textContent = "Pixel size unreadable — set the cells by hand.";
+      }
+      sizing.addEventListener("submit", async (ev) => {
+        ev.preventDefault();
+        const body = { w: Number(sizing.w.value), h: Number(sizing.h.value), fit: sizing.fit.value };
+        try {
+          const saved = await api(`/api/images/${img.slug}`, { method: "PATCH", body });
+          Object.assign(img, saved);
+          $$(".chip", chips).forEach((b) => b.setAttribute("aria-pressed", String(b.textContent === `${saved.w} × ${saved.h}`)));
+          $(".applied", li).textContent = `${saved.w} × ${saved.h}, ${sizing.fit.selectedOptions[0].textContent} — the board picks it up on its next poll.`;
+          toast(`${img.token} is ${saved.w} × ${saved.h} cells.`);
+          if (!form.hidden) preview();
+          await loadMessages(); // a bigger picture can overflow a message
+          refreshLive();
+        } catch (e) {
+          toast(e.message, true);
+        }
+      });
       $(".copy", li).addEventListener("click", async () => {
         try {
           await navigator.clipboard.writeText(img.token);
