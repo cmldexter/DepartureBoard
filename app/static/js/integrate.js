@@ -33,8 +33,8 @@
       curl: (h, t) => `curl -X POST ${h}/api/messages \\
   -H "Authorization: Bearer ${t}" \\
   -H "Content-Type: application/json" \\
-  -d '{"text":"HAPPY BIRTHDAY NICK {yellow}","starts_at":"${iso(7)}","ends_at":"${iso(23)}","priority":5}'`,
-      response: `201 Created · "state": "scheduled" until starts_at, then "live", then "expired".`,
+  -d '{"text":"HAPPY BIRTHDAY NICK {yellow}","starts_at":"${iso(7)}","ends_at":"${iso(23)}","priority":5,"show_seconds":60}'`,
+      response: `201 Created · "state": "scheduled" until starts_at, then "live", then "expired". show_seconds: it holds the board a minute per turn when equals rotate (the default is the display's rotate_seconds).`,
     },
     daily: {
       title: "Every day between two times",

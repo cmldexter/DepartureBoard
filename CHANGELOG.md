@@ -9,6 +9,18 @@ and a container image `ghcr.io/cmldexter/departureboard:X.Y.Z`.
 
 ### Added
 
+- **A message's own time on the board** (#98, #99, #100). `show_seconds` (5–600) on a message, or
+  on `/api/messages/now`, is how long it holds the board when several messages take turns; the
+  others keep the display's *Rotate every*. The rotation stays stateless — every screen shows
+  the same message at the same second — and the board times its next poll to the end of the slot,
+  so short slots flip on time. The message form has a *Show for* field, the row shows the value,
+  the live card says *next in N s*. New Alembic revision `0002` adds the column; older databases
+  upgrade on start.
+- **A timer ring** (#101). The display setting `timer_ring` (*off*, *own*, *all*) draws a small
+  translucent countdown in the board's top-right corner while a message's slot runs — for
+  messages with their own time, or for every message taking turns. `/api/board/current` carries
+  `timer {seconds, remaining, own}` while messages rotate; it is left out of the `ETag`.
+
 - **A line on the sign-in page**, under the token help: this board is free, the mechanical one it
   imitates costs about $3,500, and a fraction of that is worth more to people still rebuilding
   after the June 2026 earthquakes in Venezuela, with a link to Direct Relief's response.

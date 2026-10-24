@@ -4,6 +4,7 @@
 #   export DB_URL=http://192.168.1.20:8080      # where the board is
 #   export DB_TOKEN=…                           # from `docker compose logs departureboard`, or /settings
 #   ./examples.sh now "DINNER AT 7"
+#   ./examples.sh now "DINNER AT 7" 10                           # holds the board 10 s when taking turns (show_seconds)
 #   ./examples.sh window "HAPPY BIRTHDAY NICK {yellow}" 2026-10-21T07:00:00-04:00 2026-10-21T23:00:00-04:00
 #   ./examples.sh daily "STANDUP 09:30 {blue}" 09:00 10:00
 #   ./examples.sh weekly "BINS OUT TONIGHT" 4 18:00 23:00      # repeat_days: Mon 1 Tue 2 Wed 4 Thu 8 Fri 16 Sat 32 Sun 64
@@ -28,7 +29,7 @@ json() { curl -fsS "$@" -H "$(auth)" -H "Content-Type: application/json"; echo; 
 
 db_health()  { need public; curl -fsS "$DB_URL/api/health"; echo; }
 db_board()   { need public; curl -fsS "$DB_URL/api/board/current"; echo; }
-db_now()     { need; curl -fsS -X POST "$DB_URL/api/messages/now" -H "$(auth)" -H "Content-Type: text/plain" --data "$1"; echo; }
+db_now()     { need; if [ -n "${2:-}" ]; then json -X POST "$DB_URL/api/messages/now" -d "$(jq -cn --arg t "$1" --argjson s "$2" '{text:$t, show_seconds:$s}')"; else curl -fsS -X POST "$DB_URL/api/messages/now" -H "$(auth)" -H "Content-Type: text/plain" --data "$1"; echo; fi; }
 db_window()  { need; json -X POST "$DB_URL/api/messages" -d "$(jq -cn --arg t "$1" --arg s "$2" --arg e "$3" '{text:$t, starts_at:$s, ends_at:$e}')"; }
 db_daily()   { need; json -X POST "$DB_URL/api/messages" -d "$(jq -cn --arg t "$1" --arg s "$2" --arg e "$3" '{text:$t, repeat:"daily", repeat_start:$s, repeat_end:$e}')"; }
 db_weekly()  { need; json -X POST "$DB_URL/api/messages" -d "$(jq -cn --arg t "$1" --argjson d "$2" --arg s "$3" --arg e "$4" '{text:$t, repeat:"weekly", repeat_days:$d, repeat_start:$s, repeat_end:$e}')"; }
@@ -39,7 +40,7 @@ db_preset()  { need; if [ "$1" = custom ]; then json -X PATCH "$DB_URL/api/setti
 
 case "${1:-}" in
   --demo)  db_health ;;
-  now)     db_now "$2" ;;
+  now)     db_now "$2" "${3:-}" ;;
   window)  db_window "$2" "$3" "$4" ;;
   daily)   db_daily "$2" "$3" "$4" ;;
   weekly)  db_weekly "$2" "$3" "$4" "$5" ;;

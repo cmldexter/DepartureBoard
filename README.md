@@ -83,7 +83,10 @@ and a line that says how many cells the message uses and what cannot be shown. O
 row, or let it wrap. Three kinds of schedule: a window from one date and time to another, every
 day between two times, or chosen weekdays between two times (a window that ends before it starts
 crosses midnight). When several messages are live the highest priority wins and equals take
-turns.
+turns, each for the display's *Rotate every* unless the message sets its own *Show for* — a
+birthday line can hold the board for a minute while a reminder takes ten seconds. The optional
+timer ring, a small translucent countdown in the board's corner, shows how long the current
+message has left.
 
 <img src="docs/media/form-to-tv.gif" alt="Typing a message on the settings page; on the next poll the board flips to it" width="800">
 
@@ -91,7 +94,9 @@ turns.
 
 **Display.** The preset for your TV size (Compact 6 × 22, Large 8 × 28, or your own), the
 animation pace from instant to the mechanical click, sound and volume, the theme, the idle text
-for when nothing is live, and how often the TV polls and rotates.
+for when nothing is live, how often the TV polls, the default time each message gets when
+several take turns, and whether the timer ring shows (off, only for messages with their own
+time, or for every message taking turns).
 
 <img src="docs/media/settings-images.png" alt="The images panel: upload a picture, get a token" width="800">
 

@@ -253,7 +253,8 @@ console, **Arctic white** for a bright kitchen.
 | A small red dot, bottom-left | The board cannot reach the server; it keeps the last board and retries with a backoff. |
 | No clicks | Sound needs the one click on **⛶**. Also check *Sound* on the settings page. |
 | The TV turned off anyway | The TV's own eco / auto-off timer or the stick's screensaver. See *Fullscreen and staying awake*. |
-| A message is late by a few seconds | The TV polls every few seconds (`poll_seconds` on the settings page). That is expected. |
+| A message is late by a few seconds | The TV polls every few seconds (`poll_seconds` on the settings page). That is expected; when messages take turns the board times its next poll to the end of the slot, so a message with its own *Show for* flips on time. |
+| A small ring top-right | The timer ring: how long the current message has left before the next one. *Timer ring* on the settings page turns it off, or limits it to messages with their own time. |
 | The Cast button opens a panel instead of the TV picker | The board is on `http://`, or the browser has no Presentation API (Safari, Firefox); the panel says which. Turn on HTTPS, or use Chrome's ⋮ → Cast → *Cast tab*. |
 | The cast stops when the laptop is shut | Casting streams from the laptop. Closing the lid is fine; shutting down is not. A stick or a Pi on the TV runs alone. |
 | "Your connection is not private" | Expected with the self-signed certificate; continue, or install it on the device (*HTTPS (optional)*). |
