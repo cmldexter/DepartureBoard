@@ -3,7 +3,7 @@
   "chips": ["red", "orange", "yellow", "green", "blue", "violet", "white", "black"],
   "tokens": {
     "chip": "{<colour>} — one cell, a solid flap in that colour",
-    "img": "{img:<slug>} — one cell showing an uploaded image (POST /api/images)",
+    "img": "{img:<slug>} — an uploaded image (POST /api/images) at its block size, w × h cells (PATCH /api/images/<slug>, or {img:<slug>@WxH} inline)",
     "emoji": "any emoji in the text — one cell showing the emoji on a flap"
   }
 }

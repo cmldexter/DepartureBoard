@@ -98,10 +98,13 @@ for when nothing is live, how often the TV polls, the default time each message 
 several take turns, and whether the timer ring shows (off, only for messages with their own
 time, or for every message taking turns).
 
-<img src="docs/media/settings-images.png" alt="The images panel: upload a picture, get a token" width="800">
+<img src="docs/media/settings-images.png" alt="The images panel: upload a picture, get a token, give it a size in cells" width="800">
 
-**Pictures.** Upload a PNG, JPEG, GIF or WebP and it becomes a token like `{img:cat}` that takes
-one cell, cropped to the flap.
+**Pictures.** Upload a PNG, JPEG, GIF or WebP and it becomes a token like `{img:cat}`. Give the
+picture a size in cells on the panel — a wide banner reads best across a row — and it keeps its
+shape inside that block (or fills it, or stretches, your choice). The panel suggests the sizes
+that keep the shape from the file's own pixel size. In a message the picture takes its block,
+pushing the lines beneath it down; `{img:cat@9x1}` sizes it for one message only.
 
 **The token.** At the bottom of the page, generated on first boot (or set with
 `DEPARTUREBOARD_API_TOKEN`). The TV needs none; the settings page and every write to the API do.
