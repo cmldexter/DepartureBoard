@@ -264,13 +264,22 @@ def test_image_size_sidecar_patch_and_board(client, auth, settings):
     r = client.post("/api/messages/preview", json={"text": "{img:old}"}, headers=auth)
     assert r.json()["rows"][0] == [{"img": "old"}]
     old = next(i for i in client.get("/api/images", headers=auth).json() if i["slug"] == "old")
-    assert (old["w"], old["h"], old["fit"], old["width"], old["suggested"]) == (
-        1,
-        1,
-        "stretch",
-        None,
-        [],
+    assert (old["w"], old["h"], old["fit"]) == (1, 1, "stretch")
+    assert (old["width"], old["suggested"]) == (1, [[1, 1], [3, 2], [4, 3]]), (
+        "px read from the file"
     )
+    # sizing a legacy picture writes the sidecar with the pixel size, so contain has an aspect
+    (settings.data_dir / "images" / "wide.png").write_bytes(png_header(600, 100))
+    wide = next(i for i in client.get("/api/images", headers=auth).json() if i["slug"] == "wide")
+    assert (wide["fit"], wide["width"], wide["suggested"]) == (
+        "stretch",
+        600,
+        [[9, 1], [17, 2], [26, 3]],
+    )
+    r = client.patch("/api/images/wide", json={"w": 9, "h": 1}, headers=auth)
+    assert (r.json()["fit"], r.json()["width"]) == ("contain", 600)
+    r = client.post("/api/messages/preview", json={"text": "{img:wide}"}, headers=auth)
+    assert r.json()["rows"][0][0]["ar"] == 6.0 and r.json()["rows"][0][0]["fit"] == "contain"
 
     # replacing the file keeps the size its owner set
     client.patch("/api/images/cue-flow", json={"w": 9, "h": 1, "fit": "contain"}, headers=auth)
