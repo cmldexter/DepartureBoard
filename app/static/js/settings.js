@@ -77,6 +77,8 @@
   let liveId = null; // message id the live frame shows; null = idle
   let liveKnown = false; // has the live frame reported yet?
   let liveLookedUp = undefined; // an id we reloaded the list for (a message made via the API)
+  let liveTimer = null; // { seconds, remaining, at } while the board rotates; counted down here
+  let liveTick = 0;
   let lastPreview = null; // the last board:show; resent when the preview frame says it is ready
 
   function post(frame, msg) {
@@ -91,6 +93,10 @@
     if (e.data.type === "board:current" && fromLive) {
       liveId = e.data.message_id;
       liveKnown = true;
+      const t = e.data.timer;
+      liveTimer = t && t.seconds > 0 ? { seconds: t.seconds, remaining: t.remaining, at: performance.now() } : null;
+      clearInterval(liveTick);
+      liveTick = liveTimer ? window.setInterval(renderLive, 1000) : 0;
       renderLive();
     } else if (e.data.type === "board:ready" && fromPreview && lastPreview) {
       post(previewFrame, lastPreview);
@@ -122,7 +128,12 @@
       }
       return;
     }
-    liveNow.textContent = `Live now: ${firstLine(m.text)} · ${fmtUntil(m)}`;
+    let line = `Live now: ${firstLine(m.text)} · ${fmtUntil(m)}`;
+    if (liveTimer) {
+      const left = Math.max(0, Math.round(liveTimer.remaining - (performance.now() - liveTimer.at) / 1000));
+      line += ` · next in ${left} s`;
+    }
+    liveNow.textContent = line;
   }
 
   // ---- messages
@@ -147,7 +158,7 @@
         <td class="text"></td><td class="muted"></td>
         <td class="actions"><button type="button" class="link edit">Edit</button> <button type="button" class="link delete">Delete</button></td>`;
       $(".text", tr).textContent = m.text;
-      $(".muted", tr).textContent = `${fmtWhen(m)} · p${m.priority}`;
+      $(".muted", tr).textContent = `${fmtWhen(m)} · p${m.priority}${m.show_seconds ? ` · ${m.show_seconds} s` : ""}`;
       const sw = $(".switch input", tr);
       sw.checked = m.enabled;
       sw.setAttribute("aria-label", `Enabled: ${firstLine(m.text) || "blank message"}`);
@@ -212,6 +223,7 @@
     form.id.value = m ? m.id : "";
     form.text.value = m ? m.text : "";
     form.priority.value = m ? m.priority : 0;
+    form.show_seconds.value = m && m.show_seconds ? m.show_seconds : "";
     form.enabled.checked = m ? m.enabled : true;
     form.starts_at.value = toLocalInput(m && m.starts_at);
     form.ends_at.value = toLocalInput(m && m.ends_at);
@@ -242,6 +254,7 @@
     const body = {
       text: form.text.value,
       priority: Number(form.priority.value),
+      show_seconds: form.show_seconds.value ? Number(form.show_seconds.value) : null,
       enabled: form.enabled.checked,
       starts_at: fromLocalInput(form.starts_at.value),
       ends_at: fromLocalInput(form.ends_at.value),
@@ -323,6 +336,8 @@
     display.idle_text.value = s.idle_text;
     display.poll_seconds.value = s.poll_seconds;
     display.rotate_seconds.value = s.rotate_seconds;
+    display.timer_ring.value = s.timer_ring || "off";
+    form.show_seconds.placeholder = String(s.rotate_seconds); // the default a message falls back to
     syncCustom();
   }
   $$('input[name="grid_preset"]', display).forEach((r) => r.addEventListener("change", syncCustom));
@@ -338,6 +353,7 @@
       idle_text: display.idle_text.value,
       poll_seconds: Number(display.poll_seconds.value),
       rotate_seconds: Number(display.rotate_seconds.value),
+      timer_ring: display.timer_ring.value,
     };
     if (body.grid_preset === "custom") {
       body.rows = Number(display.rows.value);
