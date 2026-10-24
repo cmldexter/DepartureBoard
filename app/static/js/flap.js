@@ -50,20 +50,65 @@
   }
 
   // A face: what one half of a flap shows. `special` is a token cell the sequence has no
-  // index for — {emoji: "🎉"} (a glyph) or {img: "slug"} (a picture) — shown on a blank.
+  // index for — {emoji: "🎉"} (a glyph) or {img, w, h, x, y, fit, ar} (one part of a picture
+  // that covers w × h cells; a bare {img} is one stretched cell) — shown on a blank.
   function faceOf(index, special) {
     if (special && special.emoji) return { text: special.emoji, chip: null, img: null, emoji: true };
     if (special && special.img) return { text: "", chip: null, img: special.img, emoji: false };
     return { text: glyphFor(index), chip: chipOf(index), img: null, emoji: false };
   }
 
-  function paint(halfEl, glyphEl, face) {
+  // Cell geometry in px, measured once per show() (and again after a resize): a picture that
+  // spans cells is drawn as one background sized to the whole block and offset per part.
+  let metrics = null;
+  function invalidateMetrics() {
+    metrics = null;
+  }
+  function measure(cellEl) {
+    const cs = getComputedStyle(cellEl);
+    const board = cellEl.parentElement;
+    const gap = board ? parseFloat(getComputedStyle(board).columnGap) || 0 : 0;
+    metrics = { cw: parseFloat(cs.width) || 0, ch: parseFloat(cs.height) || 0, gap };
+    return metrics;
+  }
+
+  // Background size and position for one part of a picture, on the top (hy = 0) or bottom
+  // half (hy = half a cell) of its cell. `contain` keeps the shape inside the block and centres
+  // it, `cover` fills and crops, `stretch` fills.
+  function slice(img, cellEl, bottom) {
+    const m = metrics || measure(cellEl);
+    const W = (img.w || 1) * m.cw + ((img.w || 1) - 1) * m.gap;
+    const H = (img.h || 1) * m.ch + ((img.h || 1) - 1) * m.gap;
+    let dw = W;
+    let dh = H;
+    if (img.ar && img.fit !== "stretch") {
+      const wide = img.ar >= W / H;
+      if ((img.fit === "cover") !== wide) {
+        dw = W;
+        dh = W / img.ar;
+      } else {
+        dh = H;
+        dw = H * img.ar;
+      }
+    }
+    const ox = (W - dw) / 2 - (img.x || 0) * (m.cw + m.gap);
+    const oy = (H - dh) / 2 - (img.y || 0) * (m.ch + m.gap) - (bottom ? m.ch / 2 : 0);
+    return { size: `${dw}px ${dh}px`, position: `${ox}px ${oy}px` };
+  }
+
+  function paint(halfEl, glyphEl, face, bottom) {
     glyphEl.textContent = face.text;
     glyphEl.classList.toggle("emoji", face.emoji);
     if (face.chip) halfEl.setAttribute("data-chip", face.chip);
     else halfEl.removeAttribute("data-chip");
-    const url = face.img ? `url("/images/${face.img}")` : "";
+    const img = face.img;
+    const url = img ? `url("/images/${img.img}")` : "";
     if (halfEl.style.backgroundImage !== url) halfEl.style.backgroundImage = url;
+    // a legacy one-cell picture keeps the stylesheet's 100% 200% split; a block gets its slice
+    const legacy = !img || (img.w === undefined && img.fit === undefined);
+    const s = legacy ? { size: "", position: "" } : slice(img, halfEl.parentElement, bottom);
+    if (halfEl.style.backgroundSize !== s.size) halfEl.style.backgroundSize = s.size;
+    if (halfEl.style.backgroundPosition !== s.position) halfEl.style.backgroundPosition = s.position;
   }
 
   // Flaps only move forward and wrap; the number of steps from one index to another.
@@ -136,15 +181,20 @@
   function commit(cell) {
     if (cell.pending === null) return;
     const face = faceOf(cell.pending, cell.pendingSpecial);
-    paint(cell.bottomEl, cell.bottom, face);
-    paint(cell.frontEl, cell.front, face);
+    paint(cell.bottomEl, cell.bottom, face, true);
+    paint(cell.frontEl, cell.front, face, false);
     cell.pending = null;
     cell.pendingSpecial = null;
     cell.leaf.classList.remove("flip-a", "flip-b");
   }
 
   function sameSpecial(a, b) {
-    return (a && a.emoji) === (b && b.emoji) && (a && a.img) === (b && b.img);
+    if ((a && a.emoji) !== (b && b.emoji)) return false;
+    const ia = a && a.img;
+    const ib = b && b.img;
+    if (!ia && !ib) return true;
+    if (!ia || !ib) return false;
+    return ["img", "w", "h", "x", "y", "fit", "ar"].every((k) => ia[k] === ib[k]);
   }
 
   // Show `index` (with an optional special token). With flip=true the leaf animates from the
@@ -159,10 +209,10 @@
       cell.pendingSpecial = null;
       cell.leaf.classList.remove("flip-a", "flip-b");
       const face = faceOf(index, special);
-      paint(cell.topEl, cell.top, face);
-      paint(cell.bottomEl, cell.bottom, face);
-      paint(cell.frontEl, cell.front, face);
-      paint(cell.backEl, cell.back, face);
+      paint(cell.topEl, cell.top, face, false);
+      paint(cell.bottomEl, cell.bottom, face, true);
+      paint(cell.frontEl, cell.front, face, false);
+      paint(cell.backEl, cell.back, face, true);
       cell.current = index;
       cell.special = special;
       return;
@@ -171,10 +221,10 @@
     commit(cell);
     const from = faceOf(cell.current, cell.special);
     const to = faceOf(index, special);
-    paint(cell.frontEl, cell.front, from);
-    paint(cell.bottomEl, cell.bottom, from);
-    paint(cell.topEl, cell.top, to);
-    paint(cell.backEl, cell.back, to);
+    paint(cell.frontEl, cell.front, from, false);
+    paint(cell.bottomEl, cell.bottom, from, true);
+    paint(cell.topEl, cell.top, to, false);
+    paint(cell.backEl, cell.back, to, true);
     cell.pending = index;
     cell.pendingSpecial = special;
     cell.current = index;
@@ -195,6 +245,8 @@
     chipOf,
     faceOf,
     sameSpecial,
+    invalidateMetrics,
+    slice,
     stepsBetween,
     next,
     buildCell,

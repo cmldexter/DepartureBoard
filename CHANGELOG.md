@@ -9,6 +9,17 @@ and a container image `ghcr.io/cmldexter/departureboard:X.Y.Z`.
 
 ### Added
 
+- **Pictures that fit** (#89, #90, #91). A picture has a size on the board: `w` × `h` cells and a
+  `fit` (`contain` keeps its shape, `cover` fills and crops, `stretch` fills), set with
+  `PATCH /api/images/{slug}` and kept in a small file beside the picture — no table, no
+  migration. The upload reads the pixel size from the file's header and suggests the blocks that
+  keep the shape (a 743×116 banner → 9×1, 19×2, 28×3). In a message the picture takes its block:
+  placed as a word of its own, never cut, the rows beneath pushed down; `{img:slug@6x2}` sizes
+  it inline. The board draws the block as a mosaic — every cell is still a flap, each painting
+  its slice, so a banner reads across the gaps and assembles with the stagger. A picture
+  uploaded before this release is still one cell, exactly as it was. The settings panel's size
+  controls follow in the next release step (#92).
+
 - **A message's own time on the board** (#98, #99, #100). `show_seconds` (5–600) on a message, or
   on `/api/messages/now`, is how long it holds the board when several messages take turns; the
   others keep the display's *Rotate every*. The rotation stays stateless — every screen shows
