@@ -23,12 +23,13 @@ Every call except the two public ones sends `Authorization: Bearer $DB_TOKEN`.
 | Show it **for a while** | `POST /api/messages` — `{"text": "…", "starts_at": "2026-10-21T07:00:00-04:00", "ends_at": "2026-10-21T23:00:00-04:00"}` (ISO-8601 with offset; either end optional) |
 | **Every day** at a time | `POST /api/messages` — `{"text": "…", "repeat": "daily", "repeat_start": "09:00", "repeat_end": "10:00"}` (server timezone; an end before the start crosses midnight) |
 | On **weekdays** | `POST /api/messages` — `{"text": "…", "repeat": "weekly", "repeat_days": 31, "repeat_start": "18:00", "repeat_end": "23:00"}` — `repeat_days` sums Mon 1 · Tue 2 · Wed 4 · Thu 8 · Fri 16 · Sat 32 · Sun 64 |
-| Priority | `"priority": 0–100` on any message; the highest live one shows; equals rotate every `rotate_seconds` |
+| Priority | `"priority": 0–100` on any message; the highest live one shows; equals take turns, each for the display's `rotate_seconds` |
+| Its **own time** on the board | `"show_seconds": 5–600` on any message (also on `/now`): how long it holds the board when taking turns; omit it for the default |
 | What is on | `GET /api/messages?state=live` (also `scheduled`, `expired`, `disabled`, or no filter) |
 | Change / pause | `PATCH /api/messages/{id}` with the fields to change, e.g. `{"enabled": false}` |
 | Remove | `DELETE /api/messages/{id}` → 204 |
 | A **picture** on the board | `POST /api/images` multipart `file` (PNG/JPEG/GIF/WebP ≤ 512 KB) + optional `slug`; the response gives `"token": "{img:slug}"` to put in a message |
-| The display | `PATCH /api/settings` — `{"grid_preset": "compact"|"large"|"custom", "rows", "cols", "animation": 0–100, "sound_enabled", "sound_volume": 0–1, "theme": "classic-black"|"walnut"|"arctic-white"|"midnight", "idle_text", "poll_seconds", "rotate_seconds"}` (partial) |
+| The display | `PATCH /api/settings` — `{"grid_preset": "compact"|"large"|"custom", "rows", "cols", "animation": 0–100, "sound_enabled", "sound_volume": 0–1, "theme": "classic-black"|"walnut"|"arctic-white"|"midnight", "idle_text", "poll_seconds", "rotate_seconds", "timer_ring": "off"|"own"|"all"}` (partial) |
 | Public: what the TV shows | `GET /api/board/current` (no token); `GET /images/{slug}` |
 | Reference | `GET /docs` (Swagger), `GET /llms.txt` |
 
@@ -61,4 +62,4 @@ User: *"Put HAPPY BIRTHDAY NICK on the board tomorrow from 7am to 11pm, make it 
    `{"text": "HAPPY BIRTHDAY NICK {yellow}", "starts_at": "2026-10-21T07:00:00-04:00", "ends_at": "2026-10-21T23:00:00-04:00", "priority": 5}`
 4. Reply with the state from the response (`scheduled`) and the id, so the user can remove it.
 
-Written against DepartureBoard 0.1.0 (API as of 2026-10-20).
+Written against DepartureBoard 0.3.0 (API as of 2026-10-24; `show_seconds` and `timer_ring` need 0.3.0 or later).

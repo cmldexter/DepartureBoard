@@ -38,7 +38,9 @@ it in `unknown`). Token cells, one cell each: `{red}` `{orange}` `{yellow}` `{gr
 **Schedules.** A window (`starts_at` / `ends_at`, ISO-8601 with offset), a `daily` repeat with a
 time of day, or a `weekly` repeat with a weekday mask (Mon=1 … Sun=64, summed). A repeat window
 that ends before it starts crosses midnight. When several messages are live the highest priority
-shows; equals rotate every `rotate_seconds`, in step on every screen.
+shows; equals take turns, each for its own `show_seconds` or the display's `rotate_seconds`, in
+step on every screen. The display setting `timer_ring` draws the slot as a small countdown in the
+board's corner.
 
 Copy-paste lines pre-filled with your host and token are on `/integrate`. Agents read `/llms.txt`.
 """

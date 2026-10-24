@@ -43,7 +43,16 @@ def test_logout_clears_cookie(client, token):
 
 def test_settings_page_panels(client, token):
     r = client.get("/settings", headers={"Authorization": f"Bearer {token}"})
-    for needle in ("Messages", "Display", "Images", "settings.js", "Server time", "feltbykraft"):
+    for needle in (
+        "Messages",
+        "Display",
+        "Images",
+        "settings.js",
+        "Server time",
+        "feltbykraft",
+        'name="show_seconds"',
+        'name="timer_ring"',
+    ):
         assert needle in r.text, needle
 
 

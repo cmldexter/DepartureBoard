@@ -130,6 +130,7 @@ CONFIG_KEYS = {
     "sound_volume",
     "theme",
     "poll_seconds",
+    "timer_ring",
     "demo",
     "embed",
     "preview",

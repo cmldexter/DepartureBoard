@@ -25,6 +25,8 @@ class Message(Base):
     # Time of day in the configured timezone, "HH:MM"
     repeat_start: Mapped[str | None] = mapped_column(String(5))
     repeat_end: Mapped[str | None] = mapped_column(String(5))
+    # Seconds this message holds the board when rotating with equals; None = rotate_seconds
+    show_seconds: Mapped[int | None] = mapped_column(Integer)
     # ui | api | agent
     source: Mapped[str] = mapped_column(String(8), nullable=False, default="api")
     created_by: Mapped[str | None] = mapped_column(String(80))
@@ -63,4 +65,9 @@ DEFAULT_SETTINGS = {
     "poll_seconds": "5",
     "rotate_seconds": "20",
     "idle_text": "",
+    "timer_ring": "off",
 }
+
+# The countdown ring in the board's corner: never, for messages with their own show_seconds, or
+# for every rotating message.
+TIMER_RINGS = ("off", "own", "all")

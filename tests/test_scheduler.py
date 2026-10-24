@@ -1,12 +1,12 @@
 """Table-driven scheduler cases. `now` is injected; the zone is America/New_York unless said."""
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 import pytest
 
 from app.models import Message
-from app.services.scheduler import rotation, state
+from app.services.scheduler import rotation, rotation_slot, state
 
 NY = ZoneInfo("America/New_York")
 MON, TUE, WED, THU, FRI, SAT, SUN = (1 << i for i in range(7))
@@ -75,3 +75,30 @@ def test_rotation_is_stateless_and_in_step():
     t = datetime(2026, 10, 20, 12, 0, 0, tzinfo=UTC)
     assert rotation(live, t, 20) is rotation(live, t.replace(second=19), 20)
     assert rotation(live, t, 20) is not rotation(live, t.replace(second=20), 20)
+
+
+def test_rotation_weighted_by_show_seconds():
+    """20 s + 40 s = a 60 s cycle: the second message holds twice as long, boundaries exact."""
+    a, b = msg(id=1), msg(id=2, show_seconds=40)
+    t0 = datetime(2026, 10, 20, 12, 0, 0, tzinfo=UTC)  # 12:00:00 UTC is a multiple of 60
+    held = {1: 0, 2: 0}
+    for s in range(60):
+        held[rotation([a, b], t0 + timedelta(seconds=s), 20).id] += 1
+    assert held == {1: 20, 2: 40}
+    assert rotation([a, b], t0 + timedelta(seconds=19), 20) is a
+    assert rotation([a, b], t0 + timedelta(seconds=20), 20) is b
+    assert rotation([a, b], t0 + timedelta(seconds=59), 20) is b
+    assert rotation([a, b], t0 + timedelta(seconds=60), 20) is a
+    slot = rotation_slot([a, b], t0 + timedelta(seconds=25), 20)
+    assert (slot.message, slot.seconds, slot.remaining, slot.own) == (b, 40, 35, True)
+    slot = rotation_slot([a, b], t0 + timedelta(seconds=5), 20)
+    assert (slot.message, slot.seconds, slot.remaining, slot.own) == (a, 20, 15, False)
+
+
+def test_rotation_single_message_has_no_slot():
+    only = msg(id=1, show_seconds=5)
+    t = datetime(2026, 10, 20, 12, 0, 0, tzinfo=UTC)
+    for s in range(0, 30, 3):
+        slot = rotation_slot([only], t + timedelta(seconds=s), 20)
+        assert slot.message is only and slot.seconds is None and slot.remaining is None
+    assert rotation_slot([], t, 20) == (None, None, None, False)

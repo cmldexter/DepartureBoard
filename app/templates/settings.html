@@ -73,6 +73,7 @@
       </div>
       <div class="grid2">
         <label>Priority <input type="number" name="priority" value="0" min="-100" max="100"></label>
+        <label>Show for (s) <span class="muted">— when taking turns; blank = the board default</span><input type="number" name="show_seconds" min="5" max="600" placeholder="20" id="show-seconds"></label>
         <label class="check"><input type="checkbox" name="enabled" checked> Enabled</label>
         <label>Starts <input type="datetime-local" name="starts_at"></label>
         <label>Ends <input type="datetime-local" name="ends_at"></label>
@@ -131,7 +132,14 @@
         </label>
         <label>Idle text <span class="muted">— when nothing is live</span><input type="text" name="idle_text" maxlength="2000"></label>
         <label>Poll every (s) <input type="number" name="poll_seconds" min="2" max="60"></label>
-        <label>Rotate every (s) <input type="number" name="rotate_seconds" min="5" max="600"></label>
+        <label>Rotate every (s) <span class="muted">— the default; a message can set its own</span><input type="number" name="rotate_seconds" min="5" max="600"></label>
+        <label>Timer ring <span class="muted">— a small countdown in the board's corner</span>
+          <select name="timer_ring">
+            <option value="off">Off</option>
+            <option value="own">Messages with their own time</option>
+            <option value="all">Every message taking turns</option>
+          </select>
+        </label>
       </div>
       <div class="row"><button type="submit">Save display</button><span class="muted" id="display-status" role="status"></span></div>
     </form>

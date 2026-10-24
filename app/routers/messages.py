@@ -137,6 +137,7 @@ async def post_now(
         priority=min(100, top + 1),
         source=_source(request),
         created_by=body.created_by,
+        show_seconds=body.show_seconds,
     )
     session.add(m)
     session.commit()

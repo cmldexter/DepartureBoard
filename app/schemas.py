@@ -6,9 +6,10 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from app.models import THEMES
+from app.models import THEMES, TIMER_RINGS
 
 Repeat = Literal["none", "daily", "weekly"]
+TimerRing = Literal["off", "own", "all"]
 State = Literal["live", "scheduled", "expired", "disabled"]
 Cell = str | dict[str, str]
 
@@ -21,6 +22,8 @@ class MessageIn(BaseModel):
     `starts_at` / `ends_at` bound the window (ISO-8601 with offset; either may be null).
     `repeat` narrows it to a time of day (`daily`) or to weekdays in `repeat_days` (`weekly`,
     Mon=1 … Sun=64, summed). A repeat window whose end is before its start crosses midnight.
+    `show_seconds` is how long this message holds the board when it rotates with equals
+    (5–600); null means the display setting `rotate_seconds`.
     """
 
     text: str = Field(min_length=1, max_length=2000, examples=["ZRH 0715 BOARDING"])
@@ -32,6 +35,9 @@ class MessageIn(BaseModel):
     repeat_days: int = Field(0, ge=0, le=127)
     repeat_start: str | None = Field(None, examples=["07:00"])
     repeat_end: str | None = Field(None, examples=["09:30"])
+    show_seconds: int | None = Field(
+        None, ge=5, le=600, description="Its own time on the board, in seconds; null = the default"
+    )
     created_by: str | None = Field(None, max_length=80)
 
     model_config = ConfigDict(
@@ -43,6 +49,7 @@ class MessageIn(BaseModel):
                     "starts_at": "2026-10-21T07:00:00-04:00",
                     "ends_at": "2026-10-21T23:00:00-04:00",
                     "priority": 5,
+                    "show_seconds": 60,
                 },
                 {
                     "text": "STANDUP 09:30 {blue}",
@@ -89,6 +96,7 @@ class MessagePatch(BaseModel):
     repeat_days: int | None = Field(None, ge=0, le=127)
     repeat_start: str | None = None
     repeat_end: str | None = None
+    show_seconds: int | None = Field(None, ge=5, le=600)
 
     _hhmm = field_validator("repeat_start", "repeat_end")(MessageIn._hhmm.__func__)
 
@@ -98,6 +106,7 @@ class NowIn(BaseModel):
 
     text: str = Field(min_length=1, max_length=2000, examples=["DINNER IS READY"])
     created_by: str | None = Field(None, max_length=80)
+    show_seconds: int | None = Field(None, ge=5, le=600)
 
 
 class MessageOut(BaseModel):
@@ -113,6 +122,7 @@ class MessageOut(BaseModel):
     repeat_days: int
     repeat_start: str | None
     repeat_end: str | None
+    show_seconds: int | None
     source: str
     created_by: str | None
     created_at: datetime
@@ -152,6 +162,7 @@ class SettingsOut(BaseModel):
     poll_seconds: int
     rotate_seconds: int
     idle_text: str
+    timer_ring: TimerRing
 
 
 class SettingsPatch(BaseModel):
@@ -175,6 +186,9 @@ class SettingsPatch(BaseModel):
     poll_seconds: int | None = Field(None, ge=2, le=60)
     rotate_seconds: int | None = Field(None, ge=5, le=600)
     idle_text: str | None = Field(None, max_length=2000)
+    timer_ring: TimerRing | None = Field(
+        None, description=f"The countdown ring in the board's corner: {', '.join(TIMER_RINGS)}"
+    )
 
     @field_validator("theme")
     @classmethod
@@ -192,6 +206,15 @@ class BoardSettings(BaseModel):
     sound_volume: float
     theme: str
     poll_seconds: int
+    timer_ring: TimerRing
+
+
+class BoardTimer(BaseModel):
+    """The current slot while messages rotate; absent when one message has the board."""
+
+    seconds: int = Field(description="Length of the current slot")
+    remaining: int = Field(description="Seconds until the next message, at the time of the poll")
+    own: bool = Field(description="The message set its own show_seconds")
 
 
 class BoardCurrent(BaseModel):
@@ -203,6 +226,10 @@ class BoardCurrent(BaseModel):
         description="rows × cols cells: a character, {chip}, {img}, or {emoji}"
     )
     settings: BoardSettings
+    timer: BoardTimer | None = Field(
+        None,
+        description="The rotation slot; left out of the stamp, so it alone never moves the ETag",
+    )
 
 
 class ImageOut(BaseModel):

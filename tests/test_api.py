@@ -298,3 +298,85 @@ def test_patch_enabled_alone_keeps_everything_else(client, auth):
         assert off[key] == m[key], key
     on = client.patch(f"/api/messages/{m['id']}", json={"enabled": True}, headers=auth).json()
     assert (on["state"], on["enabled"], on["text"]) == ("live", True, "SWITCH ME")
+
+
+def test_show_seconds_round_trip_bounds_and_now(client, auth, clock):
+    r = client.post("/api/messages", json={"text": "A", "show_seconds": 45}, headers=auth)
+    assert r.status_code == 201 and r.json()["show_seconds"] == 45
+    a = r.json()["id"]
+    assert client.get(f"/api/messages/{a}", headers=auth).json()["show_seconds"] == 45
+    r = client.patch(f"/api/messages/{a}", json={"show_seconds": None}, headers=auth)
+    assert r.status_code == 200 and r.json()["show_seconds"] is None
+    for bad in (4, 601, 0):
+        assert (
+            client.post("/api/messages", json={"text": "X", "show_seconds": bad}, headers=auth)
+        ).status_code == 422
+        assert (
+            client.patch(f"/api/messages/{a}", json={"show_seconds": bad}, headers=auth)
+        ).status_code == 422
+    r = client.post("/api/messages/now", json={"text": "B", "show_seconds": 10}, headers=auth)
+    assert r.status_code == 201 and r.json()["show_seconds"] == 10
+    plain = client.post(
+        "/api/messages/now",
+        content="C",
+        headers={**auth, "Content-Type": "text/plain"},
+    )
+    assert plain.status_code == 201 and plain.json()["show_seconds"] is None
+
+
+def test_board_timer_weighted_and_out_of_the_etag(client, auth, clock):
+    a = client.post("/api/messages", json={"text": "A"}, headers=auth).json()["id"]
+    b = client.post("/api/messages", json={"text": "B", "show_seconds": 40}, headers=auth).json()[
+        "id"
+    ]
+    t0 = datetime(2026, 10, 20, 12, 0, 0, tzinfo=UTC)
+    held = {a: 0, b: 0}
+    for s in range(0, 60, 5):
+        clock["now"] = t0 + timedelta(seconds=s)
+        held[client.get("/api/board/current").json()["message_id"]] += 5
+    assert held == {a: 20, b: 40}, "the message with its own time holds the board twice as long"
+
+    clock["now"] = t0 + timedelta(seconds=25)
+    r = client.get("/api/board/current")
+    assert r.json()["message_id"] == b
+    assert r.json()["timer"] == {"seconds": 40, "remaining": 35, "own": True}
+    etag = r.headers["ETag"]
+    clock["now"] = t0 + timedelta(seconds=27)
+    again = client.get("/api/board/current", headers={"If-None-Match": etag})
+    assert again.status_code == 304, "two seconds later in the same slot: the ETag holds"
+    assert client.get("/api/board/current").json()["timer"]["remaining"] == 33
+
+    clock["now"] = t0 + timedelta(seconds=5)
+    r = client.get("/api/board/current").json()
+    assert r["message_id"] == a and r["timer"] == {"seconds": 20, "remaining": 15, "own": False}
+
+    client.delete(f"/api/messages/{a}", headers=auth)
+    r = client.get("/api/board/current").json()
+    assert r["message_id"] == b and r["timer"] is None, "one message alone: no slot"
+    assert "rotate_seconds" not in r["settings"]
+
+
+def test_timer_ring_setting(client, auth):
+    assert client.get("/api/settings", headers=auth).json()["timer_ring"] == "off"
+    assert client.get("/api/board/current").json()["settings"]["timer_ring"] == "off"
+    r = client.patch("/api/settings", json={"timer_ring": "own"}, headers=auth)
+    assert r.status_code == 200 and r.json()["timer_ring"] == "own"
+    assert client.get("/api/board/current").json()["settings"]["timer_ring"] == "own"
+    assert (
+        client.patch("/api/settings", json={"timer_ring": "maybe"}, headers=auth).status_code == 422
+    )
+    r = client.patch("/api/settings", json={"timer_ring": "all"}, headers=auth)
+    assert r.json()["timer_ring"] == "all"
+
+
+def test_board_etag_changes_when_rotation_stops(client, auth, clock):
+    """Two rotating messages → one alone with the same rows: the TV must learn the slot is gone."""
+    a = client.post("/api/messages", json={"text": "A"}, headers=auth).json()["id"]
+    b = client.post("/api/messages", json={"text": "B"}, headers=auth).json()["id"]
+    clock["now"] = datetime(2026, 10, 20, 12, 0, 5, tzinfo=UTC)  # A's slot (0–20 s)
+    r = client.get("/api/board/current")
+    assert r.json()["message_id"] == a and r.json()["timer"]["seconds"] == 20
+    etag = r.headers["ETag"]
+    client.patch(f"/api/messages/{b}", json={"enabled": False}, headers=auth)
+    r = client.get("/api/board/current", headers={"If-None-Match": etag})
+    assert r.status_code == 200 and r.json()["message_id"] == a and r.json()["timer"] is None

@@ -5,6 +5,7 @@ timestamps are stored in UTC; the repeat rules are evaluated in the configured t
 """
 
 from datetime import UTC, datetime, time, timedelta
+from typing import NamedTuple
 from zoneinfo import ZoneInfo
 
 from sqlalchemy import select
@@ -80,14 +81,37 @@ def live_messages(session: Session, now: datetime, tz: ZoneInfo) -> list[Message
     return sorted(live, key=lambda m: (-m.priority, m.id))
 
 
-def rotation(live: list[Message], now: datetime, rotate_seconds: int) -> Message | None:
-    """The message to show: the top-priority group rotates every `rotate_seconds`.
+class Slot(NamedTuple):
+    """The message to show and, while equals rotate, its slot: length, seconds left, its own?"""
 
-    Stateless — `(now // rotate_seconds) % len(group)` — so every screen polling the server
-    shows the same message at the same moment.
+    message: Message | None
+    seconds: int | None
+    remaining: int | None
+    own: bool
+
+
+def rotation_slot(live: list[Message], now: datetime, rotate_seconds: int) -> Slot:
+    """The top-priority group takes turns, each for its own `show_seconds` or `rotate_seconds`.
+
+    Stateless — the cycle is the sum of the slots and `now % cycle` says where we are — so every
+    screen polling the server shows the same message at the same moment. One message alone has
+    the board with no slot.
     """
     if not live:
-        return None
+        return Slot(None, None, None, False)
     top = [m for m in live if m.priority == live[0].priority]
-    index = (int(now.timestamp()) // max(1, rotate_seconds)) % len(top)
-    return top[index]
+    if len(top) == 1:
+        return Slot(top[0], None, None, False)
+    default = max(1, rotate_seconds)
+    slots = [m.show_seconds or default for m in top]
+    t = int(now.timestamp()) % sum(slots)
+    for m, s in zip(top, slots, strict=True):
+        if t < s:
+            return Slot(m, s, s - t, m.show_seconds is not None)
+        t -= s
+    raise AssertionError("unreachable: t < sum(slots)")
+
+
+def rotation(live: list[Message], now: datetime, rotate_seconds: int) -> Message | None:
+    """The message to show now (see `rotation_slot`)."""
+    return rotation_slot(live, now, rotate_seconds).message
