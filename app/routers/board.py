@@ -8,8 +8,10 @@ from zoneinfo import ZoneInfo
 from fastapi import APIRouter, Depends, Request, Response
 from sqlalchemy.orm import Session
 
-from app.deps import get_session, now, tz
+from app.config import Settings
+from app.deps import app_settings, get_session, now, tz
 from app.schemas import BoardCurrent, BoardSettings, BoardTimer
+from app.services import images
 from app.services.display import display_settings
 from app.services.scheduler import live_messages, rotation_slot
 from app.services.text import layout, padded_rows
@@ -17,13 +19,15 @@ from app.services.text import layout, padded_rows
 router = APIRouter(prefix="/api/board", tags=["board"])
 
 
-def current_board(session: Session, at: datetime, zone: ZoneInfo) -> BoardCurrent:
+def current_board(
+    session: Session, at: datetime, zone: ZoneInfo, settings: Settings
+) -> BoardCurrent:
     d = display_settings(session)
     live = live_messages(session, at, zone)
     slot = rotation_slot(live, at, d["rotate_seconds"])
     chosen = slot.message
     text = chosen.text if chosen else d["idle_text"]
-    rows = padded_rows(layout(text, d["rows"], d["cols"]))
+    rows = padded_rows(layout(text, d["rows"], d["cols"], images.sizes(settings)))
     settings = BoardSettings(**{k: d[k] for k in BoardSettings.model_fields})
     # The slot's length and ownership are constant within a slot, so they belong in the stamp
     # (rotating → alone must change the ETag); the seconds left do not.
@@ -66,8 +70,9 @@ def board_current(
     session: Session = Depends(get_session),
     at: datetime = Depends(now),
     zone: ZoneInfo = Depends(tz),
+    settings: Settings = Depends(app_settings),
 ):
-    board = current_board(session, at, zone)
+    board = current_board(session, at, zone, settings)
     etag = f'"{board.stamp}"'
     if request.headers.get("if-none-match", "").replace("W/", "") == etag:
         return Response(status_code=304, headers={"ETag": etag, "Cache-Control": "no-cache"})

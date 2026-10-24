@@ -5,7 +5,7 @@ from typing import Annotated
 from fastapi import APIRouter, File, Form, HTTPException, Request, Response, UploadFile, status
 from fastapi.responses import FileResponse
 
-from app.schemas import ImageOut
+from app.schemas import ImageOut, ImagePatch
 from app.services import images
 from app.services.auth import Authenticated
 
@@ -24,8 +24,10 @@ def list_images(request: Request):
     description=(
         "multipart/form-data with `file` (PNG, JPEG, GIF or WebP, up to 512 KB) and an optional "
         "`slug` (a–z, 0–9, dashes; defaults to the file name). The response's `token` goes in "
-        "a message, e.g. `HELLO {img:my-cat}`; it takes one cell. Uploading the same slug again "
-        "replaces the file."
+        "a message, e.g. `HELLO {img:my-cat}`. A new picture takes one cell; `PATCH "
+        "/api/images/{slug}` sets its block (`w` × `h` cells, `fit`), and `suggested` lists the "
+        "blocks that keep its shape. Uploading the same slug again replaces the file and keeps "
+        "its size."
     ),
     response_model=ImageOut,
     status_code=status.HTTP_201_CREATED,
@@ -61,12 +63,30 @@ async def upload_image(
     return images.describe(path)
 
 
+@api.patch(
+    "/{slug}",
+    summary="Size an image on the board",
+    description=(
+        "`w` (1–36) × `h` (1–10) cells and `fit`: `contain` keeps the picture's shape inside the "
+        "block, `cover` fills the block and crops, `stretch` fills it. The bounds are the biggest "
+        "board; a message whose picture does not fit the board in use is refused when saved."
+    ),
+    response_model=ImageOut,
+)
+def patch_image(slug: str, body: ImagePatch, request: Request):
+    path = images.find(request.app.state.settings, slug)
+    if path is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "No such image.")
+    images.set_size(path, body.w, body.h, body.fit)
+    return images.describe(path)
+
+
 @api.delete("/{slug}", summary="Delete an image", status_code=status.HTTP_204_NO_CONTENT)
 def delete_image(slug: str, request: Request):
     path = images.find(request.app.state.settings, slug)
     if path is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "No such image.")
-    path.unlink()
+    images.remove(path)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 

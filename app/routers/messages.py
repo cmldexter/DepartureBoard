@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.config import Settings
-from app.deps import get_session, now, tz
+from app.deps import app_settings, get_session, now, tz
 from app.models import Message
 from app.schemas import MessageIn, MessageOut, MessagePatch, NowIn, PreviewIn, PreviewOut, State
 from app.services import images
@@ -24,7 +24,7 @@ router = APIRouter(prefix="/api/messages", tags=["messages"], dependencies=[Auth
 def check_text(text: str, session: Session, settings: Settings):
     """422 with a readable reason when the text does not fit or names an unknown image."""
     d = display_settings(session)
-    lay = layout(text, d["rows"], d["cols"])
+    lay = layout(text, d["rows"], d["cols"], images.sizes(settings))
     if err := capacity_error(lay):
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, err)
     missing = [s for s in lay.images if images.find(settings, s) is None]
@@ -37,9 +37,11 @@ def check_text(text: str, session: Session, settings: Settings):
     return lay
 
 
-def to_out(m: Message, session: Session, at: datetime, zone: ZoneInfo) -> MessageOut:
+def to_out(
+    m: Message, session: Session, at: datetime, zone: ZoneInfo, settings: Settings
+) -> MessageOut:
     d = display_settings(session)
-    lay = layout(m.text, d["rows"], d["cols"])
+    lay = layout(m.text, d["rows"], d["cols"], images.sizes(settings))
     fields = {k: getattr(m, k) for k in MessageOut.model_fields if hasattr(m, k)}
     for k in ("starts_at", "ends_at", "created_at", "updated_at"):
         fields[k] = as_utc(fields[k])  # SQLite returns naive; they are UTC
@@ -63,9 +65,10 @@ def list_messages(
     session: Session = Depends(get_session),
     at: datetime = Depends(now),
     zone: ZoneInfo = Depends(tz),
+    settings: Settings = Depends(app_settings),
 ):
     rows = session.scalars(select(Message).order_by(Message.id)).all()
-    out = [to_out(m, session, at, zone) for m in rows]
+    out = [to_out(m, session, at, zone, settings) for m in rows]
     return [o for o in out if state is None or o.state == state]
 
 
@@ -86,7 +89,7 @@ def create_message(
     session.commit()
     session.refresh(m)
     response.headers["Location"] = f"/api/messages/{m.id}"
-    return to_out(m, session, at, zone)
+    return to_out(m, session, at, zone, request.app.state.settings)
 
 
 @router.post(
@@ -143,7 +146,7 @@ async def post_now(
     session.commit()
     session.refresh(m)
     response.headers["Location"] = f"/api/messages/{m.id}"
-    return to_out(m, session, at, zone)
+    return to_out(m, session, at, zone, request.app.state.settings)
 
 
 @router.post(
@@ -154,8 +157,8 @@ async def post_now(
 )
 def preview(body: PreviewIn, request: Request, session: Session = Depends(get_session)):
     d = display_settings(session)
-    lay = layout(body.text, d["rows"], d["cols"])
     settings = request.app.state.settings
+    lay = layout(body.text, d["rows"], d["cols"], images.sizes(settings))
     return PreviewOut(
         rows=lay.rows,
         grid_rows=d["rows"],
@@ -181,8 +184,9 @@ def read_message(
     session: Session = Depends(get_session),
     at: datetime = Depends(now),
     zone: ZoneInfo = Depends(tz),
+    settings: Settings = Depends(app_settings),
 ):
-    return to_out(_get(message_id, session), session, at, zone)
+    return to_out(_get(message_id, session), session, at, zone, settings)
 
 
 @router.patch("/{message_id}", summary="Edit a message", response_model=MessageOut)
@@ -207,7 +211,7 @@ def patch_message(
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(e)) from e
     session.commit()
     session.refresh(m)
-    return to_out(m, session, at, zone)
+    return to_out(m, session, at, zone, request.app.state.settings)
 
 
 @router.delete("/{message_id}", summary="Delete a message", status_code=status.HTTP_204_NO_CONTENT)

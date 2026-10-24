@@ -95,3 +95,76 @@ def test_padded_rows_fill_the_grid():
 def test_tokens_count_one_cell():
     lay = layout("{red}{img:a}🎉", 4, 16)
     assert lay.used == 3
+
+
+BANNER = {"banner": {"w": 9, "h": 1, "fit": "contain", "ar": 6.405}}
+LOGO = {"logo": {"w": 4, "h": 2, "fit": "cover", "ar": None}}
+
+
+def part(slug, size, x, y):
+    cell = {"img": slug, "w": size["w"], "h": size["h"], "x": x, "y": y, "fit": size["fit"]}
+    if size["ar"]:
+        cell["ar"] = size["ar"]
+    return cell
+
+
+def test_block_wraps_as_a_word_and_is_never_cut():
+    lay = layout("HELLO WORLD {img:banner} BYE", 6, 22, BANNER)
+    # HELLO WORLD = 11, + space + 9 = 21 fits; " BYE" does not → BYE wraps
+    assert len(lay.rows) == 2
+    assert lay.rows[0][12:21] == [part("banner", BANNER["banner"], x, 0) for x in range(9)]
+    assert lay.rows[1] == ["B", "Y", "E"]
+    lay = layout("HELLO WORLD AGAIN {img:banner}", 6, 22, BANNER)
+    assert len(lay.rows) == 2 and len(lay.rows[1]) == 9, "the block moves whole to the next row"
+    lay = layout("AB{img:banner}CD", 6, 16, BANNER)  # glued: a 13-wide word on a 16 board
+    assert len(lay.rows) == 1 and lay.rows[0][0] == "A" and lay.rows[0][11] == "C"
+    lay = layout("ABCDEFGH{img:banner}", 6, 16, BANNER)  # 17 wide: cut before the block
+    assert [len(r) for r in lay.rows] == [8, 9]
+
+
+def test_block_pushes_rows_down_and_used_counts_area():
+    lay = layout("HI {img:logo} THERE\nNEXT", 6, 22, LOGO)
+    assert lay.rows[0][:3] == ["H", "I", " "]
+    assert lay.rows[0][3:7] == [part("logo", LOGO["logo"], x, 0) for x in range(4)]
+    assert lay.rows[0][7:] == [" ", "T", "H", "E", "R", "E"]
+    assert lay.rows[1] == [" ", " ", " "] + [part("logo", LOGO["logo"], x, 1) for x in range(4)]
+    assert lay.rows[2] == ["N", "E", "X", "T"]
+    assert lay.used == 2 + 1 + 4 * 2 + 1 + 5 + 4
+    assert capacity_error(lay) is None
+
+
+def test_block_wider_or_taller_than_the_board_is_refused_and_clamped():
+    lay = layout("{img:banner}", 6, 8, BANNER)
+    assert "9×1" in capacity_error(lay) and "8 columns" in capacity_error(lay)
+    assert len(lay.rows[0]) == 8, "clamped so the board never breaks"
+    tall = {"tower": {"w": 1, "h": 5, "fit": "contain", "ar": None}}
+    lay = layout("{img:tower}", 4, 16, tall)
+    assert "1×5" in capacity_error(lay) and "4 rows" in capacity_error(lay)
+    assert len(lay.rows) == 4
+
+
+def test_inline_override_at_wxh():
+    lay = layout("{img:banner@3x2}", 6, 22, BANNER)
+    assert lay.rows[0][0]["w"] == 3 and lay.rows[0][0]["h"] == 2 and lay.rows[0][0]["ar"] == 6.405
+    assert len(lay.rows) == 2 and lay.used == 6
+    lay = layout("{img:unknown@2x1}", 6, 22, {})  # no sidecar: the override still makes a block
+    assert lay.rows[0] == [
+        {"img": "unknown", "w": 2, "h": 1, "fit": "contain", "x": 0, "y": 0},
+        {"img": "unknown", "w": 2, "h": 1, "fit": "contain", "x": 1, "y": 0},
+    ]
+    assert lay.images == ["unknown"]
+    lay = layout("{img:banner@99x99}", 10, 36, BANNER)
+    assert lay.rows[0][0]["w"] == 36 and lay.rows[0][0]["h"] == 10, "clamped to the biggest board"
+    cells, _, _ = tokenize("{img:a@3x}")  # not a token
+    assert {"img": "a"} not in cells
+
+
+def test_padded_rows_cut_a_block_at_the_edge():
+    lay = layout("X\nY\nZ\nW\nV\n{img:logo}", 6, 22, LOGO)
+    rows = padded_rows(lay)
+    assert len(rows) == 6 and rows[5][0]["y"] == 0 and all(len(r) == 22 for r in rows)
+
+
+def test_legacy_picture_is_one_bare_cell():
+    lay = layout("{img:old} HI", 6, 22, {})
+    assert lay.rows[0] == [{"img": "old"}, " ", "H", "I"] and lay.used == 4

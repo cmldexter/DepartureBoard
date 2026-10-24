@@ -77,12 +77,13 @@
     active = new Map();
   }
 
-  // One cell of input — a character, or a token {chip} / {emoji} / {img} — to (index, special).
+  // One cell of input — a character, or a token {chip} / {emoji} / {img…} — to (index, special).
+  // A picture part keeps its block (w, h, x, y, fit, ar); a bare {img} is one stretched cell.
   function toCell(v) {
     if (v && typeof v === "object") {
       if (v.chip) return { index: Flap.indexOf(`{${v.chip}}`), special: null };
       if (v.emoji) return { index: Flap.BLANK, special: { emoji: v.emoji } };
-      if (v.img) return { index: Flap.BLANK, special: { img: v.img } };
+      if (v.img) return { index: Flap.BLANK, special: { img: v } };
       return { index: Flap.BLANK, special: null };
     }
     return { index: Flap.indexOf(v), special: null };
@@ -129,6 +130,7 @@
 
   // Show these rows (text, or the API's cell arrays). Unchanged cells do not move.
   function show(rows) {
+    Flap.invalidateMetrics();
     const next = toTargets(rows);
     shownSomething = shownSomething || next.idx.some((i) => i !== Flap.BLANK) || next.sp.some(Boolean);
     if (instant()) {
@@ -318,6 +320,22 @@
       net.title = `Cannot reach the server (${poll.failures}); retrying`;
     }
   }
+
+  // After a resize the cells are a different size: repaint every picture part at its new slice.
+  let resizeTimer = 0;
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      Flap.invalidateMetrics();
+      cells.forEach((cell) => {
+        if (cell.special && cell.special.img && cell.pending === null) {
+          const sp = cell.special;
+          cell.special = null; // force the repaint
+          Flap.setCell(cell, cell.current, false, sp);
+        }
+      });
+    }, 150);
+  });
 
   settings.poll_seconds = Number(config.poll_seconds) || 5;
   if (!config.demo && !config.preview) fetchBoard();
