@@ -17,8 +17,9 @@ and a container image `ghcr.io/cmldexter/departureboard:X.Y.Z`.
   placed as a word of its own, never cut, the rows beneath pushed down; `{img:slug@6x2}` sizes
   it inline. The board draws the block as a mosaic — every cell is still a flap, each painting
   its slice, so a banner reads across the gaps and assembles with the stagger. A picture
-  uploaded before this release is still one cell, exactly as it was. The settings panel's size
-  controls follow in the next release step (#92).
+  uploaded before this release is still one cell, exactly as it was. The Images panel (#92) has
+  the controls: cells wide × tall, the fit, the suggested sizes as one-click chips, and the
+  pixel size next to the file size.
 
 - **A message's own time on the board** (#98, #99, #100). `show_seconds` (5–600) on a message, or
   on `/api/messages/now`, is how long it holds the board when several messages take turns; the

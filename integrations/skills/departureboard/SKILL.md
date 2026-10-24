@@ -28,7 +28,7 @@ Every call except the two public ones sends `Authorization: Bearer $DB_TOKEN`.
 | What is on | `GET /api/messages?state=live` (also `scheduled`, `expired`, `disabled`, or no filter) |
 | Change / pause | `PATCH /api/messages/{id}` with the fields to change, e.g. `{"enabled": false}` |
 | Remove | `DELETE /api/messages/{id}` → 204 |
-| A **picture** on the board | `POST /api/images` multipart `file` (PNG/JPEG/GIF/WebP ≤ 512 KB) + optional `slug`; the response gives `"token": "{img:slug}"` to put in a message |
+| A **picture** on the board | `POST /api/images` multipart `file` (PNG/JPEG/GIF/WebP ≤ 512 KB) + optional `slug`; the response gives `"token": "{img:slug}"` to put in a message and `suggested` blocks; `PATCH /api/images/{slug}` `{"w": 9, "h": 1, "fit": "contain"}` sizes it in cells (or write `{img:slug@9x1}`) |
 | The display | `PATCH /api/settings` — `{"grid_preset": "compact"|"large"|"custom", "rows", "cols", "animation": 0–100, "sound_enabled", "sound_volume": 0–1, "theme": "classic-black"|"walnut"|"arctic-white"|"midnight", "idle_text", "poll_seconds", "rotate_seconds", "timer_ring": "off"|"own"|"all"}` (partial) |
 | Public: what the TV shows | `GET /api/board/current` (no token); `GET /images/{slug}` |
 | Reference | `GET /docs` (Swagger), `GET /llms.txt` |
@@ -42,7 +42,8 @@ Every call except the two public ones sends `Authorization: Bearer $DB_TOKEN`.
 - Text is uppercased; accents are stripped; characters the flap set lacks become a blank and are
   listed in the response's `unknown`. The set: A–Z, 0–9, `! @ # $ ( ) - + & = ; : ' " % , . / ? °`.
 - Token cells, **one cell each**: `{red}` `{orange}` `{yellow}` `{green}` `{blue}` `{violet}` `{white}` `{black}`
-  (a solid coloured flap), any emoji, and `{img:slug}` (an uploaded picture; an unknown slug is a 422).
+  (a solid coloured flap) and any emoji. `{img:slug}` is an uploaded picture at its block size (w × h cells;
+  an unknown slug is a 422, a block wider than the board is a 422 that says so); `{img:slug@WxH}` sizes it inline.
 - Keep it board-like: short lines, capitals, a chip or an emoji as an accent, not a paragraph.
 
 ## Do not
