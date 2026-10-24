@@ -82,6 +82,19 @@ def _write_meta(path: Path, meta: dict) -> None:
     _sidecar(path).write_text(json.dumps(meta, separators=(",", ":")))
 
 
+def _px(path: Path, meta: dict) -> list[int] | None:
+    """The pixel size: from the sidecar, else read from the file (a picture uploaded before
+    sidecars existed still gets its suggestions)."""
+    px = meta.get("px")
+    if isinstance(px, list) and len(px) == 2:
+        return px
+    try:
+        found = dimensions(path.read_bytes())
+    except OSError:
+        return None
+    return list(found) if found else None
+
+
 def _size_of(meta: dict) -> Size:
     if not meta:
         return dict(LEGACY)
@@ -150,7 +163,7 @@ def set_size(path: Path, w: int | None, h: int | None, fit: str | None) -> None:
             "w": w if w is not None else current["w"],
             "h": h if h is not None else current["h"],
             "fit": fit if fit is not None else current["fit"],
-            "px": meta.get("px"),
+            "px": _px(path, meta),
         }
     )
     _write_meta(path, meta)
@@ -165,7 +178,7 @@ def describe(path: Path) -> dict:
     slug = path.stem
     meta = _read_meta(path)
     size = _size_of(meta)
-    px = meta.get("px") if isinstance(meta.get("px"), list) else None
+    px = _px(path, meta)
     return {
         "slug": slug,
         "url": f"/images/{slug}",
