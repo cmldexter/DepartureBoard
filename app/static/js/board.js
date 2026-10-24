@@ -8,7 +8,11 @@
 // Framed by the settings page (same origin only): `?embed` polls as usual and reports what it
 // shows; `?embed&preview` never polls and paints what the parent posts. Messages:
 //   parent → board   board:show { rows, settings }   (preview)   board:refresh   (live)
-//   board → parent   board:ready { preview }         board:current { message_id, stamp }
+//   board → parent   board:ready { preview }         board:current { message_id, stamp, timer }
+//
+// While messages rotate, /api/board/current carries `timer` { seconds, remaining, own }: the
+// board counts the rest down locally (the ring in the corner, when the setting asks for it) and
+// times its next poll to land just after the slot ends, so short slots flip on time.
 //
 // Exposes window.Board = { show, applySettings, settings }. Plain script, no modules.
 (() => {
@@ -30,7 +34,7 @@
   const STEP_MS_MAX = 50;
   const STAGGER_RATIO = 0.7;
 
-  const settings = { rows: 0, cols: 0, animation: 60, theme: "classic-black" };
+  const settings = { rows: 0, cols: 0, animation: 60, theme: "classic-black", timer_ring: "off" };
   let cells = []; // row-major cell records
   let target = []; // row-major sequence indices the board is heading to
   let specials = []; // row-major token cells ({emoji} / {img}) shown once a cell lands, or null
@@ -171,6 +175,10 @@
     if (next.animation !== undefined) settings.animation = Number(next.animation);
     if (window.Sound) window.Sound.configure(next);
     if (next.theme) applyTheme(next.theme);
+    if (next.timer_ring !== undefined) {
+      settings.timer_ring = String(next.timer_ring);
+      renderTimer();
+    }
     const rows = Number(next.rows) || settings.rows;
     const cols = Number(next.cols) || settings.cols;
     if (rows !== settings.rows || cols !== settings.cols) {
@@ -185,6 +193,7 @@
   layout(Number(config.rows), Number(config.cols));
   settings.animation = Number(config.animation);
   settings.theme = config.theme || settings.theme;
+  settings.timer_ring = config.timer_ring || settings.timer_ring;
   if (window.Sound) window.Sound.configure(config);
 
   // The sound just unlocked (fullscreen click): nothing to do now — the next cascade clicks.
@@ -196,14 +205,67 @@
     if (framed) window.parent.postMessage(msg, location.origin);
   }
 
+  // ---- the slot timer: counted down locally between polls; drawn as the ring when asked for.
+  const timerEl = document.getElementById("timer");
+  const timerLeft = timerEl && timerEl.querySelector(".left");
+  const timer = { seconds: 0, remaining: 0, own: false, at: 0, active: false, tick: 0 };
+
+  function setTimer(t) {
+    // t = { seconds, remaining, own } from the feed, or null when one message has the board.
+    timer.active = !!(t && t.seconds > 0);
+    if (timer.active) {
+      timer.seconds = Number(t.seconds);
+      timer.remaining = Number(t.remaining);
+      timer.own = !!t.own;
+      timer.at = performance.now();
+    }
+    renderTimer();
+  }
+
+  // Seconds left in the slot right now, from the last poll's value and the local clock.
+  function timerRemaining() {
+    if (!timer.active) return null;
+    return Math.max(0, timer.remaining - (performance.now() - timer.at) / 1000);
+  }
+
+  function timerWanted() {
+    if (!timer.active || config.preview) return false;
+    if (settings.timer_ring === "all") return true;
+    return settings.timer_ring === "own" && timer.own;
+  }
+
+  function renderTimer() {
+    if (!timerEl || !timerLeft) return;
+    const wanted = timerWanted();
+    timerEl.toggleAttribute("hidden", !wanted); // an SVG element has no .hidden property
+    timerEl.classList.toggle("own", timer.own);
+    clearInterval(timer.tick);
+    timer.tick = 0;
+    if (!wanted) return;
+    const paint = () => {
+      const left = timerRemaining();
+      const frac = timer.seconds > 0 ? Math.min(1, left / timer.seconds) : 0;
+      timerLeft.style.strokeDashoffset = String(100 - frac * 100); // pathLength=100: full → empty
+    };
+    paint();
+    timer.tick = window.setInterval(paint, reducedMotion ? 1000 : 250);
+  }
+
   // ---- live data: poll /api/board/current; 304 means nothing changed; errors back off.
   const net = document.getElementById("net");
-  const poll = { etag: null, stamp: null, failures: 0, timer: 0, polls: 0, notModified: 0, inFlight: false };
+  const poll = { etag: null, stamp: null, message_id: null, failures: 0, timer: 0, polls: 0, notModified: 0, inFlight: false };
   const placeholderRows = cells.map((c) => c.current); // what the server rendered: keep it until there is content
 
   function schedule(seconds) {
     clearTimeout(poll.timer);
     poll.timer = setTimeout(fetchBoard, Math.max(1, seconds) * 1000);
+  }
+
+  // The usual poll, or sooner when the slot ends before it: land 300 ms after the boundary.
+  function scheduleNext() {
+    const left = timerRemaining();
+    if (left === null || left + 0.3 >= settings.poll_seconds) schedule(settings.poll_seconds);
+    else schedule(Math.max(1, left + 0.3));
   }
 
   async function fetchBoard() {
@@ -216,7 +278,8 @@
       if (r.status === 304) {
         poll.notModified += 1;
         online();
-        schedule(settings.poll_seconds);
+        if (timer.active && timerRemaining() === 0) setTimer(null); // the slot ended but nothing moved: stop the ring
+        scheduleNext();
         return;
       }
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -224,16 +287,18 @@
       poll.etag = r.headers.get("ETag");
       online();
       if (data.settings && data.settings.poll_seconds) settings.poll_seconds = data.settings.poll_seconds;
+      setTimer(data.timer || null);
       if (data.stamp !== poll.stamp) {
         poll.stamp = data.stamp;
-        tellParent({ type: "board:current", message_id: data.message_id, stamp: data.stamp });
+        poll.message_id = data.message_id;
         applySettings(data.settings);
         const idle = data.message_id === null && data.rows.every((row) => row.every((c) => c === " "));
         // An idle board before anything has ever shown keeps the server's placeholder
         // ("SET UP AT /SETTINGS"); after a message, idle means the idle text (or blank).
         if (!(idle && !shownSomething)) show(data.rows);
       }
-      schedule(settings.poll_seconds);
+      tellParent({ type: "board:current", message_id: data.message_id, stamp: data.stamp, timer: data.timer || null });
+      scheduleNext();
     } catch (e) {
       poll.failures += 1;
       offline();
@@ -257,7 +322,7 @@
   settings.poll_seconds = Number(config.poll_seconds) || 5;
   if (!config.demo && !config.preview) fetchBoard();
 
-  window.Board = { show, applySettings, applyTheme, settings, stepMs, soundReady, poll, fetchBoard };
+  window.Board = { show, applySettings, applyTheme, settings, stepMs, soundReady, poll, fetchBoard, timer, timerRemaining };
 
   if (framed) {
     window.addEventListener("message", (e) => {

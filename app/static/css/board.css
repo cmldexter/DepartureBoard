@@ -143,6 +143,26 @@ html.board-page, .board-page { overflow: hidden; }
   z-index: 2;
 }
 
+/* ---- the timer ring: a small translucent countdown top-right while a message's slot runs
+   (display setting timer_ring: own | all). Not part of the HUD — it stays in fullscreen. */
+.timer {
+  position: fixed;
+  top: 2vmin;
+  right: 2vmin;
+  width: 5vmin;
+  height: 5vmin;
+  z-index: 9;
+  opacity: 0.45;
+  pointer-events: none;
+  transform: rotate(-90deg); /* the arc starts at 12 o'clock and empties clockwise */
+}
+.timer[hidden] { display: none; }
+.timer circle { fill: none; stroke: var(--ui-fg, #f4f4f4); stroke-width: 3; }
+.timer .track { opacity: 0.25; }
+.timer .left { stroke-dasharray: 100; stroke-dashoffset: 0; stroke-linecap: round; transition: stroke-dashoffset 0.25s linear; }
+.timer.own .left { stroke: var(--accent, #ffcc33); }
+@media (prefers-reduced-motion: reduce) { .timer .left { transition: none; } }
+
 /* ---- the little chrome: ⚙ settings bottom-left, ⛶ fullscreen bottom-right, a status line between, the net dot beside ⚙; shown on activity, hidden in fullscreen */
 .hud {
   position: fixed;

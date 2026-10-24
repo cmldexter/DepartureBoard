@@ -24,6 +24,10 @@
     {% endfor %}
   </div>
 </main>
+<svg id="timer" class="timer" viewBox="0 0 36 36" aria-hidden="true" hidden>
+  <circle class="track" cx="18" cy="18" r="15.5"></circle>
+  <circle class="left" cx="18" cy="18" r="15.5" pathLength="100"></circle>
+</svg>
 {% if not embed %}
 <a id="settings-link" class="hud" href="/settings" target="_blank" rel="noopener" aria-label="Settings (opens in a new tab)" title="Settings · opens in a new tab · or press s">⚙</a>
 <button type="button" id="cast" class="hud" aria-label="Cast to the TV" title="Cast to the TV · this computer stays on" aria-pressed="false" hidden><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-7"/><path d="M3 12a9 9 0 0 1 9 9"/><path d="M3 16a5 5 0 0 1 5 5"/><path d="M3 20h.01"/></svg></button>

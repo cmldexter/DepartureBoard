@@ -10,7 +10,7 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models import COLS_BOUNDS, DEFAULT_SETTINGS, PRESETS, ROWS_BOUNDS, Setting
+from app.models import COLS_BOUNDS, DEFAULT_SETTINGS, PRESETS, ROWS_BOUNDS, TIMER_RINGS, Setting
 
 ANIMATION_BOUNDS = (0, 100)
 
@@ -67,6 +67,11 @@ def resolve_display(raw: Mapping[str, Any]) -> dict[str, Any]:
             merged["rotate_seconds"], int(DEFAULT_SETTINGS["rotate_seconds"])
         ),
         "idle_text": str(merged["idle_text"]),
+        "timer_ring": (
+            str(merged["timer_ring"]).strip().lower()
+            if str(merged["timer_ring"]).strip().lower() in TIMER_RINGS
+            else DEFAULT_SETTINGS["timer_ring"]
+        ),
     }
 
 

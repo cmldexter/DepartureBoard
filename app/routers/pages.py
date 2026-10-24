@@ -85,6 +85,7 @@ def board(request: Request):
         "sound_volume": display["sound_volume"],
         "theme": theme,
         "poll_seconds": display["poll_seconds"],
+        "timer_ring": display["timer_ring"],
         "demo": demo,
         "embed": embed,
         "preview": preview,
