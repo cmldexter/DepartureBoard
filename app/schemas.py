@@ -11,7 +11,7 @@ from app.models import THEMES, TIMER_RINGS
 Repeat = Literal["none", "daily", "weekly"]
 TimerRing = Literal["off", "own", "all"]
 State = Literal["live", "scheduled", "expired", "disabled"]
-Cell = str | dict[str, str]
+Cell = str | dict[str, Any]  # see app.services.text
 
 _HHMM = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
 
@@ -232,12 +232,32 @@ class BoardCurrent(BaseModel):
     )
 
 
+Fit = Literal["contain", "cover", "stretch"]
+
+
 class ImageOut(BaseModel):
     slug: str
     url: str
     token: str
     content_type: str
     bytes: int
+    w: int = Field(description="Cells wide on the board")
+    h: int = Field(description="Cells tall on the board")
+    fit: Fit = Field(description="contain keeps the shape, cover fills and crops, stretch fills")
+    width: int | None = Field(description="Pixels, from the file's header; null when unreadable")
+    height: int | None
+    suggested: list[list[int]] = Field(
+        description="[w, h] blocks that keep the picture's shape, 1–3 rows tall"
+    )
+
+
+class ImagePatch(BaseModel):
+    """How the picture sits on the board. Send only the fields to change."""
+
+    model_config = ConfigDict(json_schema_extra={"examples": [{"w": 9, "h": 1, "fit": "contain"}]})
+    w: int | None = Field(None, ge=1, le=36)
+    h: int | None = Field(None, ge=1, le=10)
+    fit: Fit | None = None
 
 
 def as_dict(model: BaseModel) -> dict[str, Any]:

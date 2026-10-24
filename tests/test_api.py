@@ -141,8 +141,15 @@ def test_images_upload_token_and_board(client, auth, settings):
         "token": "{img:my-cat}",
         "content_type": "image/png",
         "bytes": len(PNG),
+        "w": 1,
+        "h": 1,
+        "fit": "contain",
+        "width": 1,
+        "height": 1,
+        "suggested": [[1, 1], [3, 2], [4, 3]],
     }
     assert (settings.data_dir / "images" / "my-cat.png").read_bytes() == PNG
+    assert (settings.data_dir / "images" / "my-cat.json").exists(), "the sidecar"
     assert client.get("/images/my-cat").status_code == 200, "public for the board"
     assert client.get("/images/nope").status_code == 404
     assert [i["slug"] for i in client.get("/api/images", headers=auth).json()] == ["my-cat"]
@@ -167,15 +174,109 @@ def test_images_upload_token_and_board(client, auth, settings):
 
     r = client.post("/api/messages", json={"text": "HI {img:my-cat} 🎉"}, headers=auth)
     assert r.status_code == 201
-    assert r.json()["rows"][0] == ["H", "I", " ", {"img": "my-cat"}, " ", {"emoji": "🎉"}]
+    cat = {"img": "my-cat", "w": 1, "h": 1, "x": 0, "y": 0, "fit": "contain", "ar": 1.0}
+    assert r.json()["rows"][0] == ["H", "I", " ", cat, " ", {"emoji": "🎉"}]
     assert r.json()["used"] == 6
     board = client.get("/api/board/current").json()
-    assert board["rows"][0][3] == {"img": "my-cat"}
+    assert board["rows"][0][3] == cat
 
     r = client.post("/api/messages", json={"text": "{img:not-there}"}, headers=auth)
     assert r.status_code == 422 and "Upload it first" in r.json()["detail"]
     assert client.delete("/api/images/my-cat", headers=auth).status_code == 204
     assert client.delete("/api/images/my-cat", headers=auth).status_code == 404
+    assert not (settings.data_dir / "images" / "my-cat.json").exists(), "sidecar goes too"
+
+
+def png_header(w: int, h: int) -> bytes:
+    """Just the signature and IHDR — enough for the size reader; the server never decodes."""
+    import struct
+    import zlib
+
+    ihdr = struct.pack(">IIBBBBB", w, h, 8, 6, 0, 0, 0)
+    chunk = struct.pack(">I", 13) + b"IHDR" + ihdr + struct.pack(">I", zlib.crc32(b"IHDR" + ihdr))
+    return b"\x89PNG\r\n\x1a\n" + chunk + b"\x00" * 16
+
+
+def test_image_size_sidecar_patch_and_board(client, auth, settings):
+    """The owner's banner: 743×116 → suggested 9×1 / 19×2 / 28×3; PATCH sizes it; the board
+    carries the parts; the stamp changes; a legacy picture (no sidecar) is still one bare cell."""
+    files = {"file": ("CUE flow.png", io.BytesIO(png_header(743, 116)), "image/png")}
+    img = client.post("/api/images", files=files, headers=auth).json()
+    assert (img["width"], img["height"], img["w"], img["h"], img["fit"]) == (
+        743,
+        116,
+        1,
+        1,
+        "contain",
+    )
+    assert img["suggested"] == [[9, 1], [19, 2], [28, 3]]
+
+    r = client.patch("/api/images/cue-flow", json={"w": 9, "h": 1}, headers=auth)
+    assert r.status_code == 200 and (r.json()["w"], r.json()["h"]) == (9, 1)
+    assert client.patch("/api/images/cue-flow", json={"w": 37}, headers=auth).status_code == 422
+    assert (
+        client.patch("/api/images/cue-flow", json={"fit": "zoom"}, headers=auth).status_code == 422
+    )
+    assert client.patch("/api/images/nope", json={"w": 2}, headers=auth).status_code == 404
+    listed = client.get("/api/images", headers=auth).json()
+    assert [(i["slug"], i["w"], i["h"]) for i in listed] == [("cue-flow", 9, 1)]
+
+    m = client.post("/api/messages", json={"text": "HI {img:cue-flow} THERE"}, headers=auth)
+    assert m.status_code == 201
+    row = m.json()["rows"][0]
+    assert row[:3] == ["H", "I", " "] and row[12:] == [" ", "T", "H", "E", "R", "E"]
+    parts = row[3:12]
+    assert [p["x"] for p in parts] == list(range(9))
+    assert all(
+        (p["img"], p["w"], p["h"], p["y"], p["fit"], p["ar"])
+        == ("cue-flow", 9, 1, 0, "contain", 6.405)
+        for p in parts
+    )
+    assert m.json()["used"] == 2 + 1 + 9 + 1 + 5
+    board = client.get("/api/board/current")
+    stamp = board.json()["stamp"]
+    assert board.json()["rows"][0][3]["w"] == 9
+
+    # a size change on the panel changes the board on its next poll
+    client.patch("/api/images/cue-flow", json={"w": 19, "h": 2, "fit": "cover"}, headers=auth)
+    board = client.get("/api/board/current").json()
+    assert board["stamp"] != stamp
+    # "HI " + 19 = 22 fits the row exactly; the row below holds the lower parts; THERE moves down
+    assert board["rows"][0][3]["w"] == 19 and board["rows"][0][21]["x"] == 18
+    assert board["rows"][1][:3] == [" ", " ", " "] and board["rows"][1][3]["y"] == 1
+    assert board["rows"][2][:5] == ["T", "H", "E", "R", "E"], "the text is pushed down"
+
+    # too wide for this board (6 × 22): refused with the size in the message
+    client.patch("/api/images/cue-flow", json={"w": 24, "h": 1}, headers=auth)
+    r = client.post("/api/messages", json={"text": "{img:cue-flow}"}, headers=auth)
+    assert (
+        r.status_code == 422 and "24×1" in r.json()["detail"] and "22 columns" in r.json()["detail"]
+    )
+    r = client.post("/api/messages/preview", json={"text": "{img:cue-flow}"}, headers=auth)
+    assert r.status_code == 200 and r.json()["rows"][0][0]["w"] == 22, "the preview clamps"
+
+    # the inline override wins over the stored size
+    r = client.post("/api/messages/preview", json={"text": "{img:cue-flow@3x1}"}, headers=auth)
+    assert [c["w"] for c in r.json()["rows"][0]] == [3, 3, 3]
+
+    # a picture from before sizes existed: file without a sidecar → one bare cell
+    (settings.data_dir / "images" / "old.png").write_bytes(PNG)
+    r = client.post("/api/messages/preview", json={"text": "{img:old}"}, headers=auth)
+    assert r.json()["rows"][0] == [{"img": "old"}]
+    old = next(i for i in client.get("/api/images", headers=auth).json() if i["slug"] == "old")
+    assert (old["w"], old["h"], old["fit"], old["width"], old["suggested"]) == (
+        1,
+        1,
+        "stretch",
+        None,
+        [],
+    )
+
+    # replacing the file keeps the size its owner set
+    client.patch("/api/images/cue-flow", json={"w": 9, "h": 1, "fit": "contain"}, headers=auth)
+    files = {"file": ("x.png", io.BytesIO(png_header(1486, 232)), "image/png")}
+    r = client.post("/api/images", files=files, data={"slug": "cue-flow"}, headers=auth)
+    assert r.status_code == 200 and (r.json()["w"], r.json()["width"]) == (9, 1486)
 
 
 def test_openapi_builds(client):
