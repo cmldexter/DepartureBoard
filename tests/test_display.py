@@ -116,6 +116,7 @@ def test_theme_assets_exist(client):
 
     for t in THEMES:
         assert client.get(f"/static/themes/{t}.css").status_code == 200, t
+        assert client.get(f"/static/themes/{t}.png").status_code == 200, f"{t} swatch"
     for f in ("oswald", "jetbrains-mono", "nunito"):
         assert client.get(f"/static/fonts/{f}.woff2").status_code == 200, f
     for v in ("keep-awake.mp4", "keep-awake.webm"):
@@ -131,6 +132,10 @@ CONFIG_KEYS = {
     "theme",
     "poll_seconds",
     "timer_ring",
+    "background_image",
+    "background_blur",
+    "background_dim",
+    "background_fit",
     "demo",
     "embed",
     "preview",
@@ -201,3 +206,21 @@ def test_board_page_has_a_hidden_cast_button(client):
     assert "hidden" in m.group(0), "hidden until cast.js finds the API and https"
     assert "/static/js/cast.js" in html
     assert 'id="cast"' not in client.get("/?embed").text
+
+
+def test_board_page_has_the_backdrop_layer(client):
+    html = client.get("/").text
+    assert 'id="backdrop"' in html
+    assert 'id="backdrop"' in client.get("/?embed").text, "the live card shows the picture too"
+    c = _config(html)
+    assert (
+        c["background_image"],
+        c["background_blur"],
+        c["background_dim"],
+        c["background_fit"],
+    ) == (
+        "",
+        12,
+        30,
+        "cover",
+    )

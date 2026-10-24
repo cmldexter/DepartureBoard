@@ -5,6 +5,36 @@
 html.board-page, .board-page { overflow: hidden; }
 .board-page { background: var(--bg); text-size-adjust: none; -webkit-text-size-adjust: none; }
 
+/* ---- a picture behind the board (display settings background_*): a fixed layer under the
+   frame, blurred and dimmed; the frame turns translucent over it, the board keeps its own colour. */
+#backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: var(--bg) center / cover no-repeat;
+}
+html.has-backdrop #backdrop {
+  display: block;
+  inset: calc(-2 * var(--bg-blur, 0px)); /* the blurred edge never shows */
+  background-image: var(--bg-image);
+  background-size: var(--bg-fit, cover);
+  filter: blur(var(--bg-blur, 0px));
+}
+#backdrop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, var(--bg-dim, 0));
+}
+html.has-backdrop .frame {
+  position: relative;
+  z-index: 1;
+  background: transparent;
+  background: color-mix(in srgb, var(--frame-color) 35%, transparent);
+}
+
 .frame {
   --frame: var(--frame-width, 3vmin);
   --gap: 0.35vmin;

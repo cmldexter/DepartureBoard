@@ -66,7 +66,16 @@ DEFAULT_SETTINGS = {
     "rotate_seconds": "20",
     "idle_text": "",
     "timer_ring": "off",
+    # A picture behind the board: "" (none), "img:<slug>" (uploaded) or "builtin:<name>";
+    # blurred by background_blur px, dimmed by background_dim %, cover or contain.
+    "background_image": "",
+    "background_blur": "12",
+    "background_dim": "30",
+    "background_fit": "cover",
 }
+
+# Shipped backgrounds: app/static/backgrounds/<name>.jpg (none yet — Epic 12 S2 adds them).
+BUILTIN_BACKGROUNDS: tuple[str, ...] = ()
 
 # The countdown ring in the board's corner: never, for messages with their own show_seconds, or
 # for every rotating message.

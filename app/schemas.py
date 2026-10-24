@@ -6,10 +6,12 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from app.models import THEMES, TIMER_RINGS
+from app.models import BUILTIN_BACKGROUNDS, THEMES, TIMER_RINGS
 
 Repeat = Literal["none", "daily", "weekly"]
 TimerRing = Literal["off", "own", "all"]
+BackgroundFit = Literal["cover", "contain"]
+_BG_IMAGE = re.compile(r"^(img:[a-z0-9][a-z0-9-]{0,39}|builtin:[a-z0-9][a-z0-9-]{0,39})$")
 State = Literal["live", "scheduled", "expired", "disabled"]
 Cell = str | dict[str, Any]  # see app.services.text
 
@@ -163,6 +165,10 @@ class SettingsOut(BaseModel):
     rotate_seconds: int
     idle_text: str
     timer_ring: TimerRing
+    background_image: str
+    background_blur: int
+    background_dim: int
+    background_fit: BackgroundFit
 
 
 class SettingsPatch(BaseModel):
@@ -173,6 +179,7 @@ class SettingsPatch(BaseModel):
                 {"grid_preset": "custom", "rows": 7, "cols": 30},
                 {"animation": 0, "sound_enabled": False},
                 {"theme": "walnut", "idle_text": "WELCOME HOME"},
+                {"background_image": "img:poster", "background_blur": 20, "background_dim": 40},
             ]
         }
     )
@@ -189,6 +196,29 @@ class SettingsPatch(BaseModel):
     timer_ring: TimerRing | None = Field(
         None, description=f"The countdown ring in the board's corner: {', '.join(TIMER_RINGS)}"
     )
+    background_image: str | None = Field(
+        None,
+        description=(
+            'A picture behind the board: "" for none, "img:<slug>" for an uploaded picture, '
+            '"builtin:<name>" for a shipped one'
+        ),
+    )
+    background_blur: int | None = Field(None, ge=0, le=40, description="Blur, px")
+    background_dim: int | None = Field(None, ge=0, le=90, description="Dim, %")
+    background_fit: BackgroundFit | None = None
+
+    @field_validator("background_image")
+    @classmethod
+    def _background(cls, v: str | None) -> str | None:
+        if v is None or v == "":
+            return v
+        v = v.strip()
+        if not _BG_IMAGE.match(v):
+            raise ValueError('background_image must be "", "img:<slug>" or "builtin:<name>"')
+        if v.startswith("builtin:") and v[8:] not in BUILTIN_BACKGROUNDS:
+            known = ", ".join(BUILTIN_BACKGROUNDS) or "none shipped yet"
+            raise ValueError(f"no built-in background {v[8:]!r} ({known})")
+        return v
 
     @field_validator("theme")
     @classmethod
@@ -207,6 +237,10 @@ class BoardSettings(BaseModel):
     theme: str
     poll_seconds: int
     timer_ring: TimerRing
+    background_image: str
+    background_blur: int
+    background_dim: int
+    background_fit: BackgroundFit
 
 
 class BoardTimer(BaseModel):

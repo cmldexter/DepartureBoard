@@ -7,6 +7,7 @@
 {% endblock %}
 {% block body_class %}board-page{% if embed %} embed{% endif %}{% endblock %}
 {% block body %}
+<div id="backdrop" aria-hidden="true"></div>
 <main class="frame" style="--rows: {{ rows }}; --cols: {{ cols }};">
   <div class="board" id="board" aria-label="Departure board">
     {% for row in grid %}

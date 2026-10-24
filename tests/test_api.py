@@ -490,3 +490,62 @@ def test_board_etag_changes_when_rotation_stops(client, auth, clock):
     client.patch(f"/api/messages/{b}", json={"enabled": False}, headers=auth)
     r = client.get("/api/board/current", headers={"If-None-Match": etag})
     assert r.status_code == 200 and r.json()["message_id"] == a and r.json()["timer"] is None
+
+
+def test_background_settings(client, auth):
+    s = client.get("/api/settings", headers=auth).json()
+    assert (
+        s["background_image"],
+        s["background_blur"],
+        s["background_dim"],
+        s["background_fit"],
+    ) == (
+        "",
+        12,
+        30,
+        "cover",
+    )
+    before = client.get("/api/board/current")
+    assert before.json()["settings"]["background_image"] == ""
+    # an uploaded picture must exist
+    r = client.patch("/api/settings", json={"background_image": "img:poster"}, headers=auth)
+    assert r.status_code == 422 and "Upload it first" in r.json()["detail"]
+    client.post(
+        "/api/images", files={"file": ("poster.png", io.BytesIO(PNG), "image/png")}, headers=auth
+    )
+    r = client.patch(
+        "/api/settings",
+        json={"background_image": "img:poster", "background_blur": 20, "background_dim": 40},
+        headers=auth,
+    )
+    assert r.status_code == 200
+    assert (
+        r.json()["background_image"],
+        r.json()["background_blur"],
+        r.json()["background_dim"],
+    ) == (
+        "img:poster",
+        20,
+        40,
+    )
+    after = client.get("/api/board/current", headers={"If-None-Match": before.headers["ETag"]})
+    assert after.status_code == 200, "the TV learns about the picture on its next poll"
+    assert after.json()["settings"]["background_image"] == "img:poster"
+    assert after.json()["settings"]["background_blur"] == 20
+    # bounds and shapes
+    for bad in (
+        {"background_image": "poster"},
+        {"background_image": "img:Bad Slug"},
+        {"background_image": "builtin:nope"},
+        {"background_blur": 41},
+        {"background_dim": 91},
+        {"background_fit": "zoom"},
+    ):
+        assert client.patch("/api/settings", json=bad, headers=auth).status_code == 422, bad
+    r = client.patch("/api/settings", json={"background_fit": "contain"}, headers=auth)
+    assert r.json()["background_fit"] == "contain"
+    r = client.patch("/api/settings", json={"background_image": ""}, headers=auth)
+    assert r.json()["background_image"] == "" and r.json()["background_blur"] == 20, (
+        "clearing keeps the sliders"
+    )
+    assert client.get("/").status_code == 200
