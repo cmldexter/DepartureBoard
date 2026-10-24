@@ -54,8 +54,12 @@ def test_settings_page_panels(client, token):
         'name="timer_ring"',
         "at the size set there",
         "give it a size below",
+        'id="look"',
+        'role="radiogroup"',
+        'data-theme="walnut"',
     ):
         assert needle in r.text, needle
+    assert 'name="theme"' not in r.text, "the theme left the Display form for the swatches"
 
 
 def test_integrate_page(client, token):
