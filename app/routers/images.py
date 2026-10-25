@@ -22,7 +22,7 @@ def list_images(request: Request):
     "",
     summary="Upload an image",
     description=(
-        "multipart/form-data with `file` (PNG, JPEG, GIF or WebP, up to 512 KB) and an optional "
+        "multipart/form-data with `file` (PNG, JPEG, GIF or WebP, up to 5 MB) and an optional "
         "`slug` (a–z, 0–9, dashes; defaults to the file name). The response's `token` goes in "
         "a message, e.g. `HELLO {img:my-cat}`. A new picture takes one cell; `PATCH "
         "/api/images/{slug}` sets its block (`w` × `h` cells, `fit`), and `suggested` lists the "
@@ -48,7 +48,9 @@ async def upload_image(
     data = await file.read(images.MAX_BYTES + 1)
     if len(data) > images.MAX_BYTES:
         raise HTTPException(
-            status.HTTP_413_CONTENT_TOO_LARGE, f"Over {images.MAX_BYTES // 1024} KB."
+            status.HTTP_413_CONTENT_TOO_LARGE,
+            f"Over {images.MAX_BYTES // (1024 * 1024)} MB — a phone screenshot fits, a camera "
+            "photo may need resizing.",
         )
     if not data:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "Empty file.")

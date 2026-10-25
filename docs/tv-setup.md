@@ -244,6 +244,11 @@ Choose on the settings page; the TV re-lays the board on the next refresh. Theme
 of the room: **Classic black** and **Midnight** for a dark wall, **Walnut** for a wooden
 console, **Arctic white** for a bright kitchen.
 
+A picture behind the board ([docs/backgrounds.md](backgrounds.md)) is loaded once per page load
+and cached by the TV's browser, so a big file (up to 5 MB) costs only the first paint. The blur
+is rendered on the TV: a Raspberry Pi 4 handles 40 px at 1080p; an older stick is happier below
+20 px, and Dim costs nothing.
+
 ## Troubleshooting
 
 | What you see | What it means |
