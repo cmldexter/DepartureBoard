@@ -7,6 +7,11 @@ and a container image `ghcr.io/cmldexter/departureboard:X.Y.Z`.
 
 ## [Unreleased]
 
+### Changed
+
+- **Uploads may be 5 MB** (#97), up from 512 KB — a phone screenshot of a poster fits. The 413
+  says so; the Images panel shows a file's size in MB past 1 MB.
+
 ### Added
 
 - **A picture behind the board** (#94). Display settings `background_image` (`""`, `img:<slug>`
@@ -15,6 +20,16 @@ and a container image `ghcr.io/cmldexter/departureboard:X.Y.Z`.
   under the frame, blurred and dimmed; the frame turns translucent over it and the flaps keep
   their theme. Nothing changes until a picture is set. The live card and the form preview show
   it too.
+- **Four backgrounds that ship with the app** (#95): `builtin:terminal` (concrete grey),
+  `builtin:wood` (dark walnut), `builtin:gala` (navy with gold bokeh, the formal one) and
+  `builtin:paper` (warm off-white), drawn by the project at 1920 × 1080 under
+  `app/static/backgrounds/`, each with a thumbnail. `docs/backgrounds.md` is the guide for making
+  your own, with `docs/background-template.png` showing the flap boxes for both presets.
+- **The background picker** (#96). Under the theme swatches, *Behind the board*: None, the
+  four built-ins and every uploaded picture as swatches, an *Upload…* right there, Blur and Dim
+  sliders and a Fit choice. The live card and the form preview follow every move before anything
+  is saved (a `board:settings` message to the board frame); *Save background* writes the four
+  settings in one call, *Clear* takes the picture off and keeps the sliders.
 - **Look & feel on the settings page** (#93). The four themes as swatches under the live card;
   one click applies the theme at once and the TV follows on its next poll. The theme select left
   the Display form.

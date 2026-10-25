@@ -8,7 +8,7 @@ from fastapi import APIRouter, Form, Request, status
 from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
 
 from app import __version__
-from app.models import THEMES
+from app.models import BUILTIN_BACKGROUNDS, THEMES
 from app.services.auth import COOKIE_NAME, _presented_token, token_matches
 from app.services.display import display_settings, resolve_display
 from app.services.tls import local_ipv4s
@@ -126,6 +126,7 @@ def settings_page(request: Request):
             "tz": settings.tz,
             "server_time": now.strftime("%Y-%m-%d %H:%M"),
             "themes": list(THEMES),
+            "backgrounds": list(BUILTIN_BACKGROUNDS),
             "addresses": board_addresses(request),
             "named": bool(settings.host),
         },

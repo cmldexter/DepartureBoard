@@ -90,10 +90,16 @@ message has left.
 
 <img src="docs/media/form-to-tv.gif" alt="Typing a message on the settings page; on the next poll the board flips to it" width="800">
 
-<img src="docs/media/settings-display.png" alt="The display form: preset, animation, sound, theme, idle text, poll and rotate intervals" width="800">
+<img src="docs/media/settings-display.png" alt="The display form: preset, animation, sound, idle text, poll and rotate intervals, timer ring" width="800">
 
 **Look & feel.** Four theme swatches under the live card; click one and the TV follows on its
-next poll, nothing to save.
+next poll, nothing to save. Below them, *Behind the board*: a picture under the frame — one of
+the four that ship, or a poster snip uploaded right there — with blur and dim sliders the live
+card follows as they move. *Save* sends it to the TV; *Clear* takes it off.
+
+<img src="docs/media/settings-look.png" alt="Look & feel: four theme swatches, then the background picker with None, the built-in pictures, an upload, and the blur and dim sliders" width="800">
+
+<img src="docs/media/board-background.png" alt="The board on Classic Black over a blurred, dimmed party poster" width="800">
 
 **Display.** The preset for your TV size (Compact 6 × 22, Large 8 × 28, or your own), the
 animation pace from instant to the mechanical click, sound and volume, the idle text
@@ -103,7 +109,7 @@ time, or for every message taking turns).
 
 <img src="docs/media/settings-images.png" alt="The images panel: upload a picture, get a token, give it a size in cells" width="800">
 
-**Pictures.** Upload a PNG, JPEG, GIF or WebP and it becomes a token like `{img:cat}`. Give the
+**Pictures.** Upload a PNG, JPEG, GIF or WebP (up to 5 MB) and it becomes a token like `{img:cat}`. Give the
 picture a size in cells on the panel — a wide banner reads best across a row — and it keeps its
 shape inside that block (or fills it, or stretches, your choice). The panel suggests the sizes
 that keep the shape from the file's own pixel size. In a message the picture takes its block,
@@ -126,6 +132,10 @@ post from a script, a calendar or an agent, open `/integrate` (pictured below).
 
 Each theme is one stylesheet under `app/static/themes/` with its font bundled, so the board
 works on a LAN with no internet. A new theme is a welcome pull request.
+
+Behind any theme can sit a picture: four ship with the app (*terminal*, *wood*, *gala*, *paper*)
+and your own uploads work too, blurred and dimmed to taste. [docs/backgrounds.md](docs/backgrounds.md)
+has the four-click recipe, the safe area and a 1920 × 1080 template.
 
 ## Bring your own integration
 

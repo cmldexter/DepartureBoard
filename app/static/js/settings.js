@@ -101,6 +101,8 @@
     } else if (e.data.type === "board:ready" && fromPreview && lastPreview) {
       post(previewFrame, lastPreview);
     }
+    // a poll that brought new settings re-applied the saved background; put the draft back
+    if (e.data.type === "board:current" && fromLive && bgDirty()) post(liveFrame, { type: "board:settings", settings: { ...bgDraft } });
   });
 
   const firstLine = (text) => (text.split("\n").find((l) => l.trim()) || text).trim();
@@ -283,7 +285,7 @@
 
   // ---- look & feel: the theme swatches apply at once (one PATCH, the row-switch pattern)
   let currentTheme = "classic-black";
-  const swatches = $$("#look .swatch");
+  const swatches = $$("#theme-choices .swatch");
   function markTheme(theme) {
     currentTheme = theme;
     swatches.forEach((b) => {
@@ -319,6 +321,124 @@
       const next = swatches[(i + step + swatches.length) % swatches.length];
       chooseTheme(next.dataset.theme, true);
     });
+  });
+
+  // ---- look & feel: a picture behind the board. The frames follow the draft at once through
+  // board:settings; Save writes the four settings in one PATCH; Clear removes the picture now.
+  const bgForm = $("#backdrop-form");
+  const bgChoices = $("#backdrop-choices");
+  const bgStatus = $("#backdrop-status");
+  const BG = ["background_image", "background_blur", "background_dim", "background_fit"];
+  const bgDraft = { background_image: "", background_blur: 12, background_dim: 30, background_fit: "cover" };
+  let bgSaved = { ...bgDraft };
+  const bgDirty = () => BG.some((k) => bgDraft[k] !== bgSaved[k]);
+  const bgSwatches = () => $$(".swatch", bgChoices);
+  function markBg(value) {
+    bgDraft.background_image = value;
+    const all = bgSwatches();
+    let found = false;
+    all.forEach((b) => {
+      const on = b.dataset.bg === value;
+      found = found || on;
+      b.setAttribute("aria-checked", String(on));
+      b.tabIndex = on ? 0 : -1;
+    });
+    if (!found && all.length) all[0].tabIndex = 0; // the picture is gone: None takes the tab stop
+  }
+  function showBgDraft() {
+    $("#blur-value").textContent = `${bgDraft.background_blur} px`;
+    $("#dim-value").textContent = `${bgDraft.background_dim} %`;
+    const msg = { type: "board:settings", settings: { ...bgDraft } };
+    post(liveFrame, msg);
+    post(previewFrame, msg);
+  }
+  function fillBgForm(s) {
+    BG.forEach((k) => (bgSaved[k] = s[k]));
+    Object.assign(bgDraft, bgSaved);
+    bgForm.background_blur.value = bgDraft.background_blur;
+    bgForm.background_dim.value = bgDraft.background_dim;
+    bgForm.background_fit.value = bgDraft.background_fit;
+    markBg(bgDraft.background_image);
+    showBgDraft();
+  }
+  function renderBgUploads(items) {
+    bgSwatches().filter((b) => b.dataset.bg.startsWith("img:")).forEach((b) => b.remove());
+    for (const img of items) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "swatch";
+      b.setAttribute("role", "radio");
+      b.dataset.bg = `img:${img.slug}`;
+      b.tabIndex = -1;
+      b.innerHTML = '<img alt="" width="320" height="180" loading="lazy"><span></span>';
+      $("img", b).src = `${img.url}?v=${img.bytes}`;
+      $("span", b).textContent = img.slug;
+      bgChoices.appendChild(b);
+    }
+    markBg(bgDraft.background_image);
+  }
+  const bgName = (v) => (v.startsWith("img:") ? v.slice(4) : v.startsWith("builtin:") ? v.slice(8) : "none");
+  function pickBg(value, focus) {
+    markBg(value);
+    showBgDraft();
+    bgStatus.textContent = value ? `${bgName(value)} on the card — Save to put it on the TV.` : "No picture — Save to take it off the TV.";
+    if (focus) bgSwatches().find((b) => b.dataset.bg === value)?.focus();
+  }
+  bgChoices.addEventListener("click", (e) => {
+    const b = e.target.closest(".swatch");
+    if (b) pickBg(b.dataset.bg, false);
+  });
+  bgChoices.addEventListener("keydown", (ev) => {
+    const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[ev.key];
+    const b = ev.target.closest(".swatch");
+    if (!step || !b) return;
+    ev.preventDefault();
+    const all = bgSwatches();
+    const next = all[(all.indexOf(b) + step + all.length) % all.length];
+    pickBg(next.dataset.bg, true);
+  });
+  bgForm.background_blur.addEventListener("input", () => {
+    bgDraft.background_blur = Number(bgForm.background_blur.value);
+    showBgDraft();
+  });
+  bgForm.background_dim.addEventListener("input", () => {
+    bgDraft.background_dim = Number(bgForm.background_dim.value);
+    showBgDraft();
+  });
+  bgForm.background_fit.addEventListener("change", () => {
+    bgDraft.background_fit = bgForm.background_fit.value;
+    showBgDraft();
+  });
+  async function saveBg(body, said) {
+    try {
+      const saved = await api("/api/settings", { method: "PATCH", body });
+      fillBgForm(saved);
+      bgStatus.textContent = said;
+      refreshLive();
+    } catch (e) {
+      toast(e.message, true);
+    }
+  }
+  bgForm.addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    const body = { ...bgDraft };
+    saveBg(body, body.background_image ? "Saved — the TV picks it up on its next poll." : "Saved with no picture.");
+  });
+  $("#backdrop-clear").addEventListener("click", () => saveBg({ background_image: "" }, "Cleared — the blur and dim are kept for next time."));
+  bgForm.file.addEventListener("change", async () => {
+    const file = bgForm.file.files[0];
+    if (!file) return;
+    const fd = new FormData();
+    fd.append("file", file);
+    try {
+      const img = await api("/api/images", { method: "POST", form: fd });
+      bgForm.file.value = "";
+      await loadImages();
+      pickBg(`img:${img.slug}`, false);
+      bgStatus.textContent = `${img.slug} uploaded and on the card — Save to put it on the TV.`;
+    } catch (e) {
+      toast(e.message, true);
+    }
   });
 
   // ---- preview (the server lays the text out, so it can never differ from the board)
@@ -371,6 +491,7 @@
     display.rotate_seconds.value = s.rotate_seconds;
     display.timer_ring.value = s.timer_ring || "off";
     form.show_seconds.placeholder = String(s.rotate_seconds); // the default a message falls back to
+    fillBgForm(s);
     syncCustom();
   }
   $$('input[name="grid_preset"]', display).forEach((r) => r.addEventListener("change", syncCustom));
@@ -407,6 +528,7 @@
   const imageList = $("#image-list");
   async function loadImages() {
     const items = await api("/api/images");
+    renderBgUploads(items);
     imageList.textContent = "";
     if (!items.length) {
       imageList.innerHTML = '<li class="muted">No pictures yet.</li>';
@@ -428,7 +550,8 @@
         </form>`;
       $("img", li).src = `${img.url}?v=${Date.now()}`;
       $(".token", li).textContent = img.token;
-      $(".size", li).textContent = `${Math.round(img.bytes / 1024)} KB${img.width ? ` · ${img.width} × ${img.height} px` : ""}`;
+      const kb = img.bytes / 1024;
+      $(".size", li).textContent = `${kb >= 1000 ? `${(kb / 1024).toFixed(1)} MB` : `${Math.round(kb)} KB`}${img.width ? ` · ${img.width} × ${img.height} px` : ""}`;
       const sizing = $(".sizing", li);
       sizing.setAttribute("aria-label", `Size of ${img.token} on the board`);
       sizing.w.value = img.w;

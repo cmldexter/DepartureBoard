@@ -8,6 +8,8 @@
 // Framed by the settings page (same origin only): `?embed` polls as usual and reports what it
 // shows; `?embed&preview` never polls and paints what the parent posts. Messages:
 //   parent → board   board:show { rows, settings }   (preview)   board:refresh   (live)
+//                    board:settings { settings }     (both: a draft of display settings, e.g.
+//                    the background picker's sliders, applied before anything is saved)
 //   board → parent   board:ready { preview }         board:current { message_id, stamp, timer }
 //
 // While messages rotate, /api/board/current carries `timer` { seconds, remaining, own }: the
@@ -378,6 +380,8 @@
       } else if (e.data.type === "board:refresh" && !config.preview && !config.demo) {
         clearTimeout(poll.timer);
         fetchBoard();
+      } else if (e.data.type === "board:settings" && e.data.settings && typeof e.data.settings === "object") {
+        applySettings(e.data.settings);
       }
     });
     tellParent({ type: "board:ready", preview: !!config.preview });

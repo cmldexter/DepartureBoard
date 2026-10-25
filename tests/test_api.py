@@ -167,10 +167,18 @@ def test_images_upload_token_and_board(client, auth, settings):
     assert r.status_code == 415
     r = client.post(
         "/api/images",
-        files={"file": ("big.png", io.BytesIO(b"0" * (512 * 1024 + 1)), "image/png")},
+        files={"file": ("big.png", io.BytesIO(b"0" * (5 * 1024 * 1024 + 1)), "image/png")},
         headers=auth,
     )
-    assert r.status_code == 413
+    assert r.status_code == 413 and "Over 5 MB" in r.json()["detail"]
+    r = client.post(
+        "/api/images",
+        files={"file": ("phone.jpg", io.BytesIO(b"\xff\xd8" + b"0" * (4_900_000)), "image/jpeg")},
+        headers=auth,
+    )
+    assert r.status_code == 201, "a phone screenshot of a poster (4.9 MB) fits"
+    assert r.json()["bytes"] == 4_900_002
+    assert client.delete("/api/images/phone", headers=auth).status_code == 204
 
     r = client.post("/api/messages", json={"text": "HI {img:my-cat} 🎉"}, headers=auth)
     assert r.status_code == 201
@@ -544,6 +552,9 @@ def test_background_settings(client, auth):
         assert client.patch("/api/settings", json=bad, headers=auth).status_code == 422, bad
     r = client.patch("/api/settings", json={"background_fit": "contain"}, headers=auth)
     assert r.json()["background_fit"] == "contain"
+    r = client.patch("/api/settings", json={"background_image": "builtin:gala"}, headers=auth)
+    assert r.status_code == 200 and r.json()["background_image"] == "builtin:gala"
+    assert client.get("/api/board/current").json()["settings"]["background_image"] == "builtin:gala"
     r = client.patch("/api/settings", json={"background_image": ""}, headers=auth)
     assert r.json()["background_image"] == "" and r.json()["background_blur"] == 20, (
         "clearing keeps the sliders"

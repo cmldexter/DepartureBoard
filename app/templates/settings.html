@@ -39,7 +39,7 @@
   <section id="look" aria-labelledby="look-heading">
     <h2 id="look-heading">Look &amp; feel</h2>
     <p class="muted">Pick a theme — the TV follows on its next poll, nothing to save.</p>
-    <div class="swatches" role="radiogroup" aria-label="Theme">
+    <div class="swatches" id="theme-choices" role="radiogroup" aria-label="Theme">
       {% for t in themes %}
       <button type="button" class="swatch" role="radio" aria-checked="false" data-theme="{{ t }}" tabindex="-1">
         <img src="/static/themes/{{ t }}.png" alt="" width="320" height="180">
@@ -48,6 +48,37 @@
       {% endfor %}
     </div>
     <p class="muted" id="look-status" role="status"></p>
+
+    <form id="backdrop-form" class="backdrop" aria-labelledby="backdrop-heading">
+      <h3 id="backdrop-heading">Behind the board</h3>
+      <p class="muted">A picture under the frame: a poster snip blurred into a mood for a party, or one of ours for a
+        quieter look. The card above follows every choice; <em>Save</em> sends it to the TV.
+        <a href="https://github.com/cmldexter/DepartureBoard/blob/main/docs/backgrounds.md" rel="noopener" target="_blank">Making your own</a>.</p>
+      <fieldset>
+        <legend>Picture</legend>
+        <div class="swatches backdrops" id="backdrop-choices" role="radiogroup" aria-label="Background picture">
+          <button type="button" class="swatch none" role="radio" aria-checked="true" data-bg="" tabindex="0">
+            <span class="thumb" aria-hidden="true">—</span><span>None</span>
+          </button>
+          {% for b in backgrounds %}
+          <button type="button" class="swatch" role="radio" aria-checked="false" data-bg="builtin:{{ b }}" tabindex="-1">
+            <img src="/static/backgrounds/thumbs/{{ b }}.jpg" alt="" width="320" height="180" loading="lazy">
+            <span>{{ b.title() }}</span>
+          </button>
+          {% endfor %}
+        </div>
+        <p class="upload"><label class="file-button">Upload…<input type="file" name="file" accept="image/png,image/jpeg,image/gif,image/webp" class="sr-only"></label>
+          <span class="muted">Your uploads from the Images panel are in the row too. Up to 5 MB.</span></p>
+      </fieldset>
+      <fieldset class="effects">
+        <legend>Effect</legend>
+        <label>Blur <input type="range" name="background_blur" min="0" max="40" step="1" value="12"> <output id="blur-value">12 px</output></label>
+        <label>Dim <input type="range" name="background_dim" min="0" max="90" step="5" value="30"> <output id="dim-value">30 %</output></label>
+        <label>Fit <select name="background_fit"><option value="cover">fill the screen</option><option value="contain">fit inside</option></select></label>
+      </fieldset>
+      <div class="row"><span><button type="submit">Save background</button> <button type="button" class="small" id="backdrop-clear">Clear</button></span>
+        <span class="muted" id="backdrop-status" role="status"></span></div>
+    </form>
   </section>
 
   <dialog id="cast-help" aria-labelledby="cast-help-title">
@@ -156,7 +187,7 @@
 
   <section id="images">
     <h2>Images</h2>
-    <p class="muted">PNG, JPEG, GIF or WebP up to 512 KB. A new picture takes one cell; give it a size below — a wide one reads best across a row — and it keeps its shape inside that block unless you choose otherwise.</p>
+    <p class="muted">PNG, JPEG, GIF or WebP up to 5 MB. A new picture takes one cell; give it a size below — a wide one reads best across a row — and it keeps its shape inside that block unless you choose otherwise.</p>
     <form id="image-form" class="card row">
       <label>File <input type="file" name="file" accept="image/png,image/jpeg,image/gif,image/webp" required></label>
       <label>Slug <span class="muted">(optional)</span> <input type="text" name="slug" pattern="[a-z0-9][a-z0-9\-]{0,39}" placeholder="my-cat"></label>

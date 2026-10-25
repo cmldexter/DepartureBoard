@@ -62,7 +62,7 @@ curl -X POST ${h}/api/messages/now \\
   -H "Authorization: Bearer ${t}" \\
   -H "Content-Type: text/plain" \\
   --data 'HELLO {img:cat}'`,
-      response: `201 Created on each. PNG, JPEG, GIF or WebP up to 512 KB; the same slug replaces.`,
+      response: `201 Created on each. PNG, JPEG, GIF or WebP up to 5 MB; the same slug replaces.`,
     },
     list: {
       title: "What is live right now",

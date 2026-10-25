@@ -20,7 +20,7 @@ CONTENT_TYPES = {
     "image/webp": "webp",
 }
 MEDIA_TYPES = {ext: ct for ct, ext in CONTENT_TYPES.items()}
-MAX_BYTES = 512 * 1024
+MAX_BYTES = 5 * 1024 * 1024  # a phone screenshot of a poster is 1–3 MB; backgrounds are big
 SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,39}$")
 
 # A block is at most the biggest board (custom 36 × 10); the preset in use may be smaller, and
