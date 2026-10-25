@@ -5,7 +5,7 @@ from typing import Annotated
 from fastapi import APIRouter, File, Form, HTTPException, Request, Response, UploadFile, status
 from fastapi.responses import FileResponse
 
-from app.schemas import ImageOut, ImagePatch
+from app.schemas import ImageOut, ImagePatch, QrIn
 from app.services import images
 from app.services.auth import Authenticated
 
@@ -65,6 +65,27 @@ async def upload_image(
     return images.describe(path)
 
 
+@api.post(
+    "/qr",
+    summary="Make a QR code picture",
+    description=(
+        "A QR code is a picture the server makes: the same token, size, panel and sidecar as any "
+        "upload. Send `slug` and `data` (text or a URL, up to 1024 characters); the code is dark "
+        "on white with a quiet zone, error correction M, and is drawn whole over its block "
+        "(`solid`) so a phone can scan it from the sofa. A new one takes 4 × 3 cells; the same "
+        "slug again remakes the picture and keeps its size. `qr.data` echoes the text."
+    ),
+    response_model=ImageOut,
+    status_code=status.HTTP_201_CREATED,
+    responses={200: {"description": "Remade an existing QR code"}},
+)
+def make_qr(request: Request, response: Response, body: QrIn):
+    path, replaced = images.save_qr(request.app.state.settings, body.slug, body.data)
+    if replaced:
+        response.status_code = status.HTTP_200_OK
+    return images.describe(path)
+
+
 @api.patch(
     "/{slug}",
     summary="Size an image on the board",
@@ -79,7 +100,7 @@ def patch_image(slug: str, body: ImagePatch, request: Request):
     path = images.find(request.app.state.settings, slug)
     if path is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "No such image.")
-    images.set_size(path, body.w, body.h, body.fit)
+    images.set_size(path, body.w, body.h, body.fit, body.solid)
     return images.describe(path)
 
 

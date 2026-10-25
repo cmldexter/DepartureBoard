@@ -285,6 +285,10 @@ class BoardCurrent(BaseModel):
 Fit = Literal["contain", "cover", "stretch"]
 
 
+class QrInfo(BaseModel):
+    data: str
+
+
 class ImageOut(BaseModel):
     slug: str
     url: str
@@ -294,11 +298,15 @@ class ImageOut(BaseModel):
     w: int = Field(description="Cells wide on the board")
     h: int = Field(description="Cells tall on the board")
     fit: Fit = Field(description="contain keeps the shape, cover fills and crops, stretch fills")
+    solid: bool = Field(
+        description="Drawn whole over its block — no gap or split line through it; a QR needs it"
+    )
     width: int | None = Field(description="Pixels, from the file's header; null when unreadable")
     height: int | None
     suggested: list[list[int]] = Field(
         description="[w, h] blocks that keep the picture's shape, 1–3 rows tall"
     )
+    qr: QrInfo | None = Field(None, description="For a QR code the server made: its text")
 
 
 class ImagePatch(BaseModel):
@@ -308,6 +316,21 @@ class ImagePatch(BaseModel):
     w: int | None = Field(None, ge=1, le=36)
     h: int | None = Field(None, ge=1, le=10)
     fit: Fit | None = None
+    solid: bool | None = Field(
+        None, description="Draw the picture whole over its block instead of slicing it per flap"
+    )
+
+
+class QrIn(BaseModel):
+    """Make a QR code picture from text or a URL; the same slug again remakes it."""
+
+    model_config = ConfigDict(
+        json_schema_extra={"examples": [{"slug": "menu", "data": "https://example.com/menu"}]}
+    )
+    slug: str = Field(
+        pattern=r"^[a-z0-9][a-z0-9-]{0,39}$", description="a–z, 0–9 and dashes, up to 40"
+    )
+    data: str = Field(min_length=1, max_length=1024, description="The text or URL the code carries")
 
 
 def as_dict(model: BaseModel) -> dict[str, Any]:

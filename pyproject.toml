@@ -11,6 +11,7 @@ dependencies = [
     "alembic>=1.16,<2",
     "jinja2>=3.1,<4",
     "pydantic-settings>=2.6,<3",
+    "segno>=1.6.6",
 ]
 
 [dependency-groups]
@@ -18,6 +19,7 @@ dev = [
     "ruff>=0.12",
     "pytest>=8.3",
     "httpx>=0.28",
+    "zxing-cpp>=3.1.1",
 ]
 
 [tool.ruff]

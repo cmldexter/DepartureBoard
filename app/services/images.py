@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import TypedDict
 
 from app.config import Settings
+from app.services import qr
 from app.services.imagesize import dimensions
 
 CONTENT_TYPES = {
@@ -35,9 +36,11 @@ class Size(TypedDict):
     h: int
     fit: str
     ar: float | None  # pixel aspect (width / height), None when unknown
+    solid: bool  # drawn whole over the block (one overlay) instead of sliced per flap
+    qr: bool  # a code the server made — drawn pixel-sharp
 
 
-LEGACY: Size = {"w": 1, "h": 1, "fit": "stretch", "ar": None}
+LEGACY: Size = {"w": 1, "h": 1, "fit": "stretch", "ar": None, "solid": False, "qr": False}
 
 
 def images_dir(settings: Settings) -> Path:
@@ -103,7 +106,14 @@ def _size_of(meta: dict) -> Size:
     w = min(MAX_W, max(1, int(meta.get("w", 1))))
     h = min(MAX_H, max(1, int(meta.get("h", 1))))
     fit = meta.get("fit") if meta.get("fit") in FITS else "contain"
-    return {"w": w, "h": h, "fit": fit, "ar": ar}
+    return {
+        "w": w,
+        "h": h,
+        "fit": fit,
+        "ar": ar,
+        "solid": bool(meta.get("solid")),
+        "qr": isinstance(meta.get("qr"), dict),
+    }
 
 
 def size_of(path: Path) -> Size:
@@ -133,7 +143,8 @@ def save(settings: Settings, slug: str, content_type: str, data: bytes) -> tuple
     """Write the file and its sidecar; returns (path, replaced).
 
     Other extensions of the slug are removed. Replacing a picture keeps the size its owner set
-    and refreshes the pixel size.
+    (and whether it is drawn whole) and refreshes the pixel size; a QR's text is dropped — the
+    new file is whatever was uploaded.
     """
     existing = find(settings, slug)
     kept = _read_meta(existing) if existing else {}
@@ -146,15 +157,38 @@ def save(settings: Settings, slug: str, content_type: str, data: bytes) -> tuple
     path = images_dir(settings) / f"{slug}.{CONTENT_TYPES[content_type]}"
     path.write_bytes(data)
     px = dimensions(data)
-    size = _size_of(kept) if kept else {"w": 1, "h": 1, "fit": "contain", "ar": None}
+    size = _size_of(kept) if kept else dict(LEGACY, fit="contain")
     _write_meta(
         path,
-        {"w": size["w"], "h": size["h"], "fit": size["fit"], "px": list(px) if px else None},
+        {
+            "w": size["w"],
+            "h": size["h"],
+            "fit": size["fit"],
+            "solid": size["solid"],
+            "px": list(px) if px else None,
+        },
     )
     return path, existing is not None
 
 
-def set_size(path: Path, w: int | None, h: int | None, fit: str | None) -> None:
+def save_qr(settings: Settings, slug: str, data: str) -> tuple[Path, bool]:
+    """Make (or remake) a QR code picture; returns (path, replaced).
+
+    A new one takes a square-ish block and is drawn whole; a remade one keeps the size and the
+    drawing mode its owner set. The sidecar records the text so the panel can offer to edit it.
+    """
+    path, replaced = save(settings, slug, "image/png", qr.png(data))
+    meta = _read_meta(path)
+    if not replaced:
+        meta.update({"w": qr.BLOCK_W, "h": qr.BLOCK_H, "fit": "contain", "solid": True})
+    meta["qr"] = {"data": data}
+    _write_meta(path, meta)
+    return path, replaced
+
+
+def set_size(
+    path: Path, w: int | None, h: int | None, fit: str | None, solid: bool | None = None
+) -> None:
     """Change how the picture sits on the board; unset fields keep their value."""
     meta = _read_meta(path)
     current = _size_of(meta)
@@ -168,6 +202,8 @@ def set_size(path: Path, w: int | None, h: int | None, fit: str | None) -> None:
             "px": _px(path, meta),
         }
     )
+    if solid is not None:
+        meta["solid"] = bool(solid)
     _write_meta(path, meta)
 
 
@@ -190,7 +226,9 @@ def describe(path: Path) -> dict:
         "w": size["w"],
         "h": size["h"],
         "fit": size["fit"],
+        "solid": size["solid"],
         "width": px[0] if px else None,
         "height": px[1] if px else None,
         "suggested": suggested(px),
+        "qr": {"data": str(meta["qr"]["data"])} if size["qr"] and "data" in meta["qr"] else None,
     }
