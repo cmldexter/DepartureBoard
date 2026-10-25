@@ -106,6 +106,9 @@ DEFAULT_SETTINGS = {
     "guest_auto_approve": "false",
     "guest_priority": "1",
     "guest_show_seconds": "15",
+    # The profile loaded last (profiles/<slug>.json), "" when none — informational; a save or a
+    # load sets it. Not part of a profile, never sent to the TV.
+    "active_profile": "",
 }
 
 GUEST_BOUNDS = {"guest_priority": (-100, 100), "guest_show_seconds": (5, 600)}
