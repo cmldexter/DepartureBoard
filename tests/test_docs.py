@@ -33,6 +33,11 @@ def test_every_doc_knows_about_guests():
     assert guest.PER_IP_HOUR == 20 and guest.PER_BOARD_HOUR == 200, "the README says it in words"
     for path, needles in (
         ("llms.txt", ("/api/guest/rotate", "/api/guest/qr", "/api/posts", "guest_auto_approve")),
+        ("llms.txt", ("/api/profiles", "kept_disabled", "active_profile")),
+        ("integrations/skills/departureboard/SKILL.md", ("/api/profiles",)),
+        ("integrations/curl/examples.sh", ("profile save", "api/profiles")),
+        ("docs/profiles.md", ("kept_disabled", "/now", "pictures_missing", "cron")),
+        ("README.md", ("**Boards.**", "docs/profiles.md")),
         ("integrations/skills/departureboard/SKILL.md", ("/api/guest/rotate", "/api/posts")),
         ("SECURITY.md", ("guest link", "docs/guests.md")),
         ("docs/qr.md", ("guests.md",)),

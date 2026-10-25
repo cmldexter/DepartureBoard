@@ -47,6 +47,128 @@
     });
   }
 
+  // ---- boards: the live board saved under a name, switched, copied, renamed, deleted. The
+  // listing says which is active and whether the live board changed since it was saved (the dot).
+  let boards = [];
+  let activeBoard = null; // the listing entry of the active profile, or null
+  const boardStatus = $("#boards-status");
+  const boardSwitch = $("#board-switch");
+  const slugify = (name) => name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || "board";
+  const fmtSaved = (iso) => (iso ? new Date(iso).toLocaleString([], { dateStyle: "short", timeStyle: "short" }) : "");
+  function renderBoards() {
+    activeBoard = boards.find((b) => b.active) || null;
+    $("#board-name").textContent = activeBoard ? activeBoard.name : "unsaved board";
+    $("#board-dot").hidden = !(activeBoard && activeBoard.changed);
+    $("#board-meta").textContent = activeBoard ? `${activeBoard.messages} message${activeBoard.messages === 1 ? "" : "s"} · saved ${fmtSaved(activeBoard.saved_at)}${activeBoard.pictures_missing.length ? ` · missing ${activeBoard.pictures_missing.map((s) => `{img:${s}}`).join(" ")}` : ""}` : "— Save as… keeps it under a name";
+    const current = boardSwitch.value;
+    boardSwitch.textContent = "";
+    boardSwitch.append(new Option("Switch…", ""));
+    for (const b of boards) boardSwitch.append(new Option(`${b.name} · ${b.messages} message${b.messages === 1 ? "" : "s"}${b.saved_at ? ` · ${fmtSaved(b.saved_at)}` : ""}${b.active ? " (this board)" : ""}`, b.slug));
+    boardSwitch.value = boards.some((b) => b.slug === current) ? current : "";
+    boardSwitch.disabled = !boards.length;
+    for (const id of ["board-duplicate", "board-rename", "board-delete"]) $(`#${id}`).disabled = !activeBoard;
+  }
+  async function loadProfiles() {
+    boards = await api("/api/profiles");
+    renderBoards();
+  }
+  async function refreshAll() {
+    await loadMessages();
+    await loadDisplay();
+    await loadImages();
+    if (!form.hidden) preview();
+    refreshLive();
+  }
+  async function saveBoard(slug, name, said) {
+    try {
+      const out = await api(`/api/profiles/${slug}/save`, { method: "POST", body: name ? { name } : {} });
+      await loadProfiles();
+      boardStatus.textContent = said || `Saved as ${out.name}.`;
+      toast(`${out.name} saved — ${out.messages} message${out.messages === 1 ? "" : "s"} and the display.`);
+    } catch (e) {
+      toast(e.message, true);
+    }
+  }
+  $("#board-save").addEventListener("click", () => {
+    if (activeBoard) saveBoard(activeBoard.slug, null, `${activeBoard.name} saved.`);
+    else $("#board-save-as").click();
+  });
+  $("#board-save-as").addEventListener("click", () => {
+    const name = prompt("Save this board as…", activeBoard ? activeBoard.name : "Party");
+    if (!name || !name.trim()) return;
+    const slug = slugify(name.trim());
+    const taken = boards.find((b) => b.slug === slug);
+    if (taken && !(activeBoard && taken.slug === activeBoard.slug) && !confirm(`Overwrite the saved board “${taken.name}”?`)) return;
+    saveBoard(slug, name.trim());
+  });
+  boardSwitch.addEventListener("change", async () => {
+    const slug = boardSwitch.value;
+    if (!slug) return;
+    const target = boards.find((b) => b.slug === slug);
+    if (activeBoard && activeBoard.changed && !confirm(`Switch to “${target.name}”? This board has changes since it was saved.`)) {
+      boardSwitch.value = "";
+      return;
+    }
+    if (!activeBoard && messages.length && !confirm(`Switch to “${target.name}”? This board is not saved; its messages are replaced.`)) {
+      boardSwitch.value = "";
+      return;
+    }
+    try {
+      const out = await api(`/api/profiles/${slug}/load`, { method: "POST" });
+      await loadProfiles();
+      await refreshAll();
+      const kept = out.kept_disabled.length;
+      boardStatus.textContent = `${out.name} is on the board${kept ? ` — ${kept} message${kept === 1 ? "" : "s"} did not fit and ${kept === 1 ? "is" : "are"} disabled` : ""}.`;
+      toast(`${out.name} loaded — the TV follows on its next poll.`);
+      boardSwitch.value = "";
+      boardSwitch.focus();
+    } catch (e) {
+      toast(e.message, true);
+      boardSwitch.value = "";
+    }
+  });
+  $("#board-duplicate").addEventListener("click", async () => {
+    if (!activeBoard) return;
+    $("#board-more").open = false;
+    const name = prompt("Name for the copy", `${activeBoard.name} copy`);
+    if (!name || !name.trim()) return;
+    try {
+      const out = await api(`/api/profiles/${activeBoard.slug}/copy`, { method: "POST", body: { slug: slugify(name.trim()), name: name.trim() } });
+      await loadProfiles();
+      boardStatus.textContent = `${out.name} saved as a copy — Switch… to open it.`;
+      toast(`${out.name} is a copy of ${activeBoard.name}.`);
+    } catch (e) {
+      toast(e.message, true);
+    }
+  });
+  $("#board-rename").addEventListener("click", async () => {
+    if (!activeBoard) return;
+    $("#board-more").open = false;
+    const name = prompt("Rename this board", activeBoard.name);
+    if (!name || !name.trim() || name.trim() === activeBoard.name) return;
+    try {
+      await api(`/api/profiles/${activeBoard.slug}`, { method: "PATCH", body: { name: name.trim() } });
+      await loadProfiles();
+      boardStatus.textContent = `Renamed to ${name.trim()}.`;
+    } catch (e) {
+      toast(e.message, true);
+    }
+  });
+  $("#board-delete").addEventListener("click", async () => {
+    if (!activeBoard) return;
+    $("#board-more").open = false;
+    if (!confirm(`Delete the saved board “${activeBoard.name}”? What is on the TV stays as it is.`)) return;
+    try {
+      const was = activeBoard.name;
+      await api(`/api/profiles/${activeBoard.slug}`, { method: "DELETE" });
+      await loadProfiles();
+      boardStatus.textContent = `${was} deleted — this board is unsaved now.`;
+      $("#board-save-as").focus();
+    } catch (e) {
+      toast(e.message, true);
+    }
+  });
+
   // ---- helpers for dates: the API speaks UTC ISO; inputs speak local wall time.
   const toLocalInput = (iso) => {
     if (!iso) return "";
@@ -84,7 +206,10 @@
   function post(frame, msg) {
     if (frame && frame.contentWindow) frame.contentWindow.postMessage(msg, location.origin);
   }
-  const refreshLive = () => post(liveFrame, { type: "board:refresh" });
+  const refreshLive = () => {
+    post(liveFrame, { type: "board:refresh" });
+    loadProfiles().catch(() => {}); // every change ends here: the Boards strip's dot follows
+  };
 
   window.addEventListener("message", (e) => {
     if (e.origin !== location.origin || !e.data || typeof e.data.type !== "string") return;
@@ -546,6 +671,7 @@
     fillFlapForm(s);
     fillGuestForm(s);
     syncCustom();
+    loadProfiles().catch(() => {});
   }
   $$('input[name="grid_preset"]', display).forEach((r) => r.addEventListener("change", syncCustom));
   display.animation.addEventListener("input", () => ($("#animation-value").value = display.animation.value));
@@ -971,4 +1097,5 @@
   loadDisplay().catch((e) => toast(e.message, true));
   loadImages().catch((e) => toast(e.message, true));
   loadPosts().catch((e) => toast(e.message, true));
+  loadProfiles().catch((e) => toast(e.message, true));
 })();

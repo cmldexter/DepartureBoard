@@ -90,15 +90,29 @@ def pictures_missing(settings: Settings, data: ProfileFile) -> list[str]:
     return sorted(s for s in slugs if images.find(settings, s) is None)
 
 
-def describe(settings: Settings, path: Path, active: str) -> dict[str, Any]:
+def _content(data: ProfileFile) -> dict[str, Any]:
+    return data.model_dump(mode="json", exclude={"name", "saved_at"})
+
+
+def describe(
+    settings: Settings, path: Path, active: str, session: Session | None = None
+) -> dict[str, Any]:
+    """The listing entry; with a session, the active profile also says whether the live board
+    has changed since it was saved (the dot on the Boards strip)."""
     data = read(path)
+    is_active = path.stem == active
+    changed = False
+    if is_active and session is not None:
+        live = snapshot(session, data.name, datetime.now(UTC))
+        changed = _content(live) != _content(data)
     return {
         "slug": path.stem,
         "name": data.name,
         "saved_at": data.saved_at,
         "messages": len(data.messages),
         "pictures_missing": pictures_missing(settings, data),
-        "active": path.stem == active,
+        "active": is_active,
+        "changed": changed,
     }
 
 
