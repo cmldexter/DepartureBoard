@@ -79,6 +79,21 @@
       <div class="row"><span><button type="submit">Save background</button> <button type="button" class="small" id="backdrop-clear">Clear</button></span>
         <span class="muted" id="backdrop-status" role="status"></span></div>
     </form>
+
+    <form id="flaps-form" class="backdrop flaps" aria-labelledby="flaps-heading">
+      <h3 id="flaps-heading">The flaps</h3>
+      <p class="muted">How round, how far apart, how thick the line across. Tighter flaps lose less of a picture
+        spread over them; <em>Picture mode</em> sets all three at once, <em>Classic</em> puts them back. The card
+        above follows every move; <em>Save</em> sends it to the TV.</p>
+      <fieldset class="effects">
+        <legend>Shape</legend>
+        <label>Corners <input type="range" name="cell_radius" min="0" max="12" step="1" value="6"> <output id="radius-value">6 %</output></label>
+        <label>Gap <input type="range" name="cell_gap" min="0" max="100" step="5" value="35"> <output id="gap-value">0.35 vmin</output></label>
+        <label>Split line <input type="range" name="split_line" min="0" max="3" step="1" value="1"> <output id="split-value">1 px</output></label>
+      </fieldset>
+      <div class="row"><span><button type="submit">Save flaps</button> <button type="button" class="small" id="flaps-picture">Picture mode</button> <button type="button" class="small" id="flaps-classic">Classic</button></span>
+        <span class="muted" id="flaps-status" role="status"></span></div>
+    </form>
   </section>
 
   <dialog id="cast-help" aria-labelledby="cast-help-title">

@@ -10,7 +10,15 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models import COLS_BOUNDS, DEFAULT_SETTINGS, PRESETS, ROWS_BOUNDS, TIMER_RINGS, Setting
+from app.models import (
+    COLS_BOUNDS,
+    DEFAULT_SETTINGS,
+    FLAP_BOUNDS,
+    PRESETS,
+    ROWS_BOUNDS,
+    TIMER_RINGS,
+    Setting,
+)
 
 ANIMATION_BOUNDS = (0, 100)
 
@@ -78,6 +86,10 @@ def resolve_display(raw: Mapping[str, Any]) -> dict[str, Any]:
         "background_fit": (
             "contain" if str(merged["background_fit"]).strip().lower() == "contain" else "cover"
         ),
+        **{
+            key: _clamp(_as_int(merged[key], int(DEFAULT_SETTINGS[key])), bounds)
+            for key, bounds in FLAP_BOUNDS.items()
+        },
     }
 
 

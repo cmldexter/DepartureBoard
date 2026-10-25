@@ -8,7 +8,7 @@
 {% block body_class %}board-page{% if embed %} embed{% endif %}{% endblock %}
 {% block body %}
 <div id="backdrop" aria-hidden="true"></div>
-<main class="frame" style="--rows: {{ rows }}; --cols: {{ cols }};">
+<main class="frame" style="--rows: {{ rows }}; --cols: {{ cols }}; --cell-radius: {{ config.cell_radius }}; --cell-gap: {{ config.cell_gap }}; --split-line: {{ config.split_line }};">
   <div class="board" id="board" aria-label="Departure board">
     {% for row in grid %}
       {% for ch in row %}

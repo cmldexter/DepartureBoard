@@ -37,7 +37,11 @@ html.has-backdrop .frame {
 
 .frame {
   --frame: var(--frame-width, 3vmin);
-  --gap: 0.35vmin;
+  /* The shape of a flap (display settings cell_radius / cell_gap / split_line, rendered inline on
+     this element and set by board.js applyFlapShape): unitless numbers, the classic look as fallback. */
+  --gap: calc(var(--cell-gap, 35) * 0.01vmin);
+  --r: calc(var(--cell-w) * var(--cell-radius, 6) / 100); /* 6 % of a cell ≈ the old 0.5vmin at 1080p */
+  --split: calc(var(--split-line, 1) * 1px);
   --cell-w: min(
     calc((100vw - 2 * var(--frame) - 2 * var(--gap) - (var(--cols) - 1) * var(--gap)) / var(--cols)),
     calc((100vh - 2 * var(--frame) - 2 * var(--gap) - (var(--rows) - 1) * var(--gap)) / var(--rows) / 1.45)
@@ -66,7 +70,7 @@ html.has-backdrop .frame {
   position: relative;
   width: var(--cell-w);
   height: var(--cell-h);
-  border-radius: 0.5vmin;
+  border-radius: var(--r);
   overflow: hidden;
   perspective: calc(var(--cell-h) * 4);
   font-family: var(--flap-font);
@@ -116,8 +120,8 @@ html.has-backdrop .frame {
   font-weight: 400;
   font-size: 0.9em;
 }
-.cell .half.top { top: 0; border-radius: 0.5vmin 0.5vmin 0 0; }
-.cell .half.bottom { bottom: 0; border-radius: 0 0 0.5vmin 0.5vmin; }
+.cell .half.top { top: 0; border-radius: var(--r) var(--r) 0 0; }
+.cell .half.bottom { bottom: 0; border-radius: 0 0 var(--r) var(--r); }
 
 .cell .glyph {
   position: absolute;
@@ -149,11 +153,11 @@ html.has-backdrop .frame {
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
 }
-.cell .face.front { border-radius: 0.5vmin 0.5vmin 0 0; }
+.cell .face.front { border-radius: var(--r) var(--r) 0 0; }
 /* The far side is pre-rotated so it reads upright once the leaf has turned over. */
 .cell .face.back {
   transform: rotateX(180deg);
-  border-radius: 0 0 0.5vmin 0.5vmin;
+  border-radius: 0 0 var(--r) var(--r);
 }
 
 /* The flip itself is a Web Animation on the leaf (flap.js setCell): rotateX(0) → rotateX(-180deg). */
@@ -163,7 +167,7 @@ html.has-backdrop .frame {
   left: 0;
   right: 0;
   top: 50%;
-  height: 1px;
+  height: var(--split); /* 0 hides it */
   background: var(--flap-split);
   transform: translateY(-50%);
   z-index: 2;
