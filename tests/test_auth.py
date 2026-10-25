@@ -57,6 +57,13 @@ def test_settings_page_panels(client, token):
         'id="look"',
         'role="radiogroup"',
         'data-theme="walnut"',
+        'id="backdrop-form"',
+        'data-bg="builtin:gala"',
+        "/static/backgrounds/thumbs/wood.jpg",
+        'name="background_blur"',
+        'name="background_dim"',
+        'name="background_fit"',
+        'id="backdrop-clear"',
     ):
         assert needle in r.text, needle
     assert 'name="theme"' not in r.text, "the theme left the Display form for the swatches"
