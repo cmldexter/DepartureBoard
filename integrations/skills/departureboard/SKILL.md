@@ -68,4 +68,4 @@ User: *"Put HAPPY BIRTHDAY NICK on the board tomorrow from 7am to 11pm, make it 
    `{"text": "HAPPY BIRTHDAY NICK {yellow}", "starts_at": "2026-10-21T07:00:00-04:00", "ends_at": "2026-10-21T23:00:00-04:00", "priority": 5}`
 4. Reply with the state from the response (`scheduled`) and the id, so the user can remove it.
 
-Written against DepartureBoard 0.4.0 (API as of 2026-10-25; `show_seconds` and `timer_ring` need 0.3.0 or later; QR codes, `solid`, the flap shape and guests need 0.4.0 or later).
+Written against DepartureBoard 0.5.0 (API as of 2026-10-25; `show_seconds` and `timer_ring` need 0.3.0 or later; QR codes, `solid`, the flap shape and guests need 0.4.0 or later).

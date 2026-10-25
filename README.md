@@ -1,4 +1,5 @@
 <div align="center">
+  <img src="docs/media/logo.png" alt="The DepartureBoard logo: nine flaps spelling DEP, O7:, LA with a green tick, mid-flip" width="160">
   <h1>DepartureBoard</h1>
   <p><b>An open-source split-flap departure board for any TV. One command, one board.</b></p>
   <img src="docs/media/board-demo.gif" alt="The board flipping from a departures list to a message, one column after another" width="800">
@@ -47,9 +48,9 @@ The first time, the page walks you through — four steps over its own controls,
 Optional: copy `.env.example` to `.env` to change the port, set your timezone, bring your own
 token, **give the board a name** (`DEPARTUREBOARD_HOST=dboard.localhost`; what a name does and
 does not do is in the [TV guide](docs/tv-setup.md#giving-the-board-a-name)), or **pin a version**
-for a board on a wall (`DEPARTUREBOARD_IMAGE=ghcr.io/cmldexter/departureboard:0.4.0`).
+for a board on a wall (`DEPARTUREBOARD_IMAGE=ghcr.io/cmldexter/departureboard:0.5.0`).
 Every image is built by [a public workflow](.github/workflows/release.yml) with a provenance
-attestation: `gh attestation verify oci://ghcr.io/cmldexter/departureboard:0.4.0 --owner cmldexter`.
+attestation: `gh attestation verify oci://ghcr.io/cmldexter/departureboard:0.5.0 --owner cmldexter`.
 
 To build from source instead: `docker compose -f compose.yaml -f compose.dev.yaml up --build`,
 or `uv sync && uv run fastapi dev app/main.py` for a dev server on port 8000.
