@@ -93,6 +93,7 @@ def resolve_display(raw: Mapping[str, Any]) -> dict[str, Any]:
         },
         "guest_token": str(merged["guest_token"] or "").strip(),
         "guest_auto_approve": _as_bool(merged["guest_auto_approve"]),
+        "setup_done": "1" if str(merged["setup_done"] or "").strip() == "1" else "",
         "active_profile": str(merged["active_profile"] or "").strip(),
         "calendar_everyday": str(merged["calendar_everyday"] or "").strip(),
         "calendar_applied": str(merged["calendar_applied"] or "").strip(),

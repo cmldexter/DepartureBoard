@@ -1,6 +1,6 @@
 """Display settings: what the board looks like. Bearer token."""
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
 from app.config import Settings
@@ -57,3 +57,18 @@ def patch_settings(
         guest.disable_qr_messages(session)  # a code to a closed door comes off the board
     session.commit()
     return display_settings(session)
+
+
+@router.delete(
+    "/setup_done",
+    summary="Show the first-run walkthrough again",
+    description=(
+        "Clears `setup_done`, so the next visit to `/settings` opens the walkthrough — what "
+        "*Setup → Run the walkthrough again* does. For agents and tests."
+    ),
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def reset_setup_done(session: Session = Depends(get_session)):
+    session.merge(Setting(key="setup_done", value=""))
+    session.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

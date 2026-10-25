@@ -32,6 +32,20 @@ def test_every_doc_knows_about_guests():
     assert "twenty posts an hour" in readme and "two hundred" in readme
     assert guest.PER_IP_HOUR == 20 and guest.PER_BOARD_HOUR == 200, "the README says it in words"
     for path, needles in (
+        ("CHANGELOG.md", ("#133", "#134", "#135")),
+        (
+            "README.md",
+            (
+                "walks you through",
+                "welcome-step1.png",
+                "welcome-step3.png",
+                "Run the walkthrough again",
+                "docs/tv-setup.md#the-one-minute-version",
+            ),
+        ),
+        ("docs/tv-setup.md", ("walks you through", "## The one-minute version")),
+        ("llms.txt", ("setup_done", "DELETE /api/settings/setup_done")),
+        ("integrations/skills/departureboard/SKILL.md", ("setup_done",)),
         ("llms.txt", ("/api/guest/rotate", "/api/guest/qr", "/api/posts", "guest_auto_approve")),
         ("llms.txt", ("/api/profiles", "kept_disabled", "active_profile")),
         ("integrations/skills/departureboard/SKILL.md", ("/api/profiles",)),

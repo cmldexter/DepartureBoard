@@ -1,5 +1,6 @@
 """The HTML pages: the board, the settings page, the integrate page."""
 
+import base64
 from datetime import UTC, datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -9,6 +10,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, Red
 
 from app import __version__
 from app.models import BUILTIN_BACKGROUNDS, THEMES
+from app.services import qr
 from app.services.auth import COOKIE_NAME, _presented_token, token_matches
 from app.services.display import display_settings, resolve_display
 from app.services.tls import local_ipv4s
@@ -128,6 +130,15 @@ def settings_page(request: Request):
         )
     settings = request.app.state.settings
     now = datetime.now(UTC).astimezone(ZoneInfo(settings.tz))
+    addresses = board_addresses(request)
+    with next(request.app.state.db.session()) as session:
+        welcome = display_settings(session)["setup_done"] != "1"
+    # The walkthrough's step 3: the board's first address as a QR a phone scans off the screen.
+    welcome_qr = (
+        "data:image/png;base64," + base64.b64encode(qr.png(addresses[0]["url"])).decode()
+        if welcome
+        else ""
+    )
     return templates.TemplateResponse(
         request,
         "settings.html",
@@ -137,8 +148,10 @@ def settings_page(request: Request):
             "server_time": now.strftime("%Y-%m-%d %H:%M"),
             "themes": list(THEMES),
             "backgrounds": list(BUILTIN_BACKGROUNDS),
-            "addresses": board_addresses(request),
+            "addresses": addresses,
             "named": bool(settings.host),
+            "welcome": welcome,
+            "welcome_qr": welcome_qr,
         },
     )
 

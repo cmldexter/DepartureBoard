@@ -245,7 +245,7 @@
       turns among themselves at the priority below, each for its seconds. <em>Rotate</em> makes a new link and kills
       the old one; <em>Turn off</em> closes the door. Photos lose their location data before they are stored.</p>
     <div class="card" id="guest-link">
-      <p id="guest-off" class="row"><span>Guests are off — there is no link.</span> <button type="button" class="small" id="guest-make">Make a link</button></p>
+      <p id="guest-off" class="empty"><span>Guests are off — there is no link.</span> <button type="button" class="small" id="guest-make">Make a link</button></p>
       <p id="guest-on" hidden><span class="muted">Guest link</span> <code class="token" id="guest-url"></code>
         <button type="button" class="link" id="guest-copy">Copy</button> · <button type="button" class="link" id="guest-rotate">Rotate</button> · <button type="button" class="link" id="guest-close">Turn off</button></p>
       <p id="guest-qr-row" class="row" hidden><button type="button" class="small" id="guest-qr">Put the QR on the board</button>
@@ -268,6 +268,7 @@
 
   <div id="panel-boards" class="panel" role="tabpanel" aria-labelledby="tab-boards" tabindex="0" hidden>
     <p class="muted panel-intro">Your saved boards live in the strip at the top — <em>Switch…</em>, <em>Save as…</em>, the ⋯ menu. Here you plan them ahead.</p>
+    <p class="empty" id="boards-empty" hidden><span>No saved boards yet — the calendar plans saved boards.</span> <button type="button" class="small" id="boards-empty-save">Save this board under a name</button></p>
   <section id="calendar" aria-labelledby="calendar-heading">
     <div class="row"><h2 id="calendar-heading">Calendar</h2><span class="muted" id="calendar-today" role="status"></span></div>
     <p class="muted">Plan the boards ahead: a saved board for a day or a range, and it comes up by itself at midnight
@@ -317,6 +318,8 @@
     <details><summary>Show token</summary><pre class="token">{{ token }}</pre></details>
   </section>
     <p class="muted">Post from a script, a calendar or an agent: <a href="/integrate">the integrate page</a> has every call pre-filled; <a href="/docs">the API docs</a> list them all.</p>
+    <p class="row"><button type="button" class="small" id="welcome-again">Run the walkthrough again</button>
+      <span class="muted">The four steps from the first visit: your TV, a first message, the address, the token.</span></p>
   </div>
   </div>
   <aside id="side" class="side" aria-label="The board, live">
@@ -357,6 +360,63 @@
 
 
 
+
+  {% if welcome %}
+  <dialog id="welcome" class="sheet welcome" aria-labelledby="welcome-1-title">
+    <header class="row">
+      <button type="button" class="link" id="welcome-skip-all">Skip the tour</button>
+      <h2>Welcome</h2>
+      <span class="muted" id="welcome-where">1 of 4</span>
+    </header>
+    <ol class="dots" id="welcome-dots" aria-hidden="true"><li class="on"></li><li></li><li></li><li></li></ol>
+    <section class="step" id="welcome-1" aria-labelledby="welcome-1-title">
+      <h3 id="welcome-1-title">1 · Your TV</h3>
+      <p class="muted">The size that fits the screen, and a look. The board below is the one on the TV: it follows as you pick, nothing to save.</p>
+      <div class="chips" role="radiogroup" aria-label="Size">
+        <label class="chip"><input type="radio" name="welcome_preset" value="compact"> Compact · 42–48″ · 6 × 22</label>
+        <label class="chip"><input type="radio" name="welcome_preset" value="large"> Large · 55–77″ · 8 × 28</label>
+      </div>
+      <div class="swatches" id="welcome-themes" role="radiogroup" aria-label="Theme">
+        {% for t in themes %}
+        <button type="button" class="swatch" role="radio" aria-checked="false" data-theme="{{ t }}" tabindex="-1">
+          <img src="/static/themes/{{ t }}.png" alt="" width="320" height="180">
+          <span>{{ t.replace('-', ' ').title() }}</span>
+        </button>
+        {% endfor %}
+      </div>
+      <p class="muted" id="welcome-1-status" role="status"></p>
+    </section>
+    <section class="step" id="welcome-2" aria-labelledby="welcome-2-title" hidden>
+      <h3 id="welcome-2-title">2 · Your first message</h3>
+      <p class="muted">Anything you type can go on the board right now. Try the line below, then watch the flaps turn.</p>
+      <label>The line <input id="welcome-text" type="text" maxlength="2000" value="WELCOME HOME 🏠" autocomplete="off"></label>
+      <p class="row"><button type="button" id="welcome-now">Put it on the board now</button><span class="muted" id="welcome-2-status" role="status"></span></p>
+      <p class="muted">Chips take a cell each — <code>{green}</code>, <code>{red}</code>, any emoji. The <strong>Messages</strong> tab schedules lines by the day and the hour; <em>Show something now</em> on the <strong>Board</strong> tab is for the rest.</p>
+    </section>
+    <section class="step" id="welcome-3" aria-labelledby="welcome-3-title" hidden>
+      <h3 id="welcome-3-title">3 · On the TV</h3>
+      <p class="muted">Your board is at</p>
+      <ul class="addresses">
+        {% for a in addresses %}
+        <li><code class="token">{{ a.url }}</code> <button type="button" class="link copy" data-copy="{{ a.url }}">Copy</button> <span class="muted">{{ a.label }}</span></li>
+        {% endfor %}
+      </ul>
+      <div class="qr"><img src="{{ welcome_qr }}" alt="QR code of the first address" width="160" height="160">
+        <p class="muted">Open the first address in the TV's browser and press <strong>⛶</strong> in the corner: fullscreen, clicks on, the screen kept awake. The code opens the board on a phone. From a laptop in Chrome, <strong>Cast to TV</strong> beside the live board sends it to a Chromecast or Google TV. Every device, from a Fire TV stick to a Raspberry Pi, is in the <a href="https://github.com/cmldexter/DepartureBoard/blob/main/docs/tv-setup.md#the-one-minute-version" rel="noopener" target="_blank">TV guide</a>.</p></div>
+    </section>
+    <section class="step" id="welcome-4" aria-labelledby="welcome-4-title" hidden>
+      <h3 id="welcome-4-title">4 · Your token</h3>
+      <p class="muted">The one you signed in with. Every write to the board needs it — a script, a calendar, an agent — as <code>Authorization: Bearer …</code>. Keep it out of screenshots.</p>
+      <div class="row"><pre class="token">{{ token }}</pre><button type="button" class="link copy" data-copy="{{ token }}">Copy</button></div>
+      <p class="muted">It lives on the <strong>Setup</strong> tab. The <a href="/integrate">integrate page</a> has every call pre-filled with it; the <a href="/docs">API docs</a> list them all.</p>
+    </section>
+    <div class="screen" id="welcome-screen" aria-hidden="true"><iframe id="welcome-board" src="/?embed" title="The board, live" tabindex="-1"></iframe></div>
+    <footer class="row">
+      <button type="button" class="link" id="welcome-skip">Skip this step</button>
+      <span><button type="button" class="small" id="welcome-prev" hidden>Back</button> <button type="button" id="welcome-next">Next</button></span>
+    </footer>
+  </dialog>
+  {% endif %}
 
   <dialog id="sheet" class="sheet" aria-labelledby="sheet-title">
     <header class="row">

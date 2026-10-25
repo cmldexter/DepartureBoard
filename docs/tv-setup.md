@@ -13,7 +13,9 @@ covers each device we know about. If yours is missing, or a section is wrong for
 2. Find that machine's address on your network (below).
 3. On the TV, open `http://<address>:8080` in a browser and press the **⛶** button in the
    bottom-right corner. The board goes fullscreen, the clicks turn on, and the screen stays awake.
-4. On your laptop or phone, open `http://<address>:8080/settings` and write a message.
+4. On your laptop or phone, open `http://<address>:8080/settings`. The first time, the page
+   walks you through four steps — the TV's size and look, a first message, this address with a
+   QR for a phone, your token — and its step 3 points back here. Then write a message.
 
 The board says `SET UP AT /SETTINGS` until a message is live. It refreshes itself every few
 seconds; nothing on the TV ever needs a reload.
