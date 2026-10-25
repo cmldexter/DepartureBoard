@@ -9,6 +9,13 @@ and a container image `ghcr.io/cmldexter/departureboard:X.Y.Z`.
 
 ### Added
 
+- **The Boards strip** (#121). Under the settings page's header: *This board: Party* with
+  *Switch…*, *Save*, *Save as…* and a ⋯ menu for Duplicate, Rename and Delete, each one call; a
+  dot after the name when the live board differs from its saved file (`changed` on the listing);
+  switching asks first when there are unsaved changes; the live card and every list follow a load.
+- **Docs: boards from the API** (#132). `docs/profiles.md` (the file, what a switch replaces and
+  keeps — every message travels, a `/now` one too —, the cron recipe), a README *Boards* paragraph
+  with a capture, `llms.txt`, the Agent Skill, `examples.sh profile save|load|list`.
 - **Boards you can switch** (#120). The live board — its messages and display settings — saved
   under a name as a plain JSON file, `profiles/<slug>.json`, in the data directory: `GET
   /api/profiles`, `POST /api/profiles/{slug}/save`, `POST /api/profiles/{slug}/load` (replaces the

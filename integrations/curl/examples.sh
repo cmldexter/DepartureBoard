@@ -10,6 +10,7 @@
 #   ./examples.sh weekly "BINS OUT TONIGHT" 4 18:00 23:00      # repeat_days: Mon 1 Tue 2 Wed 4 Thu 8 Fri 16 Sat 32 Sun 64
 #   ./examples.sh image ./cat.png cat                            # then "HELLO {img:cat}"
 #   ./examples.sh qr menu "https://example.com/menu"            # a QR code, drawn whole — then "SCAN ME {img:menu}"
+#   ./examples.sh profile save party "Party" | load party | list   # the live board as a saved file; load puts it on the TV
 #   ./examples.sh list [live|scheduled|expired|disabled]
 #   ./examples.sh delete 12
 #   ./examples.sh preset large|compact|custom [rows cols]
@@ -17,7 +18,7 @@
 #   ./examples.sh --demo                                         # only checks the host answers
 set -euo pipefail
 
-usage() { sed -n '2,17p' "$0" | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '2,18p' "$0" | sed 's/^# \{0,1\}//'; }
 
 need() {
   if [ -z "${DB_URL:-}" ]; then echo "DB_URL is not set (e.g. http://192.168.1.20:8080)" >&2; exit 2; fi
@@ -37,6 +38,12 @@ db_weekly()  { need; json -X POST "$DB_URL/api/messages" -d "$(jq -cn --arg t "$
 db_image()   { need; curl -fsS -X POST "$DB_URL/api/images" -H "$(auth)" -F "file=@$1" ${2:+-F "slug=$2"}; echo; }
 db_qr()      { need; json -X POST "$DB_URL/api/images/qr" -d "$(jq -cn --arg s "$1" --arg d "$2" '{slug:$s, data:$d}')"; }
 db_list()    { need; curl -fsS "$DB_URL/api/messages${1:+?state=$1}" -H "$(auth)"; echo; }
+db_profile() { need; case "${1:-}" in
+  list) curl -fsS "$DB_URL/api/profiles" -H "$(auth)"; echo ;;
+  save) json -X POST "$DB_URL/api/profiles/$2/save" -d "$(jq -cn --arg n "${3:-$2}" '{name:$n}')" ;;
+  load) curl -fsS -X POST "$DB_URL/api/profiles/$2/load" -H "$(auth)"; echo ;;
+  *) usage; exit 2 ;;
+esac; }
 db_delete()  { need; curl -fsS -X DELETE "$DB_URL/api/messages/$1" -H "$(auth)" -o /dev/null -w 'deleted %{http_code}\n'; }
 db_preset()  { need; if [ "$1" = custom ]; then json -X PATCH "$DB_URL/api/settings" -d "{\"grid_preset\":\"custom\",\"rows\":$2,\"cols\":$3}"; else json -X PATCH "$DB_URL/api/settings" -d "{\"grid_preset\":\"$1\"}"; fi; }
 
@@ -48,6 +55,7 @@ case "${1:-}" in
   weekly)  db_weekly "$2" "$3" "$4" "$5" ;;
   image)   db_image "$2" "${3:-}" ;;
   qr)      db_qr "$2" "$3" ;;
+  profile) db_profile "${2:-}" "${3:-}" "${4:-}" ;;
   list)    db_list "${2:-}" ;;
   delete)  db_delete "$2" ;;
   preset)  db_preset "$2" "${3:-}" "${4:-}" ;;

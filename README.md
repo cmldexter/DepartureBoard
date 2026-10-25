@@ -64,6 +64,17 @@ or `uv sync && uv run fastapi dev app/main.py` for a dev server on port 8000.
 Everything on the board comes from `/settings`: one page, on a laptop or a phone, signed in with
 the token the first boot printed.
 
+<img src="docs/media/settings-boards.png" alt="The Boards strip: This board: Party, two messages, saved today; Switch…, Save, Save as… and a ⋯ menu" width="800">
+
+**Boards.** The strip under the header names the board you are looking at — *This board: Party* —
+with *Switch…*, *Save*, *Save as…* and a ⋯ menu for Duplicate, Rename and Delete. A board is its
+messages and its display settings together: *Save as…* keeps the live one under a name, *Switch…*
+puts a saved one on the TV, and a dot after the name says the live board has changed since it was
+saved. Each saved board is one JSON file in the data directory — hand-editable, and the export
+format — so a party board, a work board and a holiday board are a switch apart, and an agent can
+swap them on a schedule. [docs/profiles.md](docs/profiles.md) has the format and what a switch
+replaces.
+
 <img src="docs/media/settings-live.png" alt="The top of the settings page: the board as the TV shows it, a Cast button, and the line naming the live message" width="800">
 
 **On the TV.** The page opens with the board as the TV sees it, live, and the message that is
