@@ -9,6 +9,22 @@ and a container image `ghcr.io/cmldexter/departureboard:X.Y.Z`.
 
 ### Added
 
+- **First run** (#133). The first time the settings page opens (`setup_done` unset) a walkthrough
+  takes over — a sheet on a phone, a panel on a desk — in four steps over the page's own calls:
+  *Your TV* (Compact or Large and the four themes; the board in the step follows at once), *Your
+  first message* (`WELCOME HOME 🏠`, *Put it on the board now* — two minutes on the TV), *On the
+  TV* (the addresses with Copy, a QR that opens the board on a phone, Cast, the TV guide), *Your
+  token* (with Copy). *Skip* on every step; *Skip the tour* and Escape end it; *Done* sets
+  `setup_done`. **Setup → Run the walkthrough again** and `DELETE /api/settings/setup_done` bring it
+  back. The key is not part of a saved board and never reaches the TV.
+- **Empty states** (#134). Every tab says what to do next when it has nothing — one line and one
+  button, one component: *Nothing scheduled yet · Write your first message* (opens the form), *No
+  pictures yet · Upload a picture · Make a QR code*, *No saved boards yet · Save this board under a
+  name*, *Guests are off · Make a link*, and the live card's *Idle · Set it in Display*. On a phone
+  the button opens the sheet; on a desk it goes to the form.
+- **Docs: the first five minutes** (#135). The README's *Quick start* is the walkthrough in five
+  lines with captures of steps 1 and 3; `docs/tv-setup.md` is where step 3 lands; `llms.txt` and
+  the Agent Skill note `setup_done`.
 - **The board in your pocket** (#124). Under 700 px the settings page is a phone page: the tabs
   are a bottom bar with icons; the Board tab opens on *Show something now* — a line, a chip for
   30 s / 2 min / 10 min or until replaced, *Show now* — with the live card folded to a strip that

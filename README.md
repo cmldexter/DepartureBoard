@@ -23,16 +23,26 @@ docker compose up -d
 That pulls the published image (`ghcr.io/cmldexter/departureboard`, amd64 and arm64, so a
 Raspberry Pi can host it) and serves on port 8080. Then:
 
-- On the TV, open `http://<this machine>:8080` and press the **⛶** button: fullscreen, clicks on,
-  screen kept awake. The TV side, device by device, is in [**docs/tv-setup.md**](docs/tv-setup.md).
-- On your laptop, open `http://<this machine>:8080/settings`. The token it asks for was printed
-  in the server log on first boot. To get it again without reading logs:
+Open `http://<this machine>:8080/settings` on your laptop or phone. The token it asks for was
+printed in the server log on first boot; to get it again without reading logs:
 
-  ```bash
-  docker compose exec departureboard cat /data/api_token            # the container
-  pbcopy < data/api_token                                            # a `uv run` dev server, macOS: straight to the clipboard
-  xclip -selection clipboard < data/api_token                        # Linux
-  ```
+```bash
+docker compose exec departureboard cat /data/api_token            # the container
+pbcopy < data/api_token                                            # a `uv run` dev server, macOS: straight to the clipboard
+xclip -selection clipboard < data/api_token                        # Linux
+```
+
+The first time, the page walks you through — four steps over its own controls, *Skip* on each:
+
+1. **Your TV** — Compact or Large, and a look. The board on the page follows as you pick.
+2. **Your first message** — `WELCOME HOME 🏠`, *Put it on the board now*: two minutes on the TV.
+3. **On the TV** — the board's address with Copy, a QR that opens it on a phone, Cast for a
+   Chromecast, and the [TV guide](docs/tv-setup.md#the-one-minute-version). On the TV, open the
+   address and press **⛶**: fullscreen, clicks on, screen kept awake.
+4. **Your token** — where it lives, Copy, and that every script, calendar or agent sends it.
+5. *Done.* **Setup → Run the walkthrough again** brings it back.
+
+<p><img src="docs/media/welcome-step1.png" alt="Step 1 of the walkthrough: Your TV — Compact or Large, the four theme swatches with Walnut picked, and the board below following" width="400"> <img src="docs/media/welcome-step3.png" alt="Step 3: On the TV — the board's addresses with Copy, a QR code that opens the board on a phone, and the way to the TV guide" width="400"></p>
 
 Optional: copy `.env.example` to `.env` to change the port, set your timezone, bring your own
 token, **give the board a name** (`DEPARTUREBOARD_HOST=dboard.localhost`; what a name does and
