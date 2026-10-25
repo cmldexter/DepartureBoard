@@ -7,8 +7,35 @@ and a container image `ghcr.io/cmldexter/departureboard:X.Y.Z`.
 
 ## [Unreleased]
 
+_Nothing yet._
+
+## [0.5.0] — 2026-10-25
+
 ### Added
 
+- **The settings page in tabs** (#122). Six tabs — *Board*, *Messages*, *Pictures*, *Guests*,
+  *Boards*, *Setup* — over the same sections with their ids kept, so every link still lands:
+  hash-addressed (`/settings#messages`), the last one remembered per browser, arrow keys across
+  the tab list; the live card keeps polling while another tab shows; the Guests tab counts the
+  posts waiting.
+- **The desktop layout** (#123). Above 1100 px the settings page is two columns: the tab's content
+  on the left and the live card pinned on the right whatever tab you are on — with the message
+  form's preview under it while you type, so a slider, a message or an approval shows its effect
+  without scrolling. The messages table gets a sticky header, fixed columns and row hover. One
+  column again below 1100 px, with the live card at the top of the Board tab as before. The README's
+  settings captures retaken; the tour reads as tabs.
+- **The board in your pocket** (#124). Under 700 px the settings page is a phone page: the tabs
+  are a bottom bar with icons; the Board tab opens on *Show something now* — a line, a chip for
+  30 s / 2 min / 10 min or until replaced, *Show now* — with the live card folded to a strip that
+  says what is on and expands on tap; the main screens stay short, and an edit takes you to a
+  screen of its own that brings you back when it is done: Theme, Behind the board, The flaps,
+  Display, a new or edited message, Upload a picture (with *Take a photo* straight from the
+  camera), Make a QR code, a picture's size, Plan a board. Targets are thumb-sized. A web app
+  manifest and icons make *Add to Home Screen* an app-like remote (no service worker: the API is
+  never cached). The desktop layout is unchanged.
+- **Docs: the board in your pocket** (#125). A *From your phone* paragraph in the README with the
+  Board and Messages tabs as a phone shows them and *Add to Home Screen* in three lines;
+  `docs/tv-setup.md` gets *The phone as the remote*.
 - **First run** (#133). The first time the settings page opens (`setup_done` unset) a walkthrough
   takes over — a sheet on a phone, a panel on a desk — in four steps over the page's own calls:
   *Your TV* (Compact or Large and the four themes; the board in the step follows at once), *Your
@@ -25,24 +52,6 @@ and a container image `ghcr.io/cmldexter/departureboard:X.Y.Z`.
 - **Docs: the first five minutes** (#135). The README's *Quick start* is the walkthrough in five
   lines with captures of steps 1 and 3; `docs/tv-setup.md` is where step 3 lands; `llms.txt` and
   the Agent Skill note `setup_done`.
-- **The board in your pocket** (#124). Under 700 px the settings page is a phone page: the tabs
-  are a bottom bar with icons; the Board tab opens on *Show something now* — a line, a chip for
-  30 s / 2 min / 10 min or until replaced, *Show now* — with the live card folded to a strip that
-  says what is on and expands on tap; the main screens stay short, and an edit takes you to a
-  screen of its own that brings you back when it is done: Theme, Behind the board, The flaps,
-  Display, a new or edited message, Upload a picture (with *Take a photo* straight from the
-  camera), Make a QR code, a picture's size, Plan a board. Targets are thumb-sized. A web app
-  manifest and icons make *Add to Home Screen* an app-like remote (no service worker: the API is
-  never cached). The desktop layout is unchanged.
-- **Docs: the board in your pocket** (#125). A *From your phone* paragraph in the README with the
-  Board and Messages tabs as a phone shows them and *Add to Home Screen* in three lines;
-  `docs/tv-setup.md` gets *The phone as the remote*.
-- **The desktop layout** (#123). Above 1100 px the settings page is two columns: the tab's content
-  on the left and the live card pinned on the right whatever tab you are on — with the message
-  form's preview under it while you type, so a slider, a message or an approval shows its effect
-  without scrolling. The messages table gets a sticky header, fixed columns and row hover. One
-  column again below 1100 px, with the live card at the top of the Board tab as before. The README's
-  settings captures retaken; the tour reads as tabs.
 
 ## [0.4.0] — 2026-10-25
 
@@ -285,7 +294,8 @@ can afford — *"come find me when that exists."*
 - The board endpoint and the pictures are public so the TV never holds a secret; everything
   else needs the token. CORS is off unless origins are listed.
 
-[Unreleased]: https://github.com/cmldexter/DepartureBoard/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/cmldexter/DepartureBoard/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/cmldexter/DepartureBoard/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/cmldexter/DepartureBoard/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/cmldexter/DepartureBoard/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/cmldexter/DepartureBoard/compare/v0.1.0...v0.2.0
