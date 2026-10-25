@@ -43,7 +43,6 @@ html.has-backdrop .frame {
     calc((100vh - 2 * var(--frame) - 2 * var(--gap) - (var(--rows) - 1) * var(--gap)) / var(--rows) / 1.45)
   );
   --cell-h: calc(var(--cell-w) * 1.45);
-  --flip-ms: 70ms;
   height: 100vh;
   width: 100vw;
   display: grid;
@@ -157,10 +156,7 @@ html.has-backdrop .frame {
   border-radius: 0 0 0.5vmin 0.5vmin;
 }
 
-.cell .leaf.flip-a { animation: flip-a var(--flip-ms) ease-in forwards; }
-.cell .leaf.flip-b { animation: flip-b var(--flip-ms) ease-in forwards; }
-@keyframes flip-a { from { transform: rotateX(0); } to { transform: rotateX(-180deg); } }
-@keyframes flip-b { from { transform: rotateX(0); } to { transform: rotateX(-180deg); } }
+/* The flip itself is a Web Animation on the leaf (flap.js setCell): rotateX(0) → rotateX(-180deg). */
 
 .cell .split {
   position: absolute;

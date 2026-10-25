@@ -141,6 +141,18 @@ def test_builtin_backgrounds_ship_with_a_thumbnail_each(client):
     assert (root / "docs" / "backgrounds.md").exists()
 
 
+def test_flip_is_a_web_animation_not_a_class():
+    """A flip toggled as a CSS class can be cancelled out inside one style flush (two catch-up
+    steps in a slow frame) and never land; flap.js animates the leaf per step instead."""
+    from pathlib import Path
+
+    static = Path(__file__).resolve().parents[1] / "app" / "static"
+    flap = (static / "js" / "flap.js").read_text()
+    css = (static / "css" / "board.css").read_text()
+    assert "leaf.animate(" in flap and "animationend" not in flap
+    assert "flip-a" not in css and "@keyframes flip" not in css
+
+
 CONFIG_KEYS = {
     "rows",
     "cols",

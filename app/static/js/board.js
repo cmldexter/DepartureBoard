@@ -147,7 +147,7 @@
     }
     const step = stepMs(settings.animation);
     const stagger = step * STAGGER_RATIO;
-    frameEl.style.setProperty("--flip-ms", `${Math.round(step)}ms`);
+    Flap.setFlipMs(Math.round(step));
     const now = performance.now();
     next.idx.forEach((idx, pos) => {
       target[pos] = idx;

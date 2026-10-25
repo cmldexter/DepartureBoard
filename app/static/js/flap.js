@@ -111,6 +111,23 @@
     if (halfEl.style.backgroundPosition !== s.position) halfEl.style.backgroundPosition = s.position;
   }
 
+  // One flip = one Web Animation on the leaf (not a CSS class): a class toggled off and on
+  // again inside one style flush is no change to the engine, so a flip that ended in the same
+  // frame as two catch-up steps never restarted and its landing never ran — cells stuck with
+  // the old bottom half under the new top (seen on a TV and a busy laptop after a theme change).
+  // An Animation object per step is unambiguous: finish → land, cancel → gone.
+  const FLIP_FRAMES = [{ transform: "rotateX(0deg)" }, { transform: "rotateX(-180deg)" }];
+  let flipMs = 70;
+  function setFlipMs(ms) {
+    flipMs = Math.max(1, Number(ms) || 70);
+  }
+  function stopFlip(cell) {
+    const anim = cell.anim;
+    if (!anim) return;
+    cell.anim = null;
+    anim.cancel();
+  }
+
   // Flaps only move forward and wrap; the number of steps from one index to another.
   function stepsBetween(from, to) {
     const n = SEQUENCE.length;
@@ -171,9 +188,8 @@
       special: null,
       pending: null,
       pendingSpecial: null,
-      phase: 0,
+      anim: null,
     };
-    cell.leaf.addEventListener("animationend", () => commit(cell));
     return cell;
   }
 
@@ -185,7 +201,7 @@
     paint(cell.frontEl, cell.front, face, false);
     cell.pending = null;
     cell.pendingSpecial = null;
-    cell.leaf.classList.remove("flip-a", "flip-b");
+    stopFlip(cell); // the leaf returns to rest showing the front, which now carries the face
   }
 
   function sameSpecial(a, b) {
@@ -204,10 +220,10 @@
     if (index === cell.current && sameSpecial(special, cell.special) && cell.pending === null) {
       return;
     }
-    if (!flip) {
+    if (!flip || typeof cell.leaf.animate !== "function") {
       cell.pending = null;
       cell.pendingSpecial = null;
-      cell.leaf.classList.remove("flip-a", "flip-b");
+      stopFlip(cell);
       const face = faceOf(index, special);
       paint(cell.topEl, cell.top, face, false);
       paint(cell.bottomEl, cell.bottom, face, true);
@@ -229,10 +245,11 @@
     cell.pendingSpecial = special;
     cell.current = index;
     cell.special = special;
-    // Two identical animations, alternated, restart the flip without forcing a reflow.
-    cell.phase ^= 1;
-    cell.leaf.classList.remove(cell.phase ? "flip-a" : "flip-b");
-    cell.leaf.classList.add(cell.phase ? "flip-b" : "flip-a");
+    const anim = cell.leaf.animate(FLIP_FRAMES, { duration: flipMs, easing: "ease-in", fill: "forwards" });
+    anim.onfinish = () => {
+      if (cell.anim === anim) commit(cell);
+    };
+    cell.anim = anim;
   }
 
   window.Flap = {
@@ -245,6 +262,7 @@
     chipOf,
     faceOf,
     sameSpecial,
+    setFlipMs,
     invalidateMetrics,
     slice,
     stepsBetween,
