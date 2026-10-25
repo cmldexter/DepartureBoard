@@ -41,6 +41,7 @@ skill:
 > Every weekday at 9, say "STANDUP 09:30".
 > What is on the board right now? Clear it.
 > Put this picture on the board next to WELCOME HOME.   *(attach a PNG; it uploads it and uses `{img:…}`)*
+> Put a QR code for https://example.com/menu on the board under SCAN FOR THE MENU.   *(`POST /api/images/qr`, then the token)*
 > Switch the board to the large preset and the walnut theme.
 
 ## Without the skill: one tool

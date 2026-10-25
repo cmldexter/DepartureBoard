@@ -64,6 +64,19 @@ curl -X POST ${h}/api/messages/now \\
   --data 'HELLO {img:cat}'`,
       response: `201 Created on each. PNG, JPEG, GIF or WebP up to 5 MB; the same slug replaces.`,
     },
+    qr: {
+      title: "A QR code the server makes, drawn whole so a phone scans it",
+      curl: (h, t) => `curl -X POST ${h}/api/images/qr \\
+  -H "Authorization: Bearer ${t}" \\
+  -H "Content-Type: application/json" \\
+  -d '{"slug":"menu","data":"https://example.com/menu"}'
+# → {"slug":"menu","token":"{img:menu}","w":4,"h":3,"solid":true,"qr":{"data":"https://example.com/menu"}, …}
+curl -X POST ${h}/api/messages/now \\
+  -H "Authorization: Bearer ${t}" \\
+  -H "Content-Type: text/plain" \\
+  --data $'SCAN FOR THE MENU\\n{img:menu}'`,
+      response: `201 Created on each; the same slug again remakes the code (200) and keeps its size. 4 × 3 cells scan from the sofa on Compact.`,
+    },
     list: {
       title: "What is live right now",
       curl: (h, t) => `curl ${h}/api/messages?state=live \\
