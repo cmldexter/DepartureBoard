@@ -25,6 +25,9 @@ PER_IP_HOUR = 20  # posts per hour from one address
 PER_BOARD_HOUR = 200  # posts per hour for the whole board
 PHOTO_ROWS = 4  # a guest photo keeps its shape at this height in cells
 TOKEN_CHARS = 20
+QR_SLUG = "guest-qr"  # the picture of the guest link, made by POST /api/guest/qr
+QR_TOKEN = "{img:guest-qr}"
+QR_TEXT = f"SCAN TO POST A PHOTO\n{QR_TOKEN}"  # the ready-made message, created disabled
 
 
 def mint_token() -> str:
@@ -152,3 +155,43 @@ def remove(session: Session, settings: Settings, post: Post) -> None:
     """Reject, then forget the row too."""
     reject(session, settings, post)
     session.delete(post)
+
+
+# ---- the QR that opens the guest page
+
+
+def qr_messages(session: Session) -> list[Message]:
+    """Every message that carries the guest QR — the ready-made one, or one the host wrote."""
+    return list(session.scalars(select(Message).where(Message.text.contains(QR_TOKEN))))
+
+
+def make_qr(
+    session: Session, settings: Settings, url: str, source: str
+) -> tuple[bool, Message, bool]:
+    """Make (or remake) the picture of the guest link and the message that carries it.
+    Returns (picture remade, the message, message created). The message is created disabled —
+    the host switches it on when the party starts; an existing one keeps its state."""
+    _, remade = images.save_qr(settings, QR_SLUG, url)
+    existing = qr_messages(session)
+    if existing:
+        return remade, existing[0], False
+    m = Message(text=QR_TEXT, enabled=False, source=source)
+    session.add(m)
+    session.flush()
+    return remade, m, True
+
+
+def refresh_qr(settings: Settings, url: str) -> bool:
+    """After a rotate: the picture, when there is one, now carries the new link."""
+    if images.find(settings, QR_SLUG) is None:
+        return False
+    images.save_qr(settings, QR_SLUG, url)
+    return True
+
+
+def disable_qr_messages(session: Session) -> int:
+    """Guests off: a code to a closed door comes off the board."""
+    found = qr_messages(session)
+    for m in found:
+        m.enabled = False
+    return len(found)

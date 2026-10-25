@@ -752,8 +752,23 @@
   function showGuestLink(token) {
     guestOff.hidden = !!token;
     guestOn.hidden = !token;
+    $("#guest-qr-row").hidden = !token;
     guestUrl.textContent = token ? `${boardUrl()}/guest/${token}` : "";
   }
+  $("#guest-qr").addEventListener("click", async () => {
+    try {
+      const out = await api("/api/guest/qr", { method: "POST" });
+      const where = out.enabled ? `is on the board (${out.state})` : "is in the Messages list, disabled — switch it on when the party starts";
+      $("#guest-qr-note").textContent = `${out.token} carries the link; SCAN TO POST A PHOTO ${where}. Rotate remakes the code; Turn off takes the message off.`;
+      toast(`${out.token} made — the message is in the list${out.enabled ? "" : ", disabled"}.`);
+      await loadImages();
+      await loadMessages();
+      refreshLive();
+      $(`tr[data-id="${out.message_id}"] .switch input`, rowsEl)?.focus();
+    } catch (e) {
+      toast(e.message, true);
+    }
+  });
   async function rotateGuest(said) {
     try {
       const link = await api("/api/guest/rotate", { method: "POST" });

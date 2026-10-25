@@ -301,6 +301,16 @@ class GuestLink(BaseModel):
     url: str
 
 
+class GuestQr(BaseModel):
+    """The QR code of the guest link, on the board: the picture and the message that carries it."""
+
+    url: str = Field(description="The guest link the code opens")
+    token: str = Field(description="The picture's token for a message: {img:guest-qr}")
+    message_id: int = Field(description="The ready-made SCAN TO POST A PHOTO message")
+    enabled: bool = Field(description="Whether that message is switched on")
+    state: State
+
+
 class PostOut(BaseModel):
     """A guest post in the queue and, once approved, the message it became."""
 
