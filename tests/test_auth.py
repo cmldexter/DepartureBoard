@@ -86,6 +86,10 @@ def test_settings_page_panels(client, token):
         'id="board-switch"',
         'id="board-save-as"',
         'id="board-delete"',
+        'id="calendar"',
+        'id="calendar-form"',
+        'id="calendar-everyday"',
+        'id="calendar-months"',
         'id="qr-board"',
     ):
         assert needle in r.text, needle
