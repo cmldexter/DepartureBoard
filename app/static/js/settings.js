@@ -55,7 +55,7 @@
   const boardSwitch = $("#board-switch");
   const slugify = (name) => name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || "board";
   const fmtSaved = (iso) => (iso ? new Date(iso).toLocaleString([], { dateStyle: "short", timeStyle: "short" }) : "");
-  function renderBoards() {
+  let renderBoards = function () {
     activeBoard = boards.find((b) => b.active) || null;
     $("#board-name").textContent = activeBoard ? activeBoard.name : "unsaved board";
     $("#board-dot").hidden = !(activeBoard && activeBoard.changed);
@@ -67,7 +67,7 @@
     boardSwitch.value = boards.some((b) => b.slug === current) ? current : "";
     boardSwitch.disabled = !boards.length;
     for (const id of ["board-duplicate", "board-rename", "board-delete"]) $(`#${id}`).disabled = !activeBoard;
-  }
+  };
   async function loadProfiles() {
     boards = await api("/api/profiles");
     renderBoards();
@@ -1081,6 +1081,226 @@
     if (document.visibilityState === "visible") loadPosts().catch(() => {});
   });
 
+  // ---- the calendar: saved boards on dates. The grid is drawn from the plan with the same rule
+  // the server applies (the later start wins); every change is applied at once so today's board
+  // follows, and the strip and the live card refresh when it did.
+  const calMonths = $("#calendar-months");
+  const calLegend = $("#calendar-legend");
+  const calForm = $("#calendar-form");
+  const calList = $("#calendar-list");
+  const calStatus = $("#calendar-status");
+  const calEveryday = $("#calendar-everyday");
+  const calToday = $("#calendar-today");
+  let plan = { everyday: "", entries: [], today: { date: "", profile: null, entry_id: null, until: null }, applied: "" };
+  const HUES = [38, 200, 330, 120, 270, 20, 180, 60];
+  const hueOf = (slug) => HUES[boards.findIndex((b) => b.slug === slug) % HUES.length] ?? 0;
+  const tint = (slug) => `hsl(${hueOf(slug)} 60% 45% / .55)`;
+  const nameOf = (slug) => (boards.find((b) => b.slug === slug) || {}).name || slug;
+  const dateOf = (iso) => { const [y, m, d] = iso.split("-").map(Number); return new Date(y, m - 1, d); };
+  const isoOf = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const fmtDay = (iso) => dateOf(iso).toLocaleDateString([], { month: "short", day: "numeric" });
+  const fmtRange = (e) => (e.end === e.start ? fmtDay(e.start) : `${fmtDay(e.start)} – ${e.end ? fmtDay(e.end) : "…"}`);
+  // the server's rule: the latest start wins, ties by id; an entry whose board is gone is skipped
+  function entryFor(iso) {
+    let best = null;
+    for (const e of plan.entries) {
+      if (e.missing || e.start > iso || (e.end && e.end < iso)) continue;
+      if (!best || e.start > best.start || (e.start === best.start && e.id > best.id)) best = e;
+    }
+    return best;
+  }
+  function renderMonths() {
+    calMonths.textContent = "";
+    if (!plan.today.date) return;
+    const first = dateOf(plan.today.date);
+    for (let k = 0; k < 2; k++) {
+      const y = first.getFullYear();
+      const m = first.getMonth() + k;
+      const start = new Date(y, m, 1);
+      const table = document.createElement("table");
+      table.className = "cal";
+      const caption = document.createElement("caption");
+      caption.textContent = start.toLocaleDateString([], { month: "long", year: "numeric" });
+      table.appendChild(caption);
+      table.innerHTML += '<thead><tr><th scope="col">Mon</th><th scope="col">Tue</th><th scope="col">Wed</th><th scope="col">Thu</th><th scope="col">Fri</th><th scope="col">Sat</th><th scope="col">Sun</th></tr></thead>';
+      const body = document.createElement("tbody");
+      let row = document.createElement("tr");
+      const lead = (start.getDay() + 6) % 7;
+      for (let i = 0; i < lead; i++) row.appendChild(document.createElement("td"));
+      const days = new Date(y, m + 1, 0).getDate();
+      for (let d = 1; d <= days; d++) {
+        const iso = isoOf(new Date(y, m, d));
+        const td = document.createElement("td");
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "day";
+        b.dataset.date = iso;
+        const e = entryFor(iso);
+        const who = e ? nameOf(e.profile) : plan.everyday ? nameOf(plan.everyday) : "";
+        b.innerHTML = `<span class="n"></span><span class="who"></span>`;
+        $(".n", b).textContent = d;
+        $(".who", b).textContent = e ? who : "";
+        if (e) b.style.setProperty("--tint", tint(e.profile));
+        if (iso === plan.today.date) b.classList.add("today");
+        if (iso < plan.today.date) b.classList.add("past");
+        b.setAttribute("aria-label", `${dateOf(iso).toLocaleDateString([], { weekday: "short", day: "numeric", month: "long" })}${iso === plan.today.date ? ", today" : ""}: ${e ? who : who ? `${who} (everyday)` : "nothing planned"}`);
+        b.addEventListener("click", () => {
+          calForm.id.value = "";
+          calForm.start.value = iso;
+          calForm.end.value = iso;
+          $("#calendar-form-title").textContent = "Plan a board";
+          $("#calendar-save").textContent = "Add to the plan";
+          $("#calendar-cancel").hidden = true;
+          calStatus.textContent = `${fmtDay(iso)} — pick a board, stretch Until if you like.`;
+          calForm.profile.focus();
+        });
+        td.appendChild(b);
+        row.appendChild(td);
+        if (row.children.length === 7) {
+          body.appendChild(row);
+          row = document.createElement("tr");
+        }
+      }
+      if (row.children.length) {
+        while (row.children.length < 7) row.appendChild(document.createElement("td"));
+        body.appendChild(row);
+      }
+      table.appendChild(body);
+      calMonths.appendChild(table);
+    }
+    const used = [...new Set(plan.entries.filter((e) => !e.missing).map((e) => e.profile))];
+    calLegend.textContent = "";
+    for (const slug of used) {
+      const s = document.createElement("span");
+      s.className = "swatch-dot";
+      s.style.setProperty("--tint", tint(slug));
+      s.textContent = nameOf(slug);
+      calLegend.appendChild(s);
+    }
+    if (plan.everyday) calLegend.append(`${used.length ? " · " : ""}plain: ${nameOf(plan.everyday)} (everyday)`);
+    else if (!used.length) calLegend.textContent = "Nothing planned yet.";
+  }
+  function renderPlan() {
+    calList.textContent = "";
+    if (!plan.entries.length) {
+      calList.innerHTML = '<li class="muted">No plan yet — pick a board and a day above.</li>';
+    }
+    for (const e of plan.entries) {
+      const li = document.createElement("li");
+      li.dataset.id = e.id;
+      li.innerHTML = '<span class="swatch-dot"></span><span class="when"></span> · <strong class="board"></strong><span class="note muted"></span><span class="actions"><button type="button" class="link edit">Edit</button> <button type="button" class="link delete">Delete</button></span>';
+      $(".swatch-dot", li).style.setProperty("--tint", e.missing ? "transparent" : tint(e.profile));
+      $(".when", li).textContent = fmtRange(e);
+      $(".board", li).textContent = e.missing ? `${e.profile} (board deleted — skipped)` : e.name || e.profile;
+      $(".note", li).textContent = e.note ? ` · “${e.note}”` : "";
+      $(".edit", li).setAttribute("aria-label", `Edit the plan for ${fmtRange(e)}`);
+      $(".delete", li).setAttribute("aria-label", `Delete the plan for ${fmtRange(e)}`);
+      $(".edit", li).addEventListener("click", () => {
+        calForm.id.value = e.id;
+        calForm.profile.value = e.missing ? "" : e.profile;
+        calForm.start.value = e.start;
+        calForm.end.value = e.end || "";
+        calForm.note.value = e.note;
+        $("#calendar-form-title").textContent = "Change the plan";
+        $("#calendar-save").textContent = "Save the plan";
+        $("#calendar-cancel").hidden = false;
+        calForm.scrollIntoView({ block: "nearest" });
+        calForm.profile.focus();
+      });
+      $(".delete", li).addEventListener("click", async () => {
+        if (!confirm(`Delete the plan for ${fmtRange(e)} (${e.name || e.profile})?`)) return;
+        try {
+          await api(`/api/calendar/${e.id}`, { method: "DELETE" });
+          await applyAndRefresh("Deleted.");
+          $("#calendar-heading").focus();
+        } catch (err) {
+          toast(err.message, true);
+        }
+      });
+      calList.appendChild(li);
+    }
+    const t = plan.today;
+    const untilText = (iso) => (!iso ? "until further notice" : iso === t.date ? "today only" : `until ${fmtDay(iso)}`);
+    calToday.textContent = t.profile
+      ? t.entry_id
+        ? `Today: ${nameOf(t.profile)} — ${untilText(t.until)}`
+        : `Today: ${nameOf(t.profile)} (the everyday board)`
+      : "Today: nothing planned — the board stays as it is.";
+  }
+  function fillCalendarSelects() {
+    for (const sel of [calForm.profile, calEveryday]) {
+      const keep = sel === calEveryday ? plan.everyday : sel.value;
+      sel.textContent = "";
+      if (sel === calEveryday) sel.append(new Option("Stay on the last board", ""));
+      for (const b of boards) sel.append(new Option(b.name, b.slug));
+      sel.value = keep;
+      if (sel.value !== keep) sel.value = sel === calEveryday ? "" : boards[0] ? boards[0].slug : "";
+    }
+    calForm.profile.disabled = calEveryday.disabled = !boards.length;
+    $("#calendar-save").disabled = !boards.length;
+    if (!boards.length) calStatus.textContent = "Save a board first (Save as… in the strip at the top).";
+  }
+  async function loadCalendar() {
+    plan = await api("/api/calendar");
+    fillCalendarSelects();
+    renderMonths();
+    renderPlan();
+  }
+  async function applyAndRefresh(said) {
+    const out = await api("/api/calendar/apply", { method: "POST" });
+    await loadCalendar();
+    if (out.changed) {
+      await loadProfiles(); // the names, incl. a board the switch just saved
+      calStatus.textContent = `${said} ${nameOf(out.loaded)} is on the board now${out.saved_back ? ` (the previous board was saved as ${nameOf(out.saved_back)})` : ""}.`;
+      await refreshAll();
+    } else {
+      calStatus.textContent = said;
+    }
+  }
+  calForm.addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    const body = { profile: calForm.profile.value, start: calForm.start.value, end: calForm.end.value || null, note: calForm.note.value.trim() };
+    const id = calForm.id.value;
+    try {
+      const e = id ? await api(`/api/calendar/${id}`, { method: "PATCH", body }) : await api("/api/calendar", { method: "POST", body });
+      calForm.reset();
+      calForm.id.value = "";
+      $("#calendar-form-title").textContent = "Plan a board";
+      $("#calendar-save").textContent = "Add to the plan";
+      $("#calendar-cancel").hidden = true;
+      await applyAndRefresh(`${e.name} ${id ? "planned" : "added"} for ${fmtRange(e)}.`);
+      toast(`${e.name}: ${fmtRange(e)}.`);
+    } catch (err) {
+      toast(err.message, true);
+    }
+  });
+  $("#calendar-cancel").addEventListener("click", () => {
+    calForm.reset();
+    calForm.id.value = "";
+    $("#calendar-form-title").textContent = "Plan a board";
+    $("#calendar-save").textContent = "Add to the plan";
+    $("#calendar-cancel").hidden = true;
+    calStatus.textContent = "";
+  });
+  calEveryday.addEventListener("change", async () => {
+    try {
+      await api("/api/settings", { method: "PATCH", body: { calendar_everyday: calEveryday.value } });
+      await applyAndRefresh(calEveryday.value ? `${nameOf(calEveryday.value)} is the everyday board.` : "No everyday board — the last planned board stays.");
+    } catch (err) {
+      toast(err.message, true);
+    }
+  });
+  // the strip's listing feeds the names and colours; redraw when it changes
+  const renderBoardsBase = renderBoards;
+  renderBoards = function () {
+    renderBoardsBase();
+    if (plan.today.date) {
+      fillCalendarSelects();
+      renderMonths();
+      renderPlan();
+    }
+  };
+
   // ---- server time ticks in the configured zone (rendered by the server; advance locally)
   const timeEl = $("#server-time");
   const base = new Date(timeEl.textContent.replace(" ", "T"));
@@ -1097,5 +1317,5 @@
   loadDisplay().catch((e) => toast(e.message, true));
   loadImages().catch((e) => toast(e.message, true));
   loadPosts().catch((e) => toast(e.message, true));
-  loadProfiles().catch((e) => toast(e.message, true));
+  loadProfiles().then(() => loadCalendar()).catch((e) => toast(e.message, true));
 })();

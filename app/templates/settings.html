@@ -262,6 +262,30 @@
     <ul id="guest-approved" class="posts" aria-labelledby="guest-approved-heading"></ul>
   </section>
 
+  <section id="calendar" aria-labelledby="calendar-heading">
+    <div class="row"><h2 id="calendar-heading">Calendar</h2><span class="muted" id="calendar-today" role="status"></span></div>
+    <p class="muted">Plan the boards ahead: a saved board for a day or a range, and it comes up by itself at midnight
+      (the board's time). The live board is saved back into its own file first, so nothing is lost. When days overlap
+      the later start wins; the <em>everyday board</em> shows between planned days. Click a day to start a plan there.</p>
+    <div class="months" id="calendar-months"></div>
+    <p class="legend muted" id="calendar-legend"></p>
+    <form id="calendar-form" class="card" aria-labelledby="calendar-form-title">
+      <h3 id="calendar-form-title">Plan a board</h3>
+      <input type="hidden" name="id">
+      <div class="grid2">
+        <label>Board <select name="profile" required></select></label>
+        <label>Note <span class="muted">(optional)</span><input type="text" name="note" maxlength="80" placeholder="family"></label>
+        <label>From <input type="date" name="start" required></label>
+        <label>Until <span class="muted">— blank = until further notice</span><input type="date" name="end"></label>
+      </div>
+      <div class="row"><span><button type="submit" id="calendar-save">Add to the plan</button> <button type="button" class="link" id="calendar-cancel" hidden>Cancel</button></span>
+        <span class="muted" id="calendar-status" role="status"></span></div>
+    </form>
+    <ul id="calendar-list" class="plan" aria-label="The plan"></ul>
+    <label class="everyday">Everyday board <span class="muted">— between planned days</span>
+      <select id="calendar-everyday"><option value="">Stay on the last board</option></select></label>
+  </section>
+
   <section>
     <h2>Your token</h2>
     <p>Every write to the board needs it. Keep it out of screenshots. The <a href="/docs">API docs</a> show every call.</p>
