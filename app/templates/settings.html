@@ -202,11 +202,17 @@
 
   <section id="images">
     <h2>Images</h2>
-    <p class="muted">PNG, JPEG, GIF or WebP up to 5 MB. A new picture takes one cell; give it a size below — a wide one reads best across a row — and it keeps its shape inside that block unless you choose otherwise.</p>
+    <p class="muted">PNG, JPEG, GIF or WebP up to 5 MB. A new picture takes one cell; give it a size below — a wide one reads best across a row — and it keeps its shape inside that block unless you choose otherwise. Or make a <strong>QR code</strong> from a link or a line of text: it is drawn whole over its block so a phone can scan it from the sofa.</p>
     <form id="image-form" class="card row">
       <label>File <input type="file" name="file" accept="image/png,image/jpeg,image/gif,image/webp" required></label>
       <label>Slug <span class="muted">(optional)</span> <input type="text" name="slug" pattern="[a-z0-9][a-z0-9\-]{0,39}" placeholder="my-cat"></label>
       <button type="submit">Upload</button>
+    </form>
+    <form id="qr-form" class="card row" aria-label="Make a QR code">
+      <label>QR code: text or link <input type="text" name="data" maxlength="1024" placeholder="https://… or WIFI:T:WPA;S:name;P:password;;" required></label>
+      <label>Slug <input type="text" name="slug" pattern="[a-z0-9][a-z0-9\-]{0,39}" placeholder="menu" required></label>
+      <span><button type="submit">Make QR</button> <button type="button" class="small" id="qr-board">Scan to open this board</button></span>
+      <span class="muted" id="qr-status" role="status"></span>
     </form>
     <ul id="image-list" class="images"></ul>
   </section>

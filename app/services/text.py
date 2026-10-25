@@ -117,6 +117,8 @@ def _block(slug: str, size: Mapping[str, Any] | None, w: str | None, h: str | No
         cell["solid"] = True
     if size and size.get("qr"):
         cell["qr"] = True
+    if size and size.get("v"):  # a replaced file is a new picture to the TV
+        cell["v"] = int(size["v"])
     return cell
 
 

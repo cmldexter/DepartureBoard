@@ -38,9 +38,10 @@ class Size(TypedDict):
     ar: float | None  # pixel aspect (width / height), None when unknown
     solid: bool  # drawn whole over the block (one overlay) instead of sliced per flap
     qr: bool  # a code the server made — drawn pixel-sharp
+    v: int  # the file's version, bumped on every save, so a replaced picture reaches the TV
 
 
-LEGACY: Size = {"w": 1, "h": 1, "fit": "stretch", "ar": None, "solid": False, "qr": False}
+LEGACY: Size = {"w": 1, "h": 1, "fit": "stretch", "ar": None, "solid": False, "qr": False, "v": 0}
 
 
 def images_dir(settings: Settings) -> Path:
@@ -113,7 +114,15 @@ def _size_of(meta: dict) -> Size:
         "ar": ar,
         "solid": bool(meta.get("solid")),
         "qr": isinstance(meta.get("qr"), dict),
+        "v": _as_version(meta.get("v")),
     }
+
+
+def _as_version(value: object) -> int:
+    try:
+        return max(0, int(value))  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return 0
 
 
 def size_of(path: Path) -> Size:
@@ -166,6 +175,7 @@ def save(settings: Settings, slug: str, content_type: str, data: bytes) -> tuple
             "fit": size["fit"],
             "solid": size["solid"],
             "px": list(px) if px else None,
+            "v": _as_version(kept.get("v")) + 1,
         },
     )
     return path, existing is not None
@@ -229,6 +239,6 @@ def describe(path: Path) -> dict:
         "solid": size["solid"],
         "width": px[0] if px else None,
         "height": px[1] if px else None,
-        "suggested": suggested(px),
+        "suggested": [list(b) for b in qr.BLOCKS] if size["qr"] else suggested(px),
         "qr": {"data": str(meta["qr"]["data"])} if size["qr"] and "data" in meta["qr"] else None,
     }

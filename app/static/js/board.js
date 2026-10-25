@@ -186,7 +186,7 @@
       const img = s && s.img;
       if (!img || !img.solid) return;
       const anchor = pos - (img.y || 0) * settings.cols - (img.x || 0);
-      const key = `${anchor}:${img.img}:${img.w}x${img.h}:${img.fit}`;
+      const key = `${anchor}:${img.img}:${img.w}x${img.h}:${img.fit}:${img.v || 0}`; // a remade file is a new overlay
       let b = nextBlocks.get(key);
       if (!b) {
         b = { key, anchor, img, parts: [], el: null };
@@ -234,7 +234,7 @@
     const el = document.createElement("div");
     el.className = `overlay${b.img.qr ? " qr" : ""}`;
     el.dataset.fit = b.img.fit || "contain";
-    el.style.backgroundImage = `url("/images/${b.img.img}")`;
+    el.style.backgroundImage = `url("/images/${b.img.img}${b.img.v ? `?v=${b.img.v}` : ""}")`;
     b.el = el;
     overlaysEl.appendChild(el);
     placeOverlay(b);

@@ -590,12 +590,13 @@
       const li = document.createElement("li");
       li.innerHTML = `<img alt=""><div class="meta"><code class="token"></code>
         <button type="button" class="link copy">Copy token</button> <button type="button" class="link delete">Delete</button>
-        <span class="muted size"></span></div>
+        <span class="muted size"></span><span class="muted qr-text" hidden></span> <button type="button" class="link edit" hidden>Edit text</button></div>
         <form class="sizing" aria-label="Size on the board">
           <label>Wide <input type="number" name="w" min="1" max="36" required></label>
           <span class="muted">×</span>
           <label>Tall <input type="number" name="h" min="1" max="10" required></label>
           <label>Fit <select name="fit"><option value="contain">keep its shape</option><option value="cover">fill, crop</option><option value="stretch">stretch</option></select></label>
+          <label class="check"><input type="checkbox" name="solid"> Draw whole</label>
           <span class="chips" role="group" aria-label="Sizes that keep its shape"></span>
           <button type="submit" class="small">Save size</button>
           <span class="muted applied" role="status"></span>
@@ -603,7 +604,7 @@
       $("img", li).src = `${img.url}?v=${Date.now()}`;
       $(".token", li).textContent = img.token;
       const kb = img.bytes / 1024;
-      $(".size", li).textContent = `${kb >= 1000 ? `${(kb / 1024).toFixed(1)} MB` : `${Math.round(kb)} KB`}${img.width ? ` · ${img.width} × ${img.height} px` : ""}`;
+      $(".size", li).textContent = `${kb >= 1000 ? `${(kb / 1024).toFixed(1)} MB` : kb < 1 ? "under 1 KB" : `${Math.round(kb)} KB`}${img.width ? ` · ${img.width} × ${img.height} px` : ""}`;
       const sizing = $(".sizing", li);
       sizing.setAttribute("aria-label", `Size of ${img.token} on the board`);
       sizing.w.value = img.w;
@@ -612,9 +613,27 @@
       sizing.w.setAttribute("aria-label", `${img.token}: cells wide`);
       sizing.h.setAttribute("aria-label", `${img.token}: cells tall`);
       sizing.fit.setAttribute("aria-label", `${img.token}: fit`);
+      sizing.solid.checked = !!img.solid;
+      sizing.solid.setAttribute("aria-label", `${img.token}: draw whole over its block`);
+      sizing.solid.addEventListener("change", () => sizing.requestSubmit());
+      if (img.qr) {
+        $(".qr-text", li).textContent = `“${img.qr.data}”`;
+        $(".qr-text", li).title = img.qr.data;
+        $(".qr-text", li).hidden = false;
+        const edit = $(".edit", li);
+        edit.hidden = false;
+        edit.setAttribute("aria-label", `Edit the text of ${img.token}`);
+        edit.addEventListener("click", () => {
+          qrForm.data.value = img.qr.data;
+          qrForm.slug.value = img.slug;
+          qrStatus.textContent = `Editing ${img.token} — Make QR remakes it; the board follows on its next poll.`;
+          qrForm.scrollIntoView({ block: "center", behavior: "smooth" });
+          qrForm.data.focus();
+        });
+      }
       const chips = $(".chips", li);
       if (img.suggested.length) {
-        chips.append("Keeps its shape at ");
+        chips.append(img.qr ? "Scans from the sofa at 4 × 3 on Compact, 5 × 4 on Large: " : "Keeps its shape at ");
         img.suggested.forEach(([w, h], i) => {
           const b = document.createElement("button");
           b.type = "button";
@@ -632,17 +651,18 @@
           chips.append(b);
         });
         if (img.w === 1 && img.h === 1 && img.width && img.width / img.height > 1.6) $(".applied", li).textContent = "This picture is wide — try the first size.";
+        if (img.qr && !img.solid) $(".applied", li).textContent = "Draw whole is off — a code sliced through the flaps will not scan.";
       } else if (img.width === null) {
         chips.textContent = "Pixel size unreadable — set the cells by hand.";
       }
       sizing.addEventListener("submit", async (ev) => {
         ev.preventDefault();
-        const body = { w: Number(sizing.w.value), h: Number(sizing.h.value), fit: sizing.fit.value };
+        const body = { w: Number(sizing.w.value), h: Number(sizing.h.value), fit: sizing.fit.value, solid: sizing.solid.checked };
         try {
           const saved = await api(`/api/images/${img.slug}`, { method: "PATCH", body });
           Object.assign(img, saved);
           $$(".chip", chips).forEach((b) => b.setAttribute("aria-pressed", String(b.textContent === `${saved.w} × ${saved.h}`)));
-          $(".applied", li).textContent = `${saved.w} × ${saved.h}, ${sizing.fit.selectedOptions[0].textContent} — the board picks it up on its next poll.`;
+          $(".applied", li).textContent = `${saved.w} × ${saved.h}, ${sizing.fit.selectedOptions[0].textContent}${saved.solid ? ", drawn whole" : ""} — the board picks it up on its next poll.`;
           toast(`${img.token} is ${saved.w} × ${saved.h} cells.`);
           if (!form.hidden) preview();
           await loadMessages(); // a bigger picture can overflow a message
@@ -686,6 +706,33 @@
     } catch (e) {
       toast(e.message, true);
     }
+  });
+
+  // ---- a QR code from text or a link: the server makes the picture; the same slug remakes it
+  const qrForm = $("#qr-form");
+  const qrStatus = $("#qr-status");
+  qrForm.addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    const body = { slug: qrForm.slug.value.trim().toLowerCase(), data: qrForm.data.value.trim() };
+    try {
+      const img = await api("/api/images/qr", { method: "POST", body });
+      qrStatus.textContent = `${img.token} is a ${img.w} × ${img.h} code — put it in a message.`;
+      toast(`${img.token} made. Put it in a message; it scans from the sofa at ${img.w} × ${img.h}.`);
+      qrForm.reset();
+      await loadImages();
+      if (!form.hidden) preview();
+      refreshLive(); // a remade code is a new picture to the TV
+    } catch (e) {
+      toast(e.message, true);
+    }
+  });
+  $("#qr-board").addEventListener("click", () => {
+    const first = $("#addresses .addresses code");
+    if (!first) return;
+    qrForm.data.value = first.textContent.trim();
+    qrForm.slug.value = "board";
+    qrStatus.textContent = "Scan to open this board — Make QR.";
+    qrForm.data.focus();
   });
 
   // ---- server time ticks in the configured zone (rendered by the server; advance locally)

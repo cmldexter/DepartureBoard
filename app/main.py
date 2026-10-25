@@ -49,7 +49,13 @@ TAGS = [
     {"name": "messages", "description": "What the board says and when. Bearer token."},
     {"name": "board", "description": "What the TV shows right now. Public, cheap to poll."},
     {"name": "settings", "description": "Preset, animation, sound, theme, idle text. Token."},
-    {"name": "images", "description": "Pictures for `{img:slug}` cells. Token to upload."},
+    {
+        "name": "images",
+        "description": (
+            "Pictures for `{img:slug}` cells: uploads, or a QR code the server makes "
+            "(`POST /api/images/qr`). Token to write."
+        ),
+    },
     {"name": "system", "description": "Health."},
 ]
 

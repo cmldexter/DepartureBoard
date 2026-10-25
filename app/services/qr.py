@@ -13,6 +13,8 @@ MAX_DATA = 1024  # characters; a URL or a line of text
 SCALE = 10  # px per module
 BORDER = 4  # modules of quiet zone
 BLOCK_W, BLOCK_H = 4, 3  # a new QR's block in cells — square-ish (a cell is 1 × 1.45)
+# The blocks the panel offers a code: 4 × 3 scans from the sofa on Compact, 5 × 4 on Large.
+BLOCKS = [[3, 2], [4, 3], [5, 4], [6, 4]]
 
 
 def png(data: str) -> bytes:
