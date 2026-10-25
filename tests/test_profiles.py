@@ -75,7 +75,8 @@ def test_save_and_load_round_trip(client, auth, settings):
     data = json.loads(path.read_text())
     assert data["name"] == "Party" and len(data["messages"]) == 3
     assert data["settings"]["grid_preset"] == "large" and data["settings"]["cell_gap"] == 10
-    assert "guest_token" not in data["settings"] and "active_profile" not in data["settings"]
+    for key in ("guest_token", "active_profile", "calendar_everyday", "calendar_applied"):
+        assert key not in data["settings"], key
     assert (
         data["messages"][1]["repeat_start"] == "09:00" and data["messages"][1]["show_seconds"] == 30
     )

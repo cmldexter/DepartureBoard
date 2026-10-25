@@ -375,6 +375,7 @@ def test_openapi_reads_as_docs(client):
         "images",
         "guests",
         "profiles",
+        "calendar",
         "system",
     }
     assert "Bearer" in spec["info"]["description"]

@@ -1,5 +1,6 @@
 """DepartureBoard application factory."""
 
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -12,8 +13,9 @@ from fastapi.templating import Jinja2Templates
 from app import __version__
 from app.config import Settings, get_settings
 from app.db import Database, migrate
-from app.routers import board, guest, health, images, messages, pages, posts, profiles
+from app.routers import board, calendar, guest, health, images, messages, pages, posts, profiles
 from app.routers import settings as settings_api
+from app.services import calendar as calendar_service
 from app.services.auth import load_or_create_token
 
 APP_DIR = Path(__file__).resolve().parent
@@ -71,6 +73,13 @@ TAGS = [
             "back, copied, renamed, deleted. Token."
         ),
     },
+    {
+        "name": "calendar",
+        "description": (
+            "A calendar of boards: saved boards assigned to dates; the server switches at the "
+            "day boundary, saving the live board back first. Token."
+        ),
+    },
     {"name": "system", "description": "Health."},
 ]
 
@@ -79,12 +88,24 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or get_settings()
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 
+    async def calendar_loop(app: FastAPI) -> None:
+        """The calendar's switch, every calendar_tick_seconds; one failure never ends it."""
+        while True:
+            await asyncio.sleep(settings.calendar_tick_seconds)
+            try:
+                await asyncio.to_thread(calendar_service.run_tick, app)
+            except Exception:  # noqa: BLE001 — logged, the loop goes on
+                logging.getLogger("departureboard.calendar").exception("tick failed")
+
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         migrate(settings)
         app.state.db = Database(settings)
         app.state.api_token = load_or_create_token(settings)
+        task = asyncio.create_task(calendar_loop(app)) if settings.calendar_tick_seconds else None
         yield
+        if task:
+            task.cancel()
         app.state.db.engine.dispose()
 
     app = FastAPI(
@@ -118,6 +139,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(guest.public)
     app.include_router(posts.router)
     app.include_router(profiles.router)
+    app.include_router(calendar.router)
     app.include_router(pages.router)
     return app
 
