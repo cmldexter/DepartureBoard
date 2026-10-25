@@ -7,7 +7,6 @@
     <h1>DepartureBoard</h1>
     <nav><a href="/">Board</a> · <a href="/?demo">Demo</a> · <a href="/integrate">Integrate</a> · <a href="/docs">API docs</a>
       <form method="post" action="/settings/logout" class="inline"><button type="submit" class="link">Sign out</button></form>
-      <a href="#guests" id="guests-count" class="badge pending" hidden></a>
     </nav>
   </header>
   <section id="boards" aria-labelledby="boards-heading">
@@ -27,23 +26,18 @@
     </div>
     <p class="muted" id="boards-status" role="status"></p>
   </section>
-  <p class="muted">Server time now: <span id="server-time">{{ server_time }}</span> ({{ tz }}). Schedules follow it.
-    Set <code>TZ</code> in <code>.env</code> to change it.</p>
-  <section id="addresses" aria-labelledby="addresses-heading">
-    <p id="addresses-heading" class="muted">Your board is at</p>
-    <ul class="addresses">
-      {% for a in addresses %}
-      <li><code class="token">{{ a.url }}</code> <button type="button" class="link copy" data-copy="{{ a.url }}">Copy</button> <span class="muted">{{ a.label }}</span></li>
-      {% endfor %}
-    </ul>
-    {% if not named %}
-    <p class="hint">Give it a name: <code>DEPARTUREBOARD_HOST=dboard.localhost</code> in <code>.env</code> (Chrome and Edge
-      open <code>*.localhost</code> names on this machine with no setup) or a name your network resolves, such as
-      <code>board.local</code>. The <a href="https://github.com/cmldexter/DepartureBoard/blob/main/docs/tv-setup.md#giving-the-board-a-name" rel="noopener" target="_blank">TV guide</a> says what a name does.</p>
-    {% endif %}
-  </section>
   <p id="toast" class="toast" role="status" aria-live="polite" hidden></p>
 
+  <div class="tabs" role="tablist" aria-label="Settings">
+    <button type="button" role="tab" id="tab-board" aria-controls="panel-board" aria-selected="true">Board</button>
+    <button type="button" role="tab" id="tab-messages" aria-controls="panel-messages" aria-selected="false" tabindex="-1">Messages</button>
+    <button type="button" role="tab" id="tab-pictures" aria-controls="panel-pictures" aria-selected="false" tabindex="-1">Pictures</button>
+    <button type="button" role="tab" id="tab-guests" aria-controls="panel-guests" aria-selected="false" tabindex="-1">Guests <span id="guests-count" class="badge pending" hidden></span></button>
+    <button type="button" role="tab" id="tab-boards" aria-controls="panel-boards" aria-selected="false" tabindex="-1">Boards <span id="tab-boards-dot" class="tab-dot" title="This board has changes since it was saved" hidden>●</span></button>
+    <button type="button" role="tab" id="tab-setup" aria-controls="panel-setup" aria-selected="false" tabindex="-1">Setup</button>
+  </div>
+
+  <div id="panel-board" class="panel" role="tabpanel" aria-labelledby="tab-board" tabindex="0">
   <section id="live" aria-labelledby="live-heading">
     <div class="row">
       <h2 id="live-heading">On the TV</h2>
@@ -114,22 +108,42 @@
     </form>
   </section>
 
-  <dialog id="cast-help" aria-labelledby="cast-help-title">
-    <h3 id="cast-help-title">Cast to the TV</h3>
-    <p>Casting sends pictures of the board from this computer to a Chromecast or Google TV, so this
-      computer stays on while it casts. A stick or a small computer plugged into the TV runs the
-      board by itself; the <a href="https://github.com/cmldexter/DepartureBoard/blob/main/docs/tv-setup.md" rel="noopener" target="_blank">TV guide</a> has both.</p>
-    <p><strong>One click from this button</strong> needs this page in a secure context in Chrome or Edge:
-      either the board on <code>https://</code> (put <code>DEPARTUREBOARD_TLS=self-signed</code> in
-      <code>.env</code>, restart, open the settings page at its <code>https://</code> address), or, on the
-      computer running the server, a <code>*.localhost</code> name such as
-      <code>http://dboard.localhost:8080/settings</code> (<code>DEPARTUREBOARD_HOST</code>). The button then opens the TV picker.</p>
-    <p><strong>Right now, with no change:</strong> in Chrome, open the board, then ⋮ → <strong>Cast…</strong>
-      → <em>Cast tab</em> and pick the TV.</p>
-    <p id="cast-help-why" class="muted"></p>
-    <form method="dialog"><button type="submit">Close</button></form>
-  </dialog>
+  <section id="display">
+    <h2>Display</h2>
+    <form id="display-form" class="card">
+      <fieldset>
+        <legend>Preset</legend>
+        <label class="check"><input type="radio" name="grid_preset" value="compact"> Compact · 6 × 22 · 42–48" TV</label>
+        <label class="check"><input type="radio" name="grid_preset" value="large"> Large · 8 × 28 · 55–77" TV</label>
+        <label class="check"><input type="radio" name="grid_preset" value="custom"> Custom</label>
+        <div class="grid2" id="custom-size">
+          <label>Rows <input type="number" name="rows" min="4" max="10"></label>
+          <label>Columns <input type="number" name="cols" min="16" max="36"></label>
+        </div>
+      </fieldset>
+      <label>Animation <span class="muted">— 0 is instant, 100 the mechanical pace</span>
+        <span class="slider"><input type="range" name="animation" min="0" max="100"> <output id="animation-value"></output></span>
+      </label>
+      <div class="grid2">
+        <label class="check"><input type="checkbox" name="sound_enabled"> Sound</label>
+        <label>Volume <input type="range" name="sound_volume" min="0" max="1" step="0.05"></label>
+        <label>Idle text <span class="muted">— when nothing is live</span><input type="text" name="idle_text" maxlength="2000"></label>
+        <label>Poll every (s) <input type="number" name="poll_seconds" min="2" max="60"></label>
+        <label>Rotate every (s) <span class="muted">— the default; a message can set its own</span><input type="number" name="rotate_seconds" min="5" max="600"></label>
+        <label>Timer ring <span class="muted">— a small countdown in the board's corner</span>
+          <select name="timer_ring">
+            <option value="off">Off</option>
+            <option value="own">Messages with their own time</option>
+            <option value="all">Every message taking turns</option>
+          </select>
+        </label>
+      </div>
+      <div class="row"><button type="submit">Save display</button><span class="muted" id="display-status" role="status"></span></div>
+    </form>
+  </section>
+  </div>
 
+  <div id="panel-messages" class="panel" role="tabpanel" aria-labelledby="tab-messages" tabindex="0" hidden>
   <section id="messages">
     <div class="row"><h2>Messages</h2><button type="button" class="small" id="new-message">New message</button></div>
     <table class="list" aria-label="Messages">
@@ -183,41 +197,9 @@
       <p class="error" id="message-error" role="alert" hidden></p>
     </form>
   </section>
+  </div>
 
-  <section id="display">
-    <h2>Display</h2>
-    <form id="display-form" class="card">
-      <fieldset>
-        <legend>Preset</legend>
-        <label class="check"><input type="radio" name="grid_preset" value="compact"> Compact · 6 × 22 · 42–48" TV</label>
-        <label class="check"><input type="radio" name="grid_preset" value="large"> Large · 8 × 28 · 55–77" TV</label>
-        <label class="check"><input type="radio" name="grid_preset" value="custom"> Custom</label>
-        <div class="grid2" id="custom-size">
-          <label>Rows <input type="number" name="rows" min="4" max="10"></label>
-          <label>Columns <input type="number" name="cols" min="16" max="36"></label>
-        </div>
-      </fieldset>
-      <label>Animation <span class="muted">— 0 is instant, 100 the mechanical pace</span>
-        <span class="slider"><input type="range" name="animation" min="0" max="100"> <output id="animation-value"></output></span>
-      </label>
-      <div class="grid2">
-        <label class="check"><input type="checkbox" name="sound_enabled"> Sound</label>
-        <label>Volume <input type="range" name="sound_volume" min="0" max="1" step="0.05"></label>
-        <label>Idle text <span class="muted">— when nothing is live</span><input type="text" name="idle_text" maxlength="2000"></label>
-        <label>Poll every (s) <input type="number" name="poll_seconds" min="2" max="60"></label>
-        <label>Rotate every (s) <span class="muted">— the default; a message can set its own</span><input type="number" name="rotate_seconds" min="5" max="600"></label>
-        <label>Timer ring <span class="muted">— a small countdown in the board's corner</span>
-          <select name="timer_ring">
-            <option value="off">Off</option>
-            <option value="own">Messages with their own time</option>
-            <option value="all">Every message taking turns</option>
-          </select>
-        </label>
-      </div>
-      <div class="row"><button type="submit">Save display</button><span class="muted" id="display-status" role="status"></span></div>
-    </form>
-  </section>
-
+  <div id="panel-pictures" class="panel" role="tabpanel" aria-labelledby="tab-pictures" tabindex="0" hidden>
   <section id="images">
     <h2>Images</h2>
     <p class="muted">PNG, JPEG, GIF or WebP up to 5 MB. A new picture takes one cell; give it a size below — a wide one reads best across a row — and it keeps its shape inside that block unless you choose otherwise. Or make a <strong>QR code</strong> from a link or a line of text: it is drawn whole over its block so a phone can scan it from the sofa.</p>
@@ -234,7 +216,9 @@
     </form>
     <ul id="image-list" class="images"></ul>
   </section>
+  </div>
 
+  <div id="panel-guests" class="panel" role="tabpanel" aria-labelledby="tab-guests" tabindex="0" hidden>
   <section id="guests" aria-labelledby="guests-heading">
     <div class="row"><h2 id="guests-heading">Guests</h2><span class="badge pending" id="guests-waiting" role="status" hidden></span></div>
     <p class="muted">A link for phones: whoever opens it leaves a line or a photo that waits here for you — or goes
@@ -261,7 +245,10 @@
     <div class="row"><h3 id="guest-approved-heading">On the board</h3><button type="button" class="small" id="guest-clear">Clear all</button></div>
     <ul id="guest-approved" class="posts" aria-labelledby="guest-approved-heading"></ul>
   </section>
+  </div>
 
+  <div id="panel-boards" class="panel" role="tabpanel" aria-labelledby="tab-boards" tabindex="0" hidden>
+    <p class="muted panel-intro">Your saved boards live in the strip at the top — <em>Switch…</em>, <em>Save as…</em>, the ⋯ menu. Here you plan them ahead.</p>
   <section id="calendar" aria-labelledby="calendar-heading">
     <div class="row"><h2 id="calendar-heading">Calendar</h2><span class="muted" id="calendar-today" role="status"></span></div>
     <p class="muted">Plan the boards ahead: a saved board for a day or a range, and it comes up by itself at midnight
@@ -285,12 +272,57 @@
     <label class="everyday">Everyday board <span class="muted">— between planned days</span>
       <select id="calendar-everyday"><option value="">Stay on the last board</option></select></label>
   </section>
+  </div>
 
-  <section>
+  <div id="panel-setup" class="panel" role="tabpanel" aria-labelledby="tab-setup" tabindex="0" hidden>
+    <h2 id="setup-heading">Setup</h2>
+  <p class="muted">Server time now: <span id="server-time">{{ server_time }}</span> ({{ tz }}). Schedules follow it.
+    Set <code>TZ</code> in <code>.env</code> to change it.</p>
+  <section id="addresses" aria-labelledby="addresses-heading">
+    <p id="addresses-heading" class="muted">Your board is at</p>
+    <ul class="addresses">
+      {% for a in addresses %}
+      <li><code class="token">{{ a.url }}</code> <button type="button" class="link copy" data-copy="{{ a.url }}">Copy</button> <span class="muted">{{ a.label }}</span></li>
+      {% endfor %}
+    </ul>
+    {% if not named %}
+    <p class="hint">Give it a name: <code>DEPARTUREBOARD_HOST=dboard.localhost</code> in <code>.env</code> (Chrome and Edge
+      open <code>*.localhost</code> names on this machine with no setup) or a name your network resolves, such as
+      <code>board.local</code>. The <a href="https://github.com/cmldexter/DepartureBoard/blob/main/docs/tv-setup.md#giving-the-board-a-name" rel="noopener" target="_blank">TV guide</a> says what a name does.</p>
+    {% endif %}
+  </section>
+  <section id="token">
     <h2>Your token</h2>
     <p>Every write to the board needs it. Keep it out of screenshots. The <a href="/docs">API docs</a> show every call.</p>
     <details><summary>Show token</summary><pre class="token">{{ token }}</pre></details>
   </section>
+    <p class="muted">Post from a script, a calendar or an agent: <a href="/integrate">the integrate page</a> has every call pre-filled; <a href="/docs">the API docs</a> list them all.</p>
+  </div>
+
+  <dialog id="cast-help" aria-labelledby="cast-help-title">
+    <h3 id="cast-help-title">Cast to the TV</h3>
+    <p>Casting sends pictures of the board from this computer to a Chromecast or Google TV, so this
+      computer stays on while it casts. A stick or a small computer plugged into the TV runs the
+      board by itself; the <a href="https://github.com/cmldexter/DepartureBoard/blob/main/docs/tv-setup.md" rel="noopener" target="_blank">TV guide</a> has both.</p>
+    <p><strong>One click from this button</strong> needs this page in a secure context in Chrome or Edge:
+      either the board on <code>https://</code> (put <code>DEPARTUREBOARD_TLS=self-signed</code> in
+      <code>.env</code>, restart, open the settings page at its <code>https://</code> address), or, on the
+      computer running the server, a <code>*.localhost</code> name such as
+      <code>http://dboard.localhost:8080/settings</code> (<code>DEPARTUREBOARD_HOST</code>). The button then opens the TV picker.</p>
+    <p><strong>Right now, with no change:</strong> in Chrome, open the board, then ⋮ → <strong>Cast…</strong>
+      → <em>Cast tab</em> and pick the TV.</p>
+    <p id="cast-help-why" class="muted"></p>
+    <form method="dialog"><button type="submit">Close</button></form>
+  </dialog>
+
+
+
+
+
+
+
+
+
 
   <footer>
     <p>Asked for by <a href="https://www.instagram.com/feltbykraft/" rel="noopener">@feltbykraft</a>
