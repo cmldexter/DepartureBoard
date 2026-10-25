@@ -10,6 +10,23 @@
       <a href="#guests" id="guests-count" class="badge pending" hidden></a>
     </nav>
   </header>
+  <section id="boards" aria-labelledby="boards-heading">
+    <h2 id="boards-heading" class="sr-only">Boards</h2>
+    <div class="row">
+      <p class="this-board">This board: <strong id="board-name">unsaved board</strong> <span id="board-dot" class="dot" title="Changed since it was saved" hidden>●</span>
+        <span class="muted" id="board-meta"></span></p>
+      <span class="actions">
+        <label class="sr-only" for="board-switch">Switch to a saved board</label>
+        <select id="board-switch"><option value="">Switch…</option></select>
+        <button type="button" class="small" id="board-save">Save</button>
+        <button type="button" class="small" id="board-save-as">Save as…</button>
+        <details class="more" id="board-more"><summary aria-label="More board actions">⋯</summary>
+          <div class="menu"><button type="button" class="link" id="board-duplicate">Duplicate</button> <button type="button" class="link" id="board-rename">Rename</button> <button type="button" class="link" id="board-delete">Delete</button></div>
+        </details>
+      </span>
+    </div>
+    <p class="muted" id="boards-status" role="status"></p>
+  </section>
   <p class="muted">Server time now: <span id="server-time">{{ server_time }}</span> ({{ tz }}). Schedules follow it.
     Set <code>TZ</code> in <code>.env</code> to change it.</p>
   <section id="addresses" aria-labelledby="addresses-heading">

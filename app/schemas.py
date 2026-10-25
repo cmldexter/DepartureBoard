@@ -327,6 +327,9 @@ class ProfileOut(BaseModel):
         description="Pictures the profile names that are not on disk (deleted, or not imported)"
     )
     active: bool = Field(description="The profile loaded or saved last")
+    changed: bool = Field(
+        False, description="Active only: the live board differs from the file (unsaved changes)"
+    )
 
 
 class KeptDisabled(BaseModel):

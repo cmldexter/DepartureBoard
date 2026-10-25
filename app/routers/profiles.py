@@ -42,9 +42,8 @@ def _existing(slug: str, settings: Settings) -> Path:
 
 def _out(path: Path, session: Session, settings: Settings) -> ProfileOut:
     try:
-        return ProfileOut(
-            **profiles.describe(settings, path, display_settings(session)["active_profile"])
-        )
+        active = display_settings(session)["active_profile"]
+        return ProfileOut(**profiles.describe(settings, path, active, session))
     except ValueError as e:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(e)) from e
 
@@ -66,7 +65,7 @@ def list_profiles(
     out = []
     for path in profiles.list_all(settings):
         try:
-            out.append(ProfileOut(**profiles.describe(settings, path, active)))
+            out.append(ProfileOut(**profiles.describe(settings, path, active, session)))
         except ValueError:
             continue  # a hand-edited file that does not parse is left out, not fatal
     return out

@@ -68,6 +68,7 @@ def test_save_and_load_round_trip(client, auth, settings):
         "messages": 3,
         "pictures_missing": [],
         "active": True,
+        "changed": False,
     }
     assert _settings(client, auth)["active_profile"] == "party"
     path = settings.data_dir / "profiles" / "party.json"
@@ -208,6 +209,29 @@ def test_copy_rename_delete_and_the_slug_rules(client, auth, settings):
     assert client.post("/api/profiles/Bad%20Slug/save", headers=auth).status_code == 422
     assert client.post("/api/profiles/party/load", headers=auth).status_code == 404
     assert client.get("/api/profiles/party", headers=auth).status_code == 404
+
+
+def test_the_listing_says_when_the_live_board_changed(client, auth):
+    client.post("/api/messages", json={"text": "ONE"}, headers=auth)
+    client.post("/api/profiles/party/save", headers=auth)
+    client.post("/api/profiles/party/copy", json={"slug": "other"}, headers=auth)
+
+    def flags():
+        return {p["slug"]: p["changed"] for p in client.get("/api/profiles", headers=auth).json()}
+
+    assert flags() == {"other": False, "party": False}
+    client.post("/api/messages", json={"text": "TWO"}, headers=auth)
+    assert flags() == {"other": False, "party": True}, (
+        "a new message = changed, the other untouched"
+    )
+    client.post("/api/profiles/party/save", headers=auth)
+    assert flags() == {"other": False, "party": False}
+    client.patch("/api/settings", json={"theme": "walnut"}, headers=auth)
+    assert flags()["party"] is True, "a display change counts too"
+    client.post("/api/profiles/party/load", headers=auth)
+    assert flags()["party"] is False, "a load is the saved state"
+    client.post("/api/guest/rotate", headers=auth)
+    assert flags()["party"] is False, "the guest door is not part of a profile"
 
 
 def test_the_guest_door_is_not_part_of_a_profile(client, auth):

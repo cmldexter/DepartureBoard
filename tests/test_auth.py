@@ -82,6 +82,10 @@ def test_settings_page_panels(client, token):
         'id="guest-clear"',
         'id="guests-count"',
         'id="guest-qr"',
+        'id="boards"',
+        'id="board-switch"',
+        'id="board-save-as"',
+        'id="board-delete"',
         'id="qr-board"',
     ):
         assert needle in r.text, needle
