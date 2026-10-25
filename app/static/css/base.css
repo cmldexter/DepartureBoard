@@ -29,6 +29,7 @@ body { background: var(--bg); color: var(--fg); font-family: var(--font); }
 .page #give { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #222; line-height: 1.5; }
 
 /* ---- settings page */
+.page [hidden] { display: none !important; } /* a display rule on a class (.row, .badge) would beat the UA's [hidden] */
 .page .muted { color: var(--muted); }
 .page .hint { color: var(--muted); font-size: .9rem; margin: .25rem 0 .75rem; line-height: 1.6; }
 .page .hint code, .page code.token { background: #000; padding: .1rem .35rem; border-radius: .25rem; }
@@ -140,7 +141,6 @@ body { background: var(--bg); color: var(--fg); font-family: var(--font); }
 @media (max-width: 36rem) { .page ul.images .chips { flex-basis: 100%; } }
 /* guests: the link card, then two lists of posts (thumb · line · actions) */
 .page nav .badge { vertical-align: middle; text-decoration: none; color: #fff; margin-left: .25rem; }
-.page .badge[hidden] { display: none; } /* the author display rule would beat the UA's [hidden] */
 .page .badge.pending { background: #7a5a1f; color: #fff; }
 .page .badge.removed { background: #4a4a4a; color: #bbb; }
 .page #guests h3 { margin: 1.25rem 0 .25rem; font-size: 1rem; }
@@ -148,7 +148,8 @@ body { background: var(--bg); color: var(--fg); font-family: var(--font); }
 .page #guest-link p { margin: 0 0 .5rem; }
 .page #guest-off { align-items: center; }
 .page #guest-off button { margin: 0; }
-.page #guest-on code { word-break: break-all; }
+.page #guest-on { display: flex; flex-wrap: wrap; align-items: baseline; gap: .25rem .5rem; }
+.page #guest-on code { overflow-wrap: anywhere; }
 .page #guest-link label.check { margin: .75rem 0 .25rem; }
 .page #guest-link .grid2 label { margin: .5rem 0 .25rem; }
 .page #guest-status { margin: .5rem 0 0; min-height: 1.5em; }
