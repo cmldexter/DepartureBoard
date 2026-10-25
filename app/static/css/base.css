@@ -74,7 +74,7 @@ body { background: var(--bg); color: var(--fg); font-family: var(--font); }
 .page .badge.live { background: #2f6b3a; }
 .page .badge.scheduled { background: #2f4f6b; }
 .page .badge.expired { background: #4a4a4a; color: #bbb; }
-.page .badge.disabled { background: #333; color: #999; }
+.page .badge.disabled { background: #333; color: #bbb; } /* 6.9:1 — #999 failed 4.5:1 */
 .page .preview { margin: .5rem 0 .25rem; }
 /* the board itself, in a frame: it lays itself out for the frame's size, so a 16:9 box is the TV */
 .page .screen { aspect-ratio: 16 / 9; width: 100%; background: #000; border-radius: .6rem; overflow: hidden; }

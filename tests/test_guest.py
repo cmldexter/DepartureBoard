@@ -167,3 +167,69 @@ def test_the_page_keeps_what_was_typed_on_an_error(client, auth):
     t = _rotate(client, auth)["token"]
     r = client.post(f"/guest/{t}", data={"text": "x" * 121, "nick": "Ana"})
     assert 'value="Ana"' in r.text and "x" * 121 in r.text
+
+
+def test_the_qr_that_opens_the_guest_page(client, auth, settings):
+    from tests._qr import decode_qr as decode
+
+    assert client.post("/api/guest/qr", headers=auth).status_code == 409, "guests are off"
+    link = _rotate(client, auth)
+    r = client.post("/api/guest/qr", headers=auth)
+    assert r.status_code == 201, r.text
+    out = r.json()
+    assert (out["url"], out["token"], out["enabled"], out["state"]) == (
+        link["url"],
+        "{img:guest-qr}",
+        False,
+        "disabled",
+    )
+    assert decode((settings.data_dir / "images" / "guest-qr.png").read_bytes()) == link["url"]
+    img = next(i for i in client.get("/api/images", headers=auth).json() if i["slug"] == "guest-qr")
+    assert (img["w"], img["h"], img["solid"], img["qr"]["data"]) == (4, 3, True, link["url"])
+    m = client.get(f"/api/messages/{out['message_id']}", headers=auth).json()
+    assert (m["text"], m["enabled"], m["source"]) == (
+        "SCAN TO POST A PHOTO\n{img:guest-qr}",
+        False,
+        "api",
+    )
+    assert client.get("/api/board/current").json()["message_id"] is None, "disabled until you say"
+    # again: the picture is remade, the message is the same one
+    r = client.post("/api/guest/qr", headers=auth)
+    assert r.status_code == 200 and r.json()["message_id"] == out["message_id"]
+    assert len(client.get("/api/messages", headers=auth).json()) == 1
+    # switched on, it is on the TV: the words, then the code drawn whole
+    client.patch(f"/api/messages/{m['id']}", json={"enabled": True}, headers=auth)
+    board = client.get("/api/board/current").json()
+    assert board["message_id"] == m["id"]
+    assert (
+        "".join(c for c in board["rows"][0] if isinstance(c, str)).strip() == "SCAN TO POST A PHOTO"
+    )
+    part = board["rows"][1][0]
+    assert (part["img"], part["w"], part["h"], part["solid"], part["qr"]) == (
+        "guest-qr",
+        4,
+        3,
+        True,
+        True,
+    )
+    stamp = board["stamp"]
+    # rotate: the code now opens the new link, the message stays on
+    link2 = _rotate(client, auth)
+    assert decode((settings.data_dir / "images" / "guest-qr.png").read_bytes()) == link2["url"]
+    board = client.get("/api/board/current").json()
+    assert board["stamp"] != stamp and board["message_id"] == m["id"], (
+        "a new version reaches the TV"
+    )
+    assert client.post("/api/guest/qr", headers=auth).json()["enabled"] is True
+    # the door closed: the message goes off; the picture stays for next time
+    client.patch("/api/settings", json={"guest_token": ""}, headers=auth)
+    m = client.get(f"/api/messages/{m['id']}", headers=auth).json()
+    assert m["enabled"] is False and m["state"] == "disabled"
+    assert client.get("/api/board/current").json()["message_id"] is None
+    assert client.post("/api/guest/qr", headers=auth).status_code == 409
+    # a host-written message with the token counts too
+    _rotate(client, auth)
+    client.post("/api/messages", json={"text": "PHOTOS HERE {img:guest-qr}"}, headers=auth)
+    client.patch(f"/api/messages/{m['id']}", json={"enabled": True}, headers=auth)
+    client.patch("/api/settings", json={"guest_token": ""}, headers=auth)
+    assert all(not x["enabled"] for x in client.get("/api/messages", headers=auth).json())

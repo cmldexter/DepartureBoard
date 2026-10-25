@@ -57,8 +57,10 @@ with effort.
   token on its own row.
 - **The Wi-Fi.** `data` = `WIFI:T:WPA;S:<network>;P:<password>;;` — phones join from the camera. The
   password is on the TV then; use a guest network.
-- **A guest link.** When the board offers guests a page to post from, its address goes in a code the
-  same way (*Scan to open this board* makes one for the board itself today).
+- **A guest link.** *Guests → Put the QR on the board* makes the code and a ready-made
+  `SCAN TO POST A PHOTO` message in one click, and remakes the code when the link rotates —
+  [guests.md](guests.md). (*Scan to open this board* on the Images panel does the same for the
+  board's own address.)
 
 ## Details
 

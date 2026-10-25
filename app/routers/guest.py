@@ -3,20 +3,32 @@ guarded by the token in its URL, reaching nothing but the post queue. `api` mana
 
 from datetime import UTC, datetime
 from typing import Annotated
+from zoneinfo import ZoneInfo
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    Request,
+    Response,
+    UploadFile,
+    status,
+)
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
-from app.deps import app_settings, get_session, now
+from app.deps import app_settings, get_session, now, tz
 from app.models import Post, Setting
 from app.routers.pages import board_addresses
-from app.schemas import GuestLink
+from app.schemas import GuestLink, GuestQr
 from app.services import guest, images
 from app.services.auth import Authenticated
 from app.services.display import display_settings
 from app.services.exif import strip
 from app.services.imagesize import dimensions
+from app.services.scheduler import state as message_state
 
 api = APIRouter(prefix="/api/guest", tags=["guests"], dependencies=[Authenticated])
 public = APIRouter(include_in_schema=False)
@@ -36,7 +48,55 @@ def rotate(request: Request, session: Session = Depends(get_session)):
     token = guest.mint_token()
     session.merge(Setting(key="guest_token", value=token))
     session.commit()
-    return GuestLink(token=token, url=f"{board_addresses(request)[0]['url']}/guest/{token}")
+    url = _link(request, token)
+    guest.refresh_qr(request.app.state.settings, url)  # a code on the board follows the link
+    return GuestLink(token=token, url=url)
+
+
+def _link(request: Request, token: str) -> str:
+    return f"{board_addresses(request)[0]['url']}/guest/{token}"
+
+
+@api.post(
+    "/qr",
+    summary="Put the QR of the guest link on the board",
+    description=(
+        "Makes (or remakes) the picture `guest-qr` — a QR code of the current guest link, drawn "
+        "whole over 4 × 3 cells like any code from `POST /api/images/qr` — and a ready-made "
+        "message `SCAN TO POST A PHOTO` + `{img:guest-qr}`, created **disabled** so you switch it "
+        "on when the party starts (edit or schedule it like any other). Rotating the link remakes "
+        "the code; closing the door disables the message. 409 while guests are off."
+    ),
+    response_model=GuestQr,
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        200: {"description": "The picture was remade; the message already existed"},
+        409: {"description": "Guests are off — make a link first"},
+    },
+)
+def put_qr(
+    request: Request,
+    response: Response,
+    session: Session = Depends(get_session),
+    at: datetime = Depends(now),
+    zone: ZoneInfo = Depends(tz),
+):
+    token = display_settings(session)["guest_token"]
+    if not token:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Guests are off — make a link first.")
+    source = "ui" if request.cookies.get("db_session") else "api"
+    url = _link(request, token)
+    remade, m, created = guest.make_qr(session, request.app.state.settings, url, source)
+    session.commit()
+    if not created:
+        response.status_code = status.HTTP_200_OK
+    return GuestQr(
+        url=url,
+        token=guest.QR_TOKEN,
+        message_id=m.id,
+        enabled=m.enabled,
+        state=message_state(m, at, zone),
+    )
 
 
 def _open_door(token: str, session: Session) -> dict:

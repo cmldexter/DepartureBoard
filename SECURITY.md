@@ -19,3 +19,8 @@ The latest minor release. Older releases are not patched.
 - The board endpoint (`GET /api/board/current`) and the board page are public by design, so a TV
   never holds a secret. Anything you put on the board is visible to anyone who can reach the port.
 - There are no user accounts. One token, one board.
+- The **guest link** (off by default) is the one write path without the token: a 20-character
+  token in a URL that reaches a post queue and nothing else — it cannot read messages, settings or
+  other posts, posts wait for the host unless auto-approve is on, photos lose their metadata, and
+  the rate limits are small. Rotating or turning it off kills the link at once.
+  [docs/guests.md](docs/guests.md) has the whole story.

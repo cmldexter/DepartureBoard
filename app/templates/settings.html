@@ -228,6 +228,8 @@
       <p id="guest-off" class="row"><span>Guests are off — there is no link.</span> <button type="button" class="small" id="guest-make">Make a link</button></p>
       <p id="guest-on" hidden><span class="muted">Guest link</span> <code class="token" id="guest-url"></code>
         <button type="button" class="link" id="guest-copy">Copy</button> · <button type="button" class="link" id="guest-rotate">Rotate</button> · <button type="button" class="link" id="guest-close">Turn off</button></p>
+      <p id="guest-qr-row" class="row" hidden><button type="button" class="small" id="guest-qr">Put the QR on the board</button>
+        <span class="muted" id="guest-qr-note">Makes <code>{img:guest-qr}</code> and a <em>SCAN TO POST A PHOTO</em> message you switch on when the party starts. Rotate remakes the code; Turn off takes the message off.</span></p>
       <form id="guest-form" aria-label="How guest posts show">
         <label class="check"><span class="switch"><input type="checkbox" role="switch" name="guest_auto_approve"><span class="track" aria-hidden="true"></span></span> Auto-approve — a post goes on the board at once</label>
         <div class="grid2">
