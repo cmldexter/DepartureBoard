@@ -11,6 +11,15 @@ _Nothing yet._
 
 ## [0.3.0] — 2026-10-24
 
+### Fixed
+
+- **Flaps that never landed.** After a cascade, a few cells could keep the previous character on
+  the bottom half under the new one on top, with the leaf frozen mid-air — more often on a TV or
+  right after a theme change, when frames run late. The flip was a CSS class toggled off and on
+  again; two catch-up steps inside one slow frame cancelled out in the style engine, the
+  animation never restarted and its landing never ran. Each flip is now its own Web Animation,
+  so a landing cannot be lost. Present since 0.1.0.
+
 ### Added
 
 - **A picture behind the board** (#94). Display settings `background_image` (`""`, `img:<slug>`
