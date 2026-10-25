@@ -172,6 +172,29 @@
     if (!phone.matches) closeSheet();
     syncLiveStrip();
   });
+  // an empty state's button goes to the block that fills it: its sheet on a phone, the block
+  // itself (its tab shown, its first control focused) on a desk
+  function reach(blockId, sel) {
+    const block = document.getElementById(blockId);
+    if (!block) return;
+    const panel = block.closest(".panel");
+    if (panel) showTab(panel.id.replace("panel-", ""));
+    const launcher = document.querySelector(`[data-sheet="${blockId}"]`);
+    if (phone.matches && launcher) {
+      launcher.click();
+    } else {
+      block.scrollIntoView({ block: "start" });
+    }
+    const control = sel && block.querySelector(sel);
+    if (control) {
+      control.focus({ preventScroll: true });
+      if (control.type === "file") control.click();
+    }
+  }
+  document.addEventListener("click", (ev) => {
+    const b = ev.target.closest("[data-reach]");
+    if (b) reach(b.dataset.reach, b.dataset.sel || "");
+  });
   // the live card on a phone: a strip that says what is on, the picture on tap
   const liveSection = $("#live");
   const liveToggle = $("#live-toggle");
@@ -208,17 +231,17 @@
     }
   });
 
-  // ---- the addresses under the header: one Copy per line.
-  for (const b of $$("#addresses .copy")) {
-    b.addEventListener("click", async () => {
-      try {
-        await navigator.clipboard.writeText(b.dataset.copy);
-        toast(`${b.dataset.copy} copied.`);
-      } catch {
-        toast(b.dataset.copy);
-      }
-    });
-  }
+  // ---- Copy buttons: the addresses, the walkthrough's address and token.
+  document.addEventListener("click", async (ev) => {
+    const b = ev.target.closest(".copy[data-copy]");
+    if (!b) return;
+    try {
+      await navigator.clipboard.writeText(b.dataset.copy);
+      toast(`${b.dataset.copy.length > 40 ? "Copied" : b.dataset.copy + " copied"}.`);
+    } catch {
+      toast(b.dataset.copy);
+    }
+  });
 
   // ---- boards: the live board saved under a name, switched, copied, renamed, deleted. The
   // listing says which is active and whether the live board changed since it was saved (the dot).
@@ -241,7 +264,9 @@
     boardSwitch.value = boards.some((b) => b.slug === current) ? current : "";
     boardSwitch.disabled = !boards.length;
     for (const id of ["board-duplicate", "board-rename", "board-delete"]) $(`#${id}`).disabled = !activeBoard;
+    $("#boards-empty").hidden = boards.length > 0;
   };
+  $("#boards-empty-save").addEventListener("click", () => $("#board-save-as").click());
   async function loadProfiles() {
     boards = await api("/api/profiles");
     renderBoards();
@@ -419,7 +444,7 @@
       return;
     }
     if (liveId === null) {
-      liveNow.textContent = "Nothing is live — the board shows the idle text.";
+      liveNow.innerHTML = 'Idle — the board shows the idle text. <button type="button" class="link" data-reach="display-form" data-sel="input[name=idle_text]">Set it in Display</button>';
       return;
     }
     const m = messages.find((x) => x.id === liveId);
@@ -449,7 +474,8 @@
   async function loadMessages() {
     messages = await api("/api/messages");
     if (!messages.length) {
-      rowsEl.innerHTML = '<tr><td colspan="4" class="muted">No messages yet. The board shows the idle text.</td></tr>';
+      rowsEl.innerHTML = '<tr><td colspan="4"><p class="empty" id="messages-empty"><span>Nothing scheduled yet.</span> <button type="button" class="small">Write your first message</button></p></td></tr>';
+      $("#messages-empty button").addEventListener("click", () => $("#new-message").click());
       renderLive();
       return;
     }
@@ -906,7 +932,7 @@
     renderBgUploads(items);
     imageList.textContent = "";
     if (!items.length) {
-      imageList.innerHTML = '<li class="muted">No pictures yet.</li>';
+      imageList.innerHTML = '<li class="plain"><p class="empty" id="images-empty"><span>No pictures yet.</span> <button type="button" class="small" data-reach="image-form" data-sel="input[name=file]">Upload a picture</button> <button type="button" class="small" data-reach="qr-form" data-sel="input[name=data]">Make a QR code</button></p></li>';
       return;
     }
     for (const img of items) {
@@ -1528,6 +1554,129 @@
       renderPlan();
     }
   };
+
+  // ---- first run: a walkthrough the first time the page opens — four steps over the calls the
+  // page makes anyway (the preset and theme PATCH, /now, the addresses, the token), a screen of
+  // its own that brings you back. Done, Skip the tour and Escape set setup_done and close it;
+  // Setup → Run the walkthrough again clears the key and reloads.
+  const welcome = $("#welcome");
+  if (welcome) {
+    const steps = $$(".step", welcome);
+    const dots = $$("#welcome-dots li");
+    const welcomeFrame = $("#welcome-board");
+    const welcomeThemes = $$("#welcome-themes .swatch");
+    let step = 0;
+    let finished = false;
+    function showStep(i) {
+      step = Math.max(0, Math.min(steps.length - 1, i));
+      steps.forEach((s, j) => (s.hidden = j !== step));
+      dots.forEach((d, j) => d.classList.toggle("on", j === step));
+      $("#welcome-where").textContent = `${step + 1} of ${steps.length}`;
+      welcome.setAttribute("aria-labelledby", `welcome-${step + 1}-title`);
+      $("#welcome-screen").hidden = step > 1;
+      $("#welcome-prev").hidden = step === 0;
+      $("#welcome-skip").hidden = step === steps.length - 1;
+      $("#welcome-next").textContent = step === steps.length - 1 ? "Done" : "Next";
+      welcome.scrollTop = 0;
+      const first = steps[step].querySelector('input:checked, [role="radio"][aria-checked="true"], input:not([type="radio"]), button');
+      (first || $("#welcome-next")).focus();
+    }
+    async function finish() {
+      if (finished) return;
+      finished = true;
+      try {
+        await api("/api/settings", { method: "PATCH", body: { setup_done: "1" } });
+      } catch (e) {
+        toast(e.message, true);
+      }
+      if (welcome.open) welcome.close();
+      document.body.classList.remove("sheet-open");
+      welcome.remove(); // its frame stops polling
+      toast("Set up. Setup → Run the walkthrough again brings this back.");
+      $("#tab-board").focus();
+    }
+    $("#welcome-next").addEventListener("click", () => (step === steps.length - 1 ? finish() : showStep(step + 1)));
+    $("#welcome-skip").addEventListener("click", () => showStep(step + 1));
+    $("#welcome-prev").addEventListener("click", () => showStep(step - 1));
+    $("#welcome-skip-all").addEventListener("click", finish);
+    welcome.addEventListener("cancel", (ev) => {
+      ev.preventDefault(); // Escape = skip
+      finish();
+    });
+    welcome.addEventListener("close", finish); // the browser's own back gesture
+    // 1 · your TV: the preset and the theme; the board in the step follows at once
+    const nudge = () => {
+      post(welcomeFrame, { type: "board:refresh" });
+      refreshLive();
+    };
+    const markWelcomeTheme = (theme) =>
+      welcomeThemes.forEach((b) => {
+        const on = b.dataset.theme === theme;
+        b.setAttribute("aria-checked", String(on));
+        b.tabIndex = on ? 0 : -1;
+      });
+    welcomeThemes.forEach((b, i) => {
+      b.addEventListener("click", async () => {
+        await chooseTheme(b.dataset.theme, false);
+        markWelcomeTheme(currentTheme);
+        $("#welcome-1-status").textContent = `${currentTheme.replace(/-/g, " ")} — the TV has it at its next poll.`;
+        nudge();
+      });
+      b.addEventListener("keydown", (ev) => {
+        const d = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[ev.key];
+        if (!d) return;
+        ev.preventDefault();
+        const next = welcomeThemes[(i + d + welcomeThemes.length) % welcomeThemes.length];
+        next.click();
+        next.focus();
+      });
+    });
+    $$('input[name="welcome_preset"]', welcome).forEach((r) =>
+      r.addEventListener("change", async () => {
+        try {
+          const s = await api("/api/settings", { method: "PATCH", body: { grid_preset: r.value } });
+          await loadDisplay();
+          $("#welcome-1-status").textContent = `${r.value}: ${s.rows} rows of ${s.cols} flaps.`;
+          nudge();
+        } catch (e) {
+          toast(e.message, true);
+        }
+      }),
+    );
+    // 2 · the first message: on the board for two minutes, the way Show something now does it
+    $("#welcome-now").addEventListener("click", async () => {
+      const text = $("#welcome-text").value.trim();
+      if (!text) return;
+      try {
+        await api("/api/messages/now", { method: "POST", body: { text, show_seconds: 120 } });
+        $("#welcome-2-status").textContent = `${text} — on the TV for 2 minutes. Watch it flip.`;
+        await loadMessages();
+        nudge();
+      } catch (e) {
+        toast(e.message, true);
+      }
+    });
+    api("/api/settings")
+      .then((s) => {
+        const r = welcome.querySelector(`input[name="welcome_preset"][value="${s.grid_preset}"]`);
+        if (r) r.checked = true;
+        markWelcomeTheme(s.theme);
+        if (!finished) showStep(step);
+      })
+      .catch(() => {});
+    welcome.showModal();
+    document.body.classList.add("sheet-open");
+    showStep(0);
+  }
+  $("#welcome-again").addEventListener("click", async () => {
+    try {
+      await api("/api/settings/setup_done", { method: "DELETE" });
+      history.replaceState(null, "", "#board");
+      location.reload();
+    } catch (e) {
+      toast(e.message, true);
+    }
+  });
 
   // ---- server time ticks in the configured zone (rendered by the server; advance locally)
   const timeEl = $("#server-time");

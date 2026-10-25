@@ -21,7 +21,13 @@ from app.services.text import capacity_error, layout, tokenize
 SLUG_RE = images.SLUG_RE
 # The door is not a look, the pointer to the loaded profile is not its content, and the
 # calendar decides which board is up — it is not inside one.
-EXCLUDED_SETTINGS = ("guest_token", "active_profile", "calendar_everyday", "calendar_applied")
+EXCLUDED_SETTINGS = (
+    "guest_token",
+    "setup_done",
+    "active_profile",
+    "calendar_everyday",
+    "calendar_applied",
+)
 PROFILE_SETTINGS = tuple(k for k in DEFAULT_SETTINGS if k not in EXCLUDED_SETTINGS)
 MESSAGE_FIELDS = tuple(MessageIn.model_fields)
 

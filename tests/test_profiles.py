@@ -235,6 +235,15 @@ def test_the_listing_says_when_the_live_board_changed(client, auth):
     assert flags()["party"] is False, "the guest door is not part of a profile"
 
 
+def test_the_walkthrough_is_not_part_of_a_profile(client, auth):
+    client.patch("/api/settings", headers=auth, json={"setup_done": "1"})
+    assert client.post("/api/profiles/party/save", headers=auth, json={}).status_code == 201
+    assert "setup_done" not in client.get("/api/profiles/party", headers=auth).json()["settings"]
+    client.delete("/api/settings/setup_done", headers=auth)
+    client.post("/api/profiles/party/load", headers=auth)
+    assert client.get("/api/settings", headers=auth).json()["setup_done"] == ""
+
+
 def test_the_guest_door_is_not_part_of_a_profile(client, auth):
     link = client.post("/api/guest/rotate", headers=auth).json()
     client.post("/api/profiles/party/save", headers=auth)

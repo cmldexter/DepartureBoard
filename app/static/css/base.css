@@ -185,6 +185,32 @@ body { background: var(--bg); color: var(--fg); font-family: var(--font); }
 .page .sheet #message-form { margin-top: .5rem; }
 .page .sheet .swatches { grid-template-columns: 1fr 1fr; }
 body.sheet-open { overflow: hidden; }
+/* an empty state: one line and one button, the same component on every tab */
+.page .empty { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; margin: .75rem 0; padding: .9rem 1.1rem; border: 1px dashed #3a3a3a; border-radius: .6rem; color: var(--muted); }
+.page .empty button { margin: 0; }
+.page ul.images li.plain { display: block; padding: 0; border: 0; }
+.page table.list td .empty { margin: .25rem 0; }
+/* the first-run walkthrough: four steps over the page's own calls — a sheet on a phone, a panel on a desk */
+.page .welcome .step h3 { margin: .75rem 0 .25rem; }
+.page .welcome .dots { display: flex; gap: .4rem; justify-content: center; margin: .6rem 0 0; padding: 0; list-style: none; }
+.page .welcome .dots li { width: .5rem; height: .5rem; border-radius: 50%; background: #333; }
+.page .welcome .dots li.on { background: var(--accent); }
+.page .welcome .chips { margin: .25rem 0 .75rem; }
+.page .welcome .screen { margin: .75rem 0 0; border: 1px solid #2a2a2a; }
+.page .welcome .addresses { padding-left: 0; list-style: none; }
+.page .welcome .qr { display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap; }
+.page .welcome .qr img { width: 9rem; height: 9rem; border-radius: .4rem; background: #fff; }
+.page .welcome .qr p { flex: 1 1 14rem; margin: 0; }
+.page .welcome pre.token { flex: 1; margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.page .welcome .row { align-items: center; }
+.page .welcome footer { margin-top: 1rem; padding-top: .75rem; border-top: 1px solid #222; }
+.page .welcome footer button { margin: 0; }
+@media (min-width: 701px) {
+  .page dialog.welcome { position: fixed; inset: 0; width: min(46rem, 92vw); max-width: 46rem; height: auto; max-height: 90dvh; margin: auto; padding: 0 1.5rem 1.25rem; border: 1px solid #2a2a2a; border-radius: .8rem; }
+  .page dialog.welcome::backdrop { background: rgba(0, 0, 0, .65); }
+  .page .welcome header { margin: 0 -1.5rem; padding: .6rem 1.5rem; }
+  .page .welcome .swatches { grid-template-columns: repeat(4, 1fr); }
+}
 /* the phone: a bottom tab bar, big targets, the live card as a strip, blocks live in sheets */
 @media (max-width: 700px) {
   .page .narrow { padding: 1rem 1rem 6rem; }
@@ -203,6 +229,7 @@ body.sheet-open { overflow: hidden; }
   .page button { min-height: 2.75rem; }
   .page button.link { min-height: 2.75rem; display: inline-flex; align-items: center; padding: 0 .4rem; }
   .page button.small { min-height: 2.5rem; }
+  .page .chip { display: inline-flex; align-items: center; min-height: 2.75rem; }
   .page input:not([type="range"]):not([type="checkbox"]):not([type="radio"]), .page select { min-height: 2.75rem; }
   .page table.list { table-layout: fixed; }
   .page table.list th:nth-child(1) { width: 4.4rem; }
@@ -311,7 +338,7 @@ body.sheet-open { overflow: hidden; }
 .page #image-form label { margin: 0; flex: 1; }
 .page #image-form button { margin: 0; }
 @media (max-width: 36rem) { .page .grid2 { grid-template-columns: 1fr; } .page .switch { display: block; margin: 0 0 .3rem; } }
-@media (prefers-reduced-motion: reduce) { .page .switch .track, .page .switch .track::after { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .page .switch .track, .page .switch .track::after, .page #live .live-screen { transition: none; } }
 
 /* ---- integrate page */
 .page .integrate h2 { margin-top: 2rem; }

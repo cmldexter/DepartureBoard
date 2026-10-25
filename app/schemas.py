@@ -180,6 +180,9 @@ class SettingsOut(BaseModel):
     guest_auto_approve: bool = Field(description="A guest post goes on the board at once")
     guest_priority: int = Field(description="The priority a guest post's message gets")
     guest_show_seconds: int = Field(description="Its turn on the board, in seconds")
+    setup_done: str = Field(
+        description='"1" once the first-run walkthrough was done or skipped; "" shows it'
+    )
     active_profile: str = Field(description='The saved board loaded last; "" when none')
     calendar_everyday: str = Field(
         description='The calendar\'s board between planned days; "" = stay on the last one'
@@ -231,6 +234,9 @@ class SettingsPatch(BaseModel):
     )
     split_line: int | None = Field(
         None, ge=0, le=3, description="The line across a flap's middle, px (0 hides it)"
+    )
+    setup_done: Literal["", "1"] | None = Field(
+        None, description='"1" = the first-run walkthrough is done; "" shows it again'
     )
     guest_token: str | None = Field(
         None,

@@ -52,6 +52,9 @@ def test_settings_page_panels(client, token):
         "feltbykraft",
         'name="show_seconds"',
         'name="timer_ring"',
+        'id="welcome-again"',
+        'id="boards-empty"',
+        'id="guest-off" class="empty"',
         "at the size set there",
         "give it a size below",
         'id="look"',
@@ -196,7 +199,8 @@ def test_settings_page_shows_the_name(monkeypatch, tmp_path, token):
             'data-copy="http://192.168.1.20:8085"'
         )
         assert "by name" in html and "the address you are using" in html
-        assert html.count('data-copy="http://10.0.0.5:8085"') == 1
+        setup_tab = html[html.index('id="panel-setup"') : html.index('id="side"')]
+        assert setup_tab.count('data-copy="http://10.0.0.5:8085"') == 1
         assert "DEPARTUREBOARD_HOST=dboard.localhost" not in html
         # The integrate page pre-fills the name, with the request's scheme and port.
         r = c.get("/integrate", headers={"Authorization": f"Bearer {tok}"})
@@ -316,3 +320,36 @@ def test_the_manifest_makes_a_home_screen_app(client, token):
         not list(static.rglob("sw.js"))
         and "serviceWorker" not in (static / "js" / "settings.js").read_text()
     )
+
+
+def test_the_walkthrough_shows_once(client, token):
+    auth = {"Authorization": f"Bearer {token}"}
+    """A fresh data dir opens the settings page on the walkthrough; Done (setup_done = "1")
+    keeps it away; Setup → Run again (DELETE) brings it back. Its step 3 carries the board's
+    first address as a QR; the key never reaches the TV or a saved board."""
+    html = client.get("/settings", headers=auth).text
+    for needle in (
+        'id="welcome"',
+        'id="welcome-1-title"',
+        'id="welcome-4-title"',
+        'name="welcome_preset"',
+        'id="welcome-themes"',
+        'value="WELCOME HOME 🏠"',
+        'src="data:image/png;base64,',
+        'data-copy="http://testserver"',
+        'id="welcome-board"',
+    ):
+        assert needle in html, needle
+    assert client.get("/api/settings", headers=auth).json()["setup_done"] == ""
+    r = client.patch("/api/settings", headers=auth, json={"setup_done": "1"})
+    assert r.status_code == 200 and r.json()["setup_done"] == "1"
+    html = client.get("/settings", headers=auth).text
+    assert 'id="welcome"' not in html and 'id="welcome-again"' in html
+    assert "setup_done" not in client.get("/api/board/current").json()["settings"]
+    assert (
+        client.patch("/api/settings", headers=auth, json={"setup_done": "yes"}).status_code == 422
+    )
+    assert client.delete("/api/settings/setup_done", headers=auth).status_code == 204
+    assert client.get("/api/settings", headers=auth).json()["setup_done"] == ""
+    assert 'id="welcome"' in client.get("/settings", headers=auth).text
+    assert client.delete("/api/settings/setup_done").status_code == 401

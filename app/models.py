@@ -99,6 +99,9 @@ DEFAULT_SETTINGS = {
     "cell_radius": "6",
     "cell_gap": "35",
     "split_line": "1",
+    # The first-run walkthrough: "" shows it when the settings page opens, "1" once Done or
+    # skipped. DELETE /api/settings/setup_done brings it back. Never sent to the TV.
+    "setup_done": "",
     # The guest link: "" = off; a token mints with POST /api/guest/rotate. Never sent to the TV.
     "guest_token": "",
     # Guest posts wait for the host unless auto-approve is on; each becomes a message at this
