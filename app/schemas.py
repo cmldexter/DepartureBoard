@@ -169,6 +169,9 @@ class SettingsOut(BaseModel):
     background_blur: int
     background_dim: int
     background_fit: BackgroundFit
+    cell_radius: int
+    cell_gap: int
+    split_line: int
 
 
 class SettingsPatch(BaseModel):
@@ -180,6 +183,7 @@ class SettingsPatch(BaseModel):
                 {"animation": 0, "sound_enabled": False},
                 {"theme": "walnut", "idle_text": "WELCOME HOME"},
                 {"background_image": "img:poster", "background_blur": 20, "background_dim": 40},
+                {"cell_radius": 0, "cell_gap": 10, "split_line": 0},
             ]
         }
     )
@@ -206,6 +210,15 @@ class SettingsPatch(BaseModel):
     background_blur: int | None = Field(None, ge=0, le=40, description="Blur, px")
     background_dim: int | None = Field(None, ge=0, le=90, description="Dim, %")
     background_fit: BackgroundFit | None = None
+    cell_radius: int | None = Field(
+        None, ge=0, le=12, description="Corner radius of a flap, % of the cell's width"
+    )
+    cell_gap: int | None = Field(
+        None, ge=0, le=100, description="Gap between flaps, hundredths of a vmin"
+    )
+    split_line: int | None = Field(
+        None, ge=0, le=3, description="The line across a flap's middle, px (0 hides it)"
+    )
 
     @field_validator("background_image")
     @classmethod
@@ -241,6 +254,9 @@ class BoardSettings(BaseModel):
     background_blur: int
     background_dim: int
     background_fit: BackgroundFit
+    cell_radius: int
+    cell_gap: int
+    split_line: int
 
 
 class BoardTimer(BaseModel):

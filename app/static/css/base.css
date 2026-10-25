@@ -105,6 +105,7 @@ body { background: var(--bg); color: var(--fg); font-family: var(--font); }
 .page .effects select { width: auto; padding: .3rem .4rem; }
 .page .effects output { min-width: 3.4rem; color: var(--muted); font-variant-numeric: tabular-nums; }
 .page .backdrop .row button { margin-top: .75rem; }
+.page .flaps output { min-width: 4.6rem; } /* "0.35 vmin" */
 @media (max-width: 36rem) { .page .backdrops { grid-template-columns: repeat(3, 1fr); } .page .effects input[type="range"] { width: 7rem; } }
 .page #live .row { align-items: center; }
 .page #cast[data-state="connected"] { background: #2f6b3a; color: #fff; }

@@ -101,8 +101,10 @@
     } else if (e.data.type === "board:ready" && fromPreview && lastPreview) {
       post(previewFrame, lastPreview);
     }
-    // a poll that brought new settings re-applied the saved background; put the draft back
-    if (e.data.type === "board:current" && fromLive && bgDirty()) post(liveFrame, { type: "board:settings", settings: { ...bgDraft } });
+    // a poll that brought new settings re-applied the saved background and flap shape; put the drafts back
+    if (e.data.type === "board:current" && fromLive && (bgDirty() || flapDirty())) {
+      post(liveFrame, { type: "board:settings", settings: { ...bgDraft, ...flapDraft } });
+    }
   });
 
   const firstLine = (text) => (text.split("\n").find((l) => l.trim()) || text).trim();
@@ -441,6 +443,55 @@
     }
   });
 
+  // ---- look & feel: the shape of a flap. Three sliders the frames follow at once through
+  // board:settings; Save writes the three settings in one PATCH; two presets set the draft.
+  const flapForm = $("#flaps-form");
+  const flapStatus = $("#flaps-status");
+  const FLAPS = ["cell_radius", "cell_gap", "split_line"];
+  const FLAP_CLASSIC = { cell_radius: 6, cell_gap: 35, split_line: 1 };
+  const FLAP_PICTURE = { cell_radius: 0, cell_gap: 10, split_line: 0 };
+  const flapDraft = { ...FLAP_CLASSIC };
+  let flapSaved = { ...flapDraft };
+  const flapDirty = () => FLAPS.some((k) => flapDraft[k] !== flapSaved[k]);
+  function showFlapDraft() {
+    $("#radius-value").textContent = `${flapDraft.cell_radius} %`;
+    $("#gap-value").textContent = `${(flapDraft.cell_gap / 100).toFixed(2)} vmin`;
+    $("#split-value").textContent = `${flapDraft.split_line} px`;
+    FLAPS.forEach((k) => (flapForm[k].value = flapDraft[k]));
+    const msg = { type: "board:settings", settings: { ...flapDraft } };
+    post(liveFrame, msg);
+    post(previewFrame, msg);
+  }
+  function fillFlapForm(s) {
+    FLAPS.forEach((k) => (flapSaved[k] = Number(s[k])));
+    Object.assign(flapDraft, flapSaved);
+    showFlapDraft();
+  }
+  FLAPS.forEach((k) =>
+    flapForm[k].addEventListener("input", () => {
+      flapDraft[k] = Number(flapForm[k].value);
+      showFlapDraft();
+    }),
+  );
+  function presetFlaps(values, said) {
+    Object.assign(flapDraft, values);
+    showFlapDraft();
+    flapStatus.textContent = said;
+  }
+  $("#flaps-picture").addEventListener("click", () => presetFlaps(FLAP_PICTURE, "Picture mode on the card — Save to put it on the TV."));
+  $("#flaps-classic").addEventListener("click", () => presetFlaps(FLAP_CLASSIC, "Classic flaps on the card — Save to put them on the TV."));
+  flapForm.addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    try {
+      const saved = await api("/api/settings", { method: "PATCH", body: { ...flapDraft } });
+      fillFlapForm(saved);
+      flapStatus.textContent = "Saved — the TV picks it up on its next poll.";
+      refreshLive();
+    } catch (e) {
+      toast(e.message, true);
+    }
+  });
+
   // ---- preview (the server lays the text out, so it can never differ from the board)
   let previewTimer = 0;
   async function preview() {
@@ -492,6 +543,7 @@
     display.timer_ring.value = s.timer_ring || "off";
     form.show_seconds.placeholder = String(s.rotate_seconds); // the default a message falls back to
     fillBgForm(s);
+    fillFlapForm(s);
     syncCustom();
   }
   $$('input[name="grid_preset"]', display).forEach((r) => r.addEventListener("change", syncCustom));

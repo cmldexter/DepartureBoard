@@ -14,6 +14,11 @@ turns translucent over the picture; the board stays readable.
    hides the words — and **Dim** until the flaps read; the live card follows every move.
 4. **Save background.** The TV picks it up on its next poll.
 
+The gaps between the flaps show the **board's colour**, not the picture — the picture lives under
+the frame. A picture *on* the flaps (`{img:slug@9x1}` in a message) is a different thing: for that
+one, **Look & feel → The flaps → Picture mode** tightens the corners, the gap and the split line so
+less of it is lost to the grid.
+
 **Clear** takes the picture away and keeps your blur and dim for next time. The same four settings
 are on the API — `PATCH /api/settings` with `background_image`, `background_blur`,
 `background_dim` and `background_fit` — so a script can set the party look and take it down.

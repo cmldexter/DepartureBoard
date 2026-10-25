@@ -36,8 +36,11 @@
   const STEP_MS_MAX = 50;
   const STAGGER_RATIO = 0.7;
 
-  const settings = { rows: 0, cols: 0, animation: 60, theme: "classic-black", timer_ring: "off" };
+  const settings = { rows: 0, cols: 0, animation: 60, theme: "classic-black", timer_ring: "off", cell_radius: 6, cell_gap: 35, split_line: 1 };
   const BG_KEYS = ["background_image", "background_blur", "background_dim", "background_fit"];
+  // The shape of a flap: unitless numbers board.css turns into lengths (see .frame).
+  const FLAP_KEYS = ["cell_radius", "cell_gap", "split_line"];
+  const FLAP_BOUNDS = { cell_radius: [0, 12], cell_gap: [0, 100], split_line: [0, 3] };
   let cells = []; // row-major cell records
   let target = []; // row-major sequence indices the board is heading to
   let specials = []; // row-major token cells ({emoji} / {img}) shown once a cell lands, or null
@@ -188,6 +191,21 @@
     document.documentElement.classList.toggle("has-backdrop", !!url);
   }
 
+  // Corners, gap and split line go on the frame, where the server rendered them inline for the first
+  // paint. A new gap resizes every cell, so the picture slices are measured and painted again.
+  function applyFlapShape(s) {
+    const oldGap = settings.cell_gap;
+    FLAP_KEYS.forEach((k) => {
+      if (s[k] === undefined) return;
+      const [lo, hi] = FLAP_BOUNDS[k];
+      settings[k] = Math.max(lo, Math.min(hi, Number(s[k]) || 0));
+    });
+    frameEl.style.setProperty("--cell-radius", String(settings.cell_radius));
+    frameEl.style.setProperty("--cell-gap", String(settings.cell_gap));
+    frameEl.style.setProperty("--split-line", String(settings.split_line));
+    if (settings.cell_gap !== oldGap) repaintPictures();
+  }
+
   // The theme is a stylesheet; swapping the link's href is the whole change.
   function applyTheme(id) {
     const link = document.getElementById("theme");
@@ -209,6 +227,7 @@
       renderTimer();
     }
     if (BG_KEYS.some((k) => next[k] !== undefined)) applyBackdrop(next);
+    if (FLAP_KEYS.some((k) => next[k] !== undefined)) applyFlapShape(next);
     const rows = Number(next.rows) || settings.rows;
     const cols = Number(next.cols) || settings.cols;
     if (rows !== settings.rows || cols !== settings.cols) {
@@ -225,6 +244,7 @@
   settings.theme = config.theme || settings.theme;
   settings.timer_ring = config.timer_ring || settings.timer_ring;
   applyBackdrop(config);
+  applyFlapShape(config);
   if (window.Sound) window.Sound.configure(config);
 
   // The sound just unlocked (fullscreen click): nothing to do now — the next cascade clicks.
@@ -350,26 +370,28 @@
     }
   }
 
-  // After a resize the cells are a different size: repaint every picture part at its new slice.
+  // After a resize (or a new gap) the cells are a different size: repaint every picture part at
+  // its new slice.
+  function repaintPictures() {
+    Flap.invalidateMetrics();
+    cells.forEach((cell) => {
+      if (cell.special && cell.special.img && cell.pending === null) {
+        const sp = cell.special;
+        cell.special = null; // force the repaint
+        Flap.setCell(cell, cell.current, false, sp);
+      }
+    });
+  }
   let resizeTimer = 0;
   window.addEventListener("resize", () => {
     clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(() => {
-      Flap.invalidateMetrics();
-      cells.forEach((cell) => {
-        if (cell.special && cell.special.img && cell.pending === null) {
-          const sp = cell.special;
-          cell.special = null; // force the repaint
-          Flap.setCell(cell, cell.current, false, sp);
-        }
-      });
-    }, 150);
+    resizeTimer = setTimeout(repaintPictures, 150);
   });
 
   settings.poll_seconds = Number(config.poll_seconds) || 5;
   if (!config.demo && !config.preview) fetchBoard();
 
-  window.Board = { show, applySettings, applyTheme, applyBackdrop, settings, stepMs, soundReady, poll, fetchBoard, timer, timerRemaining };
+  window.Board = { show, applySettings, applyTheme, applyBackdrop, applyFlapShape, settings, stepMs, soundReady, poll, fetchBoard, timer, timerRemaining };
 
   if (framed) {
     window.addEventListener("message", (e) => {

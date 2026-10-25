@@ -29,7 +29,7 @@ Every call except the two public ones sends `Authorization: Bearer $DB_TOKEN`.
 | Change / pause | `PATCH /api/messages/{id}` with the fields to change, e.g. `{"enabled": false}` |
 | Remove | `DELETE /api/messages/{id}` → 204 |
 | A **picture** on the board | `POST /api/images` multipart `file` (PNG/JPEG/GIF/WebP ≤ 5 MB) + optional `slug`; the response gives `"token": "{img:slug}"` to put in a message and `suggested` blocks; `PATCH /api/images/{slug}` `{"w": 9, "h": 1, "fit": "contain"}` sizes it in cells (or write `{img:slug@9x1}`) |
-| The display | `PATCH /api/settings` — `{"grid_preset": "compact"|"large"|"custom", "rows", "cols", "animation": 0–100, "sound_enabled", "sound_volume": 0–1, "theme": "classic-black"|"walnut"|"arctic-white"|"midnight", "idle_text", "poll_seconds", "rotate_seconds", "timer_ring": "off"|"own"|"all"}` (partial) |
+| The display | `PATCH /api/settings` — `{"grid_preset": "compact"|"large"|"custom", "rows", "cols", "animation": 0–100, "sound_enabled", "sound_volume": 0–1, "theme": "classic-black"|"walnut"|"arctic-white"|"midnight", "idle_text", "poll_seconds", "rotate_seconds", "timer_ring": "off"|"own"|"all", "cell_radius": 0–12, "cell_gap": 0–100, "split_line": 0–3}` (partial; the last three are the shape of a flap — `0, 10, 0` is Picture mode for a banner across the flaps) |
 | Public: what the TV shows | `GET /api/board/current` (no token); `GET /images/{slug}` |
 | Reference | `GET /docs` (Swagger), `GET /llms.txt` |
 

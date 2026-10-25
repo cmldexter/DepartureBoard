@@ -61,6 +61,34 @@ def test_animation_bounds(raw, expected):
     assert resolve_display({"animation": raw})["animation"] == expected
 
 
+@pytest.mark.parametrize(
+    ("key", "raw", "expected"),
+    [
+        ("cell_radius", "0", 0),
+        ("cell_radius", "12", 12),
+        ("cell_radius", "40", 12),
+        ("cell_radius", "-1", 0),
+        ("cell_radius", "round", 6),
+        ("cell_gap", "0", 0),
+        ("cell_gap", "100", 100),
+        ("cell_gap", "250", 100),
+        ("cell_gap", "", 35),
+        ("split_line", "0", 0),
+        ("split_line", "3", 3),
+        ("split_line", "9", 3),
+        ("split_line", None, 1),
+    ],
+)
+def test_flap_shape_bounds(key, raw, expected):
+    """Corners in % of a cell, gap in hundredths of a vmin, split line in px — clamped, defaulted."""
+    assert resolve_display({key: raw})[key] == expected
+
+
+def test_flap_shape_defaults_are_the_classic_look():
+    d = resolve_display({})
+    assert (d["cell_radius"], d["cell_gap"], d["split_line"]) == (6, 35, 1)
+
+
 def test_display_settings_reads_the_table(client):
     with next(client.app.state.db.session()) as session:
         session.add(Setting(key="grid_preset", value="large"))
@@ -166,6 +194,9 @@ CONFIG_KEYS = {
     "background_blur",
     "background_dim",
     "background_fit",
+    "cell_radius",
+    "cell_gap",
+    "split_line",
     "demo",
     "embed",
     "preview",
@@ -254,3 +285,33 @@ def test_board_page_has_the_backdrop_layer(client):
         30,
         "cover",
     )
+
+
+def test_board_page_carries_the_flap_shape(client):
+    """The three shape settings reach the page config and the frame's inline style (first paint)."""
+    html = client.get("/").text
+    c = _config(html)
+    assert (c["cell_radius"], c["cell_gap"], c["split_line"]) == (6, 35, 1)
+    assert "--cell-radius: 6; --cell-gap: 35; --split-line: 1;" in html
+    with next(client.app.state.db.session()) as session:
+        session.add(Setting(key="cell_gap", value="0"))
+        session.add(Setting(key="split_line", value="0"))
+        session.commit()
+    html = client.get("/?embed").text
+    c = _config(html)
+    assert (c["cell_radius"], c["cell_gap"], c["split_line"]) == (6, 0, 0), "the live card too"
+    assert "--cell-radius: 6; --cell-gap: 0; --split-line: 0;" in html
+
+
+def test_flap_shape_is_variables_not_constants():
+    """board.css reads the shape from the frame's custom properties; no hard-coded radius or line."""
+    from pathlib import Path
+
+    static = Path(__file__).resolve().parents[1] / "app" / "static"
+    css = (static / "css" / "board.css").read_text()
+    assert "border-radius: 0.5vmin" not in css
+    assert "border-radius: var(--r)" in css
+    assert "height: var(--split)" in css
+    assert "--gap: calc(var(--cell-gap, 35) * 0.01vmin)" in css
+    js = (static / "js" / "board.js").read_text()
+    assert "applyFlapShape" in js and "repaintPictures()" in js

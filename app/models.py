@@ -51,6 +51,10 @@ PRESETS = {"compact": (6, 22), "large": (8, 28)}
 ROWS_BOUNDS = (4, 10)
 COLS_BOUNDS = (16, 36)
 
+# The shape of a flap: corner radius in % of the cell's width, the gap between cells in
+# hundredths of a vmin, the split line across the middle in px (0 hides it).
+FLAP_BOUNDS = {"cell_radius": (0, 12), "cell_gap": (0, 100), "split_line": (0, 3)}
+
 # Built-in themes: app/static/themes/<id>.css. The first is the default.
 THEMES = ("classic-black", "walnut", "arctic-white", "midnight")
 
@@ -72,6 +76,10 @@ DEFAULT_SETTINGS = {
     "background_blur": "12",
     "background_dim": "30",
     "background_fit": "cover",
+    # The shape of a flap (FLAP_BOUNDS): 6 % corners, a 0.35 vmin gap, a 1 px split line.
+    "cell_radius": "6",
+    "cell_gap": "35",
+    "split_line": "1",
 }
 
 # Shipped backgrounds: app/static/backgrounds/<name>.jpg, 1920×1080, drawn by the project (no

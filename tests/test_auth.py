@@ -64,6 +64,12 @@ def test_settings_page_panels(client, token):
         'name="background_dim"',
         'name="background_fit"',
         'id="backdrop-clear"',
+        'id="flaps-form"',
+        'name="cell_radius"',
+        'name="cell_gap"',
+        'name="split_line"',
+        'id="flaps-picture"',
+        'id="flaps-classic"',
     ):
         assert needle in r.text, needle
     assert 'name="theme"' not in r.text, "the theme left the Display form for the swatches"
