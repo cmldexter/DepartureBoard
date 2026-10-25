@@ -146,11 +146,30 @@ body { background: var(--bg); color: var(--fg); font-family: var(--font); }
 .page .tabs [role="tab"]:hover { color: var(--fg); }
 .page .tabs .badge { margin-left: .35rem; vertical-align: middle; }
 .page .tabs .tab-dot { color: var(--accent); font-size: .7em; vertical-align: middle; }
+.page .layout { display: flex; flex-direction: column; }
+.page .side { order: -1; } /* one column: the live card under the tabs, above the Board panel */
+.page .side .preview { margin-top: 1rem; }
+.page .side .preview .screen { border: 1px solid #2a2a2a; }
+.page .side .preview::before { content: "Preview"; display: block; margin: 0 0 .35rem; font-weight: 600; font-size: 1rem; }
 .page .panel { outline: none; }
 .page .panel:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: .4rem; }
 .page .panel > section:first-child > h2, .page .panel > section:first-child > .row > h2, .page #panel-setup > h2 { margin-top: 1.25rem; }
 .page .panel-intro { margin: 1rem 0 0; }
-.page .offstage { position: absolute; left: -300vw; top: 0; width: min(42rem, 100vw - 2rem); pointer-events: none; }
+@media (max-width: 1099.98px) { .page .side.offstage { position: absolute; left: -300vw; top: 0; width: min(42rem, 100vw - 2rem); pointer-events: none; } }
+/* desktop: two columns above 1100 px — the tab's content on the left, the live card (and the open
+   form's preview) pinned on the right; a sticky table header; row hover */
+@media (min-width: 1100px) {
+  .page .narrow { max-width: 74rem; }
+  .page .layout { display: grid; grid-template-columns: minmax(0, 1fr) 26rem; column-gap: 2rem; align-items: start; }
+  .page .main-col { min-width: 0; }
+  .page .side { order: 0; position: sticky; top: 1rem; }
+  .page .side #live h2 { margin-top: 1.25rem; }
+  .page table.list thead th { position: sticky; top: 0; background: var(--bg); z-index: 1; }
+  .page table.list tbody tr:hover td { background: #161616; }
+  .page table.list td.state { width: 9rem; }
+  .page table.list td.actions { width: 8rem; }
+  .page .months { gap: 1.5rem; }
+}
 @media (max-width: 36rem) { .page .tabs [role="tab"] { padding: .55rem .6rem; font-size: .9rem; } }
 /* the Boards strip under the header: this board · dot · meta | Switch… Save Save as… ⋯ */
 .page #boards { margin: 1rem 0 0; padding: .6rem .9rem; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: .6rem; }

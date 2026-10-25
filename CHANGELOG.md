@@ -7,7 +7,14 @@ and a container image `ghcr.io/cmldexter/departureboard:X.Y.Z`.
 
 ## [Unreleased]
 
-_Nothing yet._
+### Added
+
+- **The desktop layout** (#123). Above 1100 px the settings page is two columns: the tab's content
+  on the left and the live card pinned on the right whatever tab you are on — with the message
+  form's preview under it while you type, so a slider, a message or an approval shows its effect
+  without scrolling. The messages table gets a sticky header, fixed columns and row hover. One
+  column again below 1100 px, with the live card at the top of the Board tab as before. The README's
+  settings captures retaken; the tour reads as tabs.
 
 ## [0.4.0] — 2026-10-25
 

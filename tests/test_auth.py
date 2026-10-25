@@ -95,6 +95,8 @@ def test_settings_page_panels(client, token):
         'id="panel-setup"',
         'id="token"',
         'aria-controls="panel-guests"',
+        'id="side"',
+        'class="layout"',
         'id="qr-board"',
     ):
         assert needle in r.text, needle
@@ -250,8 +252,12 @@ def test_every_section_sits_in_its_tab_panel(client, token):
         pos = html.index(f'<section id="{section_id}"')
         return [name for name, start in bounds if start < pos][-1]
 
+    live = html.index('<section id="live"')
+    assert html.index('<aside id="side"') < live < html.index("</aside>"), (
+        "the live card is the aside"
+    )
+    assert live > html.index('<div id="panel-setup"'), "after every panel in the DOM; CSS orders it"
     for section, tab in {
-        "live": "board",
         "look": "board",
         "display": "board",
         "messages": "messages",
