@@ -39,6 +39,9 @@ class Settings(BaseSettings):
     # on the settings page, pre-filled on the integrate page, added to the self-signed
     # certificate. The app does not make the name resolve; see docs/tv-setup.md.
     host: str = ""
+    # How often the calendar's switch runs (seconds; 0 turns the background tick off — the
+    # API's POST /api/calendar/apply still works).
+    calendar_tick_seconds: float = 30
 
     @field_validator("host")
     @classmethod

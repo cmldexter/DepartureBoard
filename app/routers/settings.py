@@ -7,7 +7,7 @@ from app.config import Settings
 from app.deps import app_settings, get_session
 from app.models import PRESETS, Setting
 from app.schemas import SettingsOut, SettingsPatch
-from app.services import guest, images
+from app.services import guest, images, profiles
 from app.services.auth import Authenticated
 from app.services.display import display_settings
 
@@ -47,6 +47,12 @@ def patch_settings(
             continue
         stored = str(value).lower() if isinstance(value, bool) else str(value)
         session.merge(Setting(key=key, value=stored))
+    everyday = changes.get("calendar_everyday")
+    if everyday and profiles.find(settings, everyday) is None:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            f"No saved board {everyday!r}. Save one first: POST /api/profiles/{{slug}}/save.",
+        )
     if changes.get("guest_token") == "":
         guest.disable_qr_messages(session)  # a code to a closed door comes off the board
     session.commit()

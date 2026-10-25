@@ -9,6 +9,16 @@ and a container image `ghcr.io/cmldexter/departureboard:X.Y.Z`.
 
 ### Added
 
+- **A calendar of boards** (#142). Saved boards assigned to date ranges in `calendar.json` beside
+  the profiles: `GET /api/calendar` (the plan, the everyday board, what today resolves to),
+  `POST /api/calendar` (`profile`, `start`, `end` inclusive or null, `note`), `PATCH`/`DELETE
+  /api/calendar/{id}`, `POST /api/calendar/apply`. A background tick (every
+  `DEPARTUREBOARD_CALENDAR_TICK_SECONDS`, 30) puts the planned board on the TV at the day boundary
+  in the board's timezone — **after saving the live board back into its active profile** (or into
+  `unsaved-<date>` when it has none), so edits made on the Halloween board end up in
+  `halloween.json`. When two entries cover a day the later start wins; an entry whose board was
+  deleted is listed `missing` and skipped; the new setting `calendar_everyday` names the board
+  between planned days (`""` = stay on the last one); `calendar_applied` remembers the decision.
 - **The Boards strip** (#121). Under the settings page's header: *This board: Party* with
   *Switch…*, *Save*, *Save as…* and a ⋯ menu for Duplicate, Rename and Delete, each one call; a
   dot after the name when the live board differs from its saved file (`changed` on the listing);

@@ -1,7 +1,7 @@
 """Request and response shapes for the API."""
 
 import re
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -181,6 +181,10 @@ class SettingsOut(BaseModel):
     guest_priority: int = Field(description="The priority a guest post's message gets")
     guest_show_seconds: int = Field(description="Its turn on the board, in seconds")
     active_profile: str = Field(description='The saved board loaded last; "" when none')
+    calendar_everyday: str = Field(
+        description='The calendar\'s board between planned days; "" = stay on the last one'
+    )
+    calendar_applied: str = Field(description="What the calendar's switch applied last")
 
 
 class SettingsPatch(BaseModel):
@@ -245,6 +249,24 @@ class SettingsPatch(BaseModel):
     guest_show_seconds: int | None = Field(
         None, ge=5, le=600, description="A guest post's turn on the board, seconds (default 15)"
     )
+
+    calendar_everyday: str | None = Field(
+        None,
+        description=(
+            'The saved board the calendar returns to between planned days ("" = stay on the '
+            "last one); must exist"
+        ),
+    )
+
+    @field_validator("calendar_everyday")
+    @classmethod
+    def _everyday(cls, v: str | None) -> str | None:
+        if v is None or v == "":
+            return v
+        v = v.strip()
+        if not re.match(r"^[a-z0-9][a-z0-9-]{0,39}$", v):
+            raise ValueError('calendar_everyday: a saved board\'s slug, or ""')
+        return v
 
     @field_validator("guest_token")
     @classmethod
@@ -354,6 +376,62 @@ class ProfileCopyIn(BaseModel):
 
 class ProfileRenameIn(BaseModel):
     name: str = Field(min_length=1, max_length=80)
+
+
+class CalendarEntryIn(BaseModel):
+    """A saved board for a date range (days in the board's timezone; `end` inclusive)."""
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {"profile": "halloween", "start": "2026-10-31", "end": "2026-10-31"},
+                {"profile": "xmas", "start": "2026-12-20", "end": "2026-12-26", "note": "family"},
+            ]
+        }
+    )
+    profile: str = Field(pattern=r"^[a-z0-9][a-z0-9-]{0,39}$")
+    start: date
+    end: date | None = Field(None, description="Inclusive; null = until further notice")
+    note: str = Field("", max_length=80)
+
+
+class CalendarEntryPatch(BaseModel):
+    profile: str | None = Field(None, pattern=r"^[a-z0-9][a-z0-9-]{0,39}$")
+    start: date | None = None
+    end: date | None = None
+    note: str | None = Field(None, max_length=80)
+
+
+class CalendarEntryOut(BaseModel):
+    id: int
+    profile: str
+    name: str | None = Field(description="The board's name; null when it was deleted")
+    start: date
+    end: date | None
+    note: str
+    missing: bool = Field(description="The board was deleted; the switch skips this entry")
+
+
+class CalendarToday(BaseModel):
+    date: date
+    profile: str | None = Field(description="The board planned for today, or null")
+    entry_id: int | None
+    until: date | None = Field(description="The planned entry's last day; null = open")
+
+
+class CalendarOut(BaseModel):
+    everyday: str
+    entries: list[CalendarEntryOut]
+    today: CalendarToday
+    applied: str = Field(description="What the switch applied last")
+
+
+class CalendarApplied(BaseModel):
+    changed: bool = Field(description="A board was loaded")
+    applied: str
+    loaded: str | None
+    saved_back: str | None = Field(description="The profile the live board was saved into first")
+    kept_disabled: list[KeptDisabled]
 
 
 class GuestLink(BaseModel):

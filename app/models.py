@@ -109,6 +109,10 @@ DEFAULT_SETTINGS = {
     # The profile loaded last (profiles/<slug>.json), "" when none — informational; a save or a
     # load sets it. Not part of a profile, never sent to the TV.
     "active_profile": "",
+    # The calendar: the saved board between planned days ("" = stay on the last one), and what
+    # the switch applied last (internal; "entry:<id>:<slug>", "everyday:<slug>" or "").
+    "calendar_everyday": "",
+    "calendar_applied": "",
 }
 
 GUEST_BOUNDS = {"guest_priority": (-100, 100), "guest_show_seconds": (5, 600)}
