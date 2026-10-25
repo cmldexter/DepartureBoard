@@ -41,7 +41,8 @@
   if (file) {
     file.addEventListener("change", () => {
       const f = file.files[0];
-      name.textContent = f ? `${f.name} · ${(f.size / 1024 / 1024).toFixed(1)} MB` : "";
+      const size = !f ? "" : f.size >= 1024 * 1024 ? `${(f.size / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(f.size / 1024))} KB`;
+      name.textContent = f ? `${f.name} · ${size}` : "";
     });
   }
 })();
