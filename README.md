@@ -175,10 +175,22 @@ ends the evening. [docs/guests.md](docs/guests.md) is the whole safety story.
 **The token.** On the **Setup** tab with your board's addresses, generated on first boot (or set with
 `DEPARTUREBOARD_API_TOKEN`). The TV needs none; the settings page and every write to the API do.
 
-<img src="docs/media/settings-phone.png" alt="The Messages tab on a phone: the tab row, then the table" width="300">
+<p><img src="docs/media/phone-now.png" alt="The Board tab on a phone: the Boards strip, the live strip naming what is on, Show something now with a line and the chips for how long, the Theme and Behind the board rows, and the bottom bar" width="300"> <img src="docs/media/settings-phone.png" alt="The Messages tab on a phone: a switch and a state badge, the text, when it shows, Edit and Delete, and the bottom bar" width="300"></p>
 
-The page works on a phone, one tab at a time. For the TV side, read [docs/tv-setup.md](docs/tv-setup.md); to
-post from a script, a calendar or an agent, open `/integrate` (pictured below).
+**From your phone.** Under 700 px the page is a remote. The six tabs are a bar along the bottom,
+and the **Board** tab opens on *Show something now*: a line, a chip for 30 s, 2 min, 10 min or
+until replaced, *Show now*. The board folds to a strip that says what is on and expands on tap.
+The main screens stay short: a change (the theme, the display, a message, a picture, a day on the
+calendar) takes you to a screen of its own with *Back* at the top, and saving brings you back to
+where you were. *Upload a picture* has *Take a photo*, straight from the camera to the board. To
+keep it on the home screen like an app:
+
+1. Open `http://<address>:8080/settings` in Safari (iPhone) or Chrome (Android).
+2. Safari: **Share** → **Add to Home Screen**. Chrome: **⋮** → **Add to Home screen**.
+3. Tap the icon. It opens full-screen, in the board's colours; sign in once and it stays signed in for a year.
+
+For the TV side, read [docs/tv-setup.md](docs/tv-setup.md); to post from a script, a calendar or an
+agent, open `/integrate` (pictured below).
 
 ## Themes
 

@@ -211,6 +211,17 @@ Mirroring), open the address in Safari or Chrome there and press **⛶**. The wa
 the device doing the mirroring; keep it plugged in and set its auto-lock to never. A stick in
 the TV's other HDMI port is the better long-term setup.
 
+## The phone as the remote
+
+During an event the settings page on a phone is the remote: `http://<address>:8080/settings`,
+signed in once with the token. Under 700 px it is laid out for a thumb — the tabs along the bottom,
+and the **Board** tab opening on *Show something now*: type a line, pick 30 s, 2 min, 10 min or
+until replaced, and it is on the TV at the next poll. Approving a guest's post, switching to a
+saved board or planning tomorrow are each one tab away; a change opens a screen of its own and
+brings you back when it is saved. For a one-tap icon, **Add to Home Screen** (Safari: *Share*;
+Chrome: *⋮*) — it opens full-screen without the browser bars. The guest link (`/guest`, from the
+**Guests** tab) is a different thing: it needs no token and lets anyone post a line or a photo.
+
 ## Casting from a laptop (Chromecast, Google TV)
 
 Casting is the other way round from everything above: nothing runs on the TV. Chrome on your

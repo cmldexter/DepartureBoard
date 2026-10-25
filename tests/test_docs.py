@@ -53,7 +53,15 @@ def test_every_doc_knows_about_guests():
         ("integrations/skills/departureboard/SKILL.md", ("/api/guest/rotate", "/api/posts")),
         ("SECURITY.md", ("guest link", "docs/guests.md")),
         ("docs/qr.md", ("guests.md",)),
-        ("CHANGELOG.md", ("#116", "#117")),
+        ("CHANGELOG.md", ("#116", "#117", "#124", "#125")),
+        (
+            "README.md",
+            ("**From your phone.**", "phone-now.png", "Add to Home Screen", "Show something now"),
+        ),
+        (
+            "docs/tv-setup.md",
+            ("The phone as the remote", "Add to Home Screen", "Show something now"),
+        ),
     ):
         text = (ROOT / path).read_text()
         for needle in needles:
