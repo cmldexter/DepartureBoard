@@ -139,6 +139,19 @@ body { background: var(--bg); color: var(--fg); font-family: var(--font); }
 .page ul.images .chip[aria-pressed="true"] { background: var(--accent); color: #000; border-color: var(--accent); }
 .page ul.images .applied { flex-basis: 100%; font-size: .85rem; }
 @media (max-width: 36rem) { .page ul.images .chips { flex-basis: 100%; } }
+/* the tabs under the strip: six panels; the Board panel goes off-stage, not display:none */
+.page .tabs { display: flex; gap: .25rem; margin: 1rem 0 0; border-bottom: 1px solid #333; overflow-x: auto; scrollbar-width: none; }
+.page .tabs [role="tab"] { margin: 0; padding: .6rem .9rem; background: none; color: var(--muted); font-weight: 600; border: 0; border-bottom: 3px solid transparent; border-radius: .4rem .4rem 0 0; white-space: nowrap; cursor: pointer; }
+.page .tabs [role="tab"][aria-selected="true"] { color: var(--fg); border-bottom-color: var(--accent); }
+.page .tabs [role="tab"]:hover { color: var(--fg); }
+.page .tabs .badge { margin-left: .35rem; vertical-align: middle; }
+.page .tabs .tab-dot { color: var(--accent); font-size: .7em; vertical-align: middle; }
+.page .panel { outline: none; }
+.page .panel:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: .4rem; }
+.page .panel > section:first-child > h2, .page .panel > section:first-child > .row > h2, .page #panel-setup > h2 { margin-top: 1.25rem; }
+.page .panel-intro { margin: 1rem 0 0; }
+.page .offstage { position: absolute; left: -300vw; top: 0; width: min(42rem, 100vw - 2rem); pointer-events: none; }
+@media (max-width: 36rem) { .page .tabs [role="tab"] { padding: .55rem .6rem; font-size: .9rem; } }
 /* the Boards strip under the header: this board · dot · meta | Switch… Save Save as… ⋯ */
 .page #boards { margin: 1rem 0 0; padding: .6rem .9rem; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: .6rem; }
 .page #boards .row { align-items: center; }

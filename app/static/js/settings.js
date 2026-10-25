@@ -35,6 +35,88 @@
     toastTimer = setTimeout(() => (el.hidden = true), 4000);
   }
 
+  // ---- tabs: six panels, hash-addressed (#messages), the last one remembered per browser.
+  // Sections keep their ids inside the panels; a hash naming a section opens its tab and scrolls
+  // to it. The Board panel is never display:none'd — the live card is the page's heartbeat — it is
+  // moved off-stage instead, so its frame keeps polling and painting.
+  const TABS = ["board", "messages", "pictures", "guests", "boards", "setup"];
+  const TAB_OF = { live: "board", look: "board", display: "board", backdrop: "board", flaps: "board", images: "pictures", calendar: "boards", addresses: "setup", token: "setup" };
+  const tabButtons = TABS.map((t) => $(`#tab-${t}`));
+  let currentTab = "";
+  function tabForHash(hash) {
+    const id = (hash || "").replace(/^#/, "");
+    if (TABS.includes(id)) return id;
+    if (TAB_OF[id]) return TAB_OF[id];
+    const el = id && document.getElementById(id);
+    const panel = el && el.closest(".panel");
+    return panel ? panel.id.replace("panel-", "") : "";
+  }
+  function showTab(name, { focus = false, scrollTo = "" } = {}) {
+    if (!TABS.includes(name)) name = "board";
+    currentTab = name;
+    for (const t of TABS) {
+      const on = t === name;
+      const btn = $(`#tab-${t}`);
+      btn.setAttribute("aria-selected", String(on));
+      btn.tabIndex = on ? 0 : -1;
+      const panel = $(`#panel-${t}`);
+      if (t === "board") {
+        panel.classList.toggle("offstage", !on); // keeps the live frame alive while another tab shows
+        panel.setAttribute("aria-hidden", String(!on));
+        panel.inert = !on;
+      } else {
+        panel.hidden = !on;
+      }
+    }
+    try {
+      localStorage.setItem("departureboard.tab", name);
+    } catch {
+      /* private mode, blocked storage: the hash still works */
+    }
+    if (focus) $(`#tab-${name}`).focus();
+    if (scrollTo) {
+      const el = document.getElementById(scrollTo);
+      if (el) el.scrollIntoView({ block: "start" });
+    }
+  }
+  function openHash(hash, focus) {
+    const id = (hash || "").replace(/^#/, "");
+    const name = tabForHash(hash);
+    if (!name) return false;
+    showTab(name, { focus, scrollTo: TABS.includes(id) ? "" : id });
+    return true;
+  }
+  tabButtons.forEach((btn, i) => {
+    const name = TABS[i];
+    btn.addEventListener("click", () => {
+      showTab(name, { focus: true });
+      history.replaceState(null, "", `#${name}`);
+    });
+    btn.addEventListener("keydown", (ev) => {
+      const step = { ArrowRight: 1, ArrowLeft: -1, Home: -i, End: TABS.length - 1 - i }[ev.key];
+      if (step === undefined) return;
+      ev.preventDefault();
+      const next = TABS[(i + step + TABS.length) % TABS.length];
+      showTab(next, { focus: true });
+      history.replaceState(null, "", `#${next}`);
+    });
+  });
+  window.addEventListener("hashchange", () => openHash(location.hash, false));
+  {
+    let remembered = "";
+    try {
+      remembered = localStorage.getItem("departureboard.tab") || "";
+    } catch {
+      /* no storage */
+    }
+    if (!openHash(location.hash, false)) showTab(TABS.includes(remembered) ? remembered : "board");
+  }
+  // a link to a section elsewhere on the page (the README, a toast) opens its tab
+  document.addEventListener("click", (ev) => {
+    const a = ev.target.closest('a[href^="#"]');
+    if (a && openHash(a.getAttribute("href"), false)) ev.preventDefault();
+  });
+
   // ---- the addresses under the header: one Copy per line.
   for (const b of $$("#addresses .copy")) {
     b.addEventListener("click", async () => {
@@ -59,6 +141,7 @@
     activeBoard = boards.find((b) => b.active) || null;
     $("#board-name").textContent = activeBoard ? activeBoard.name : "unsaved board";
     $("#board-dot").hidden = !(activeBoard && activeBoard.changed);
+    $("#tab-boards-dot").hidden = !(activeBoard && activeBoard.changed);
     $("#board-meta").textContent = activeBoard ? `${activeBoard.messages} message${activeBoard.messages === 1 ? "" : "s"} · saved ${fmtSaved(activeBoard.saved_at)}${activeBoard.pictures_missing.length ? ` · missing ${activeBoard.pictures_missing.map((s) => `{img:${s}}`).join(" ")}` : ""}` : "— Save as… keeps it under a name";
     const current = boardSwitch.value;
     boardSwitch.textContent = "";
@@ -1075,7 +1158,9 @@
     }
   });
   setInterval(() => {
-    if (document.visibilityState === "visible") loadPosts().catch(() => {});
+    if (document.visibilityState !== "visible") return;
+    loadPosts().catch(() => {});
+    loadProfiles().catch(() => {}); // the strip's dot and the Boards tab follow changes made elsewhere
   }, 10000);
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") loadPosts().catch(() => {});

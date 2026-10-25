@@ -90,6 +90,11 @@ def test_settings_page_panels(client, token):
         'id="calendar-form"',
         'id="calendar-everyday"',
         'id="calendar-months"',
+        'role="tablist"',
+        'id="tab-messages"',
+        'id="panel-setup"',
+        'id="token"',
+        'aria-controls="panel-guests"',
         'id="qr-board"',
     ):
         assert needle in r.text, needle
@@ -227,3 +232,38 @@ def test_login_page_asks_for_a_fraction(client):
     assert "https://www.directrelief.org/emergency/venezuela-earthquakes-2026/" in html
     assert 'rel="noopener" target="_blank"' in html
     assert html.index('id="where-token"') < html.index('id="give"')
+
+
+def test_every_section_sits_in_its_tab_panel(client, token):
+    """Tabs moved the sections into panels without renaming anything: every id the rigs, the
+    README and the tests know is still there, and inside the panel its tab controls."""
+    import re
+
+    html = client.get("/settings", headers={"Authorization": f"Bearer {token}"}).text
+    panels = {
+        m.group(1): m.start() for m in re.finditer(r'<div id="panel-([a-z]+)" class="panel"', html)
+    }
+    assert list(panels) == ["board", "messages", "pictures", "guests", "boards", "setup"]
+    bounds = sorted(panels.items(), key=lambda kv: kv[1])
+
+    def panel_of(section_id):
+        pos = html.index(f'<section id="{section_id}"')
+        return [name for name, start in bounds if start < pos][-1]
+
+    for section, tab in {
+        "live": "board",
+        "look": "board",
+        "display": "board",
+        "messages": "messages",
+        "images": "pictures",
+        "guests": "guests",
+        "calendar": "boards",
+        "addresses": "setup",
+        "token": "setup",
+    }.items():
+        assert panel_of(section) == tab, section
+    assert html.index('<section id="boards"') < html.index('role="tablist"'), (
+        "the strip stays above the tabs"
+    )
+    for tab in panels:
+        assert f'id="tab-{tab}" aria-controls="panel-{tab}"' in html, tab
