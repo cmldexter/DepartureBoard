@@ -9,6 +9,14 @@ and a container image `ghcr.io/cmldexter/departureboard:X.Y.Z`.
 
 ### Added
 
+- **Boards you can switch** (#120). The live board — its messages and display settings — saved
+  under a name as a plain JSON file, `profiles/<slug>.json`, in the data directory: `GET
+  /api/profiles`, `POST /api/profiles/{slug}/save`, `POST /api/profiles/{slug}/load` (replaces the
+  live board in one transaction; a message that does not fit the profile's own grid is kept
+  disabled with its reason, a background picture that is gone is cleared), `/copy`, `PATCH`
+  (rename), `DELETE`, and `GET`/`PUT /api/profiles/{slug}` for the file itself — the export and
+  import format. A new display setting `active_profile` says which was loaded or saved last. The
+  guest link's token is not part of a profile; pictures are shared by slug and stay on disk.
 - **The QR that opens the guest page** (#116). `POST /api/guest/qr` makes the picture `guest-qr`
   from the current guest link and a ready-made message `SCAN TO POST A PHOTO` + `{img:guest-qr}`,
   disabled until you switch it on (201; 200 remade; 409 while guests are off); *Put the QR on the

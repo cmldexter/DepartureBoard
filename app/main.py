@@ -12,7 +12,7 @@ from fastapi.templating import Jinja2Templates
 from app import __version__
 from app.config import Settings, get_settings
 from app.db import Database, migrate
-from app.routers import board, guest, health, images, messages, pages, posts
+from app.routers import board, guest, health, images, messages, pages, posts, profiles
 from app.routers import settings as settings_api
 from app.services.auth import load_or_create_token
 
@@ -64,6 +64,13 @@ TAGS = [
             "minted. Token to manage."
         ),
     },
+    {
+        "name": "profiles",
+        "description": (
+            "Boards you can switch: the live board saved under a name as a JSON file, loaded "
+            "back, copied, renamed, deleted. Token."
+        ),
+    },
     {"name": "system", "description": "Health."},
 ]
 
@@ -110,6 +117,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(guest.api)
     app.include_router(guest.public)
     app.include_router(posts.router)
+    app.include_router(profiles.router)
     app.include_router(pages.router)
     return app
 

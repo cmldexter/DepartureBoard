@@ -180,6 +180,7 @@ class SettingsOut(BaseModel):
     guest_auto_approve: bool = Field(description="A guest post goes on the board at once")
     guest_priority: int = Field(description="The priority a guest post's message gets")
     guest_show_seconds: int = Field(description="Its turn on the board, in seconds")
+    active_profile: str = Field(description='The saved board loaded last; "" when none')
 
 
 class SettingsPatch(BaseModel):
@@ -292,6 +293,64 @@ class BoardSettings(BaseModel):
     cell_radius: int
     cell_gap: int
     split_line: int
+
+
+class ProfileFile(BaseModel):
+    """A saved board as stored in `profiles/<slug>.json`: hand-editable, the export format."""
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "name": "Party",
+                    "saved_at": "2026-10-25T18:00:00Z",
+                    "settings": {"grid_preset": "large", "theme": "midnight"},
+                    "messages": [{"text": "WELCOME {yellow}", "priority": 1}],
+                }
+            ]
+        }
+    )
+    name: str = Field(min_length=1, max_length=80)
+    saved_at: datetime | None = None
+    settings: dict[str, Any] = Field(
+        default_factory=dict, description="Display keys as PATCH /api/settings takes them"
+    )
+    messages: list[MessageIn] = Field(default_factory=list)
+
+
+class ProfileOut(BaseModel):
+    slug: str
+    name: str
+    saved_at: datetime | None
+    messages: int = Field(description="How many messages the profile holds")
+    pictures_missing: list[str] = Field(
+        description="Pictures the profile names that are not on disk (deleted, or not imported)"
+    )
+    active: bool = Field(description="The profile loaded or saved last")
+
+
+class KeptDisabled(BaseModel):
+    text: str
+    reason: str
+
+
+class ProfileLoaded(ProfileOut):
+    kept_disabled: list[KeptDisabled] = Field(
+        description="Messages that do not lay out on the profile's grid, kept disabled with why"
+    )
+
+
+class ProfileSaveIn(BaseModel):
+    name: str | None = Field(None, min_length=1, max_length=80, examples=["Party"])
+
+
+class ProfileCopyIn(BaseModel):
+    slug: str = Field(pattern=r"^[a-z0-9][a-z0-9-]{0,39}$", examples=["party-2"])
+    name: str | None = Field(None, min_length=1, max_length=80)
+
+
+class ProfileRenameIn(BaseModel):
+    name: str = Field(min_length=1, max_length=80)
 
 
 class GuestLink(BaseModel):
