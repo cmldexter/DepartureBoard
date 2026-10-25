@@ -37,17 +37,10 @@
     <button type="button" role="tab" id="tab-setup" aria-controls="panel-setup" aria-selected="false" tabindex="-1">Setup</button>
   </div>
 
-  <div id="panel-board" class="panel" role="tabpanel" aria-labelledby="tab-board" tabindex="0">
-  <section id="live" aria-labelledby="live-heading">
-    <div class="row">
-      <h2 id="live-heading">On the TV</h2>
-      <button type="button" class="small" id="cast" aria-pressed="false"><span class="label">Cast to TV</span></button>
-    </div>
-    <div class="screen" aria-hidden="true"><iframe id="live-board" src="/?embed" title="The board, live" tabindex="-1"></iframe></div>
-    <p id="live-now" class="muted">Waiting for the board…</p>
-    <p id="cast-note" class="muted" role="status" hidden></p>
-  </section>
+  <div class="layout">
+  <div class="main-col">
 
+  <div id="panel-board" class="panel" role="tabpanel" aria-labelledby="tab-board" tabindex="0">
   <section id="look" aria-labelledby="look-heading">
     <h2 id="look-heading">Look &amp; feel</h2>
     <p class="muted">Pick a theme — the TV follows on its next poll, nothing to save.</p>
@@ -297,6 +290,19 @@
     <details><summary>Show token</summary><pre class="token">{{ token }}</pre></details>
   </section>
     <p class="muted">Post from a script, a calendar or an agent: <a href="/integrate">the integrate page</a> has every call pre-filled; <a href="/docs">the API docs</a> list them all.</p>
+  </div>
+  </div>
+  <aside id="side" class="side" aria-label="The board, live">
+  <section id="live" aria-labelledby="live-heading">
+    <div class="row">
+      <h2 id="live-heading">On the TV</h2>
+      <button type="button" class="small" id="cast" aria-pressed="false"><span class="label">Cast to TV</span></button>
+    </div>
+    <div class="screen" aria-hidden="true"><iframe id="live-board" src="/?embed" title="The board, live" tabindex="-1"></iframe></div>
+    <p id="live-now" class="muted">Waiting for the board…</p>
+    <p id="cast-note" class="muted" role="status" hidden></p>
+  </section>
+  </aside>
   </div>
 
   <dialog id="cast-help" aria-labelledby="cast-help-title">

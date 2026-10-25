@@ -62,7 +62,10 @@ or `uv sync && uv run fastapi dev app/main.py` for a dev server on port 8000.
 ## The settings page
 
 Everything on the board comes from `/settings`: one page, on a laptop or a phone, signed in with
-the token the first boot printed.
+the token the first boot printed. Six tabs — **Board**, **Messages**, **Pictures**, **Guests**,
+**Boards**, **Setup** — and on a wide screen the board as the TV sees it stays pinned on the right
+whatever tab you are on, so a slider, a new message or an approval shows its effect without
+scrolling.
 
 <img src="docs/media/settings-boards.png" alt="The Boards strip: This board: Party, two messages, saved today; Switch…, Save, Save as… and a ⋯ menu" width="800">
 
@@ -77,7 +80,7 @@ replaces.
 
 <img src="docs/media/settings-calendar.png" alt="The Calendar section: two month grids with planned days tinted by board and today outlined, the plan as a list, a form to plan a board, the everyday board" width="800">
 
-**Calendar.** Plan the boards ahead instead of tending the board every day: pick a saved board
+**Calendar.** On the **Boards** tab: plan the boards ahead instead of tending the board every day — pick a saved board
 and a day or a range — *Halloween* on the 31st, *Christmas* from the 20th to the 26th — and the
 board comes up by itself at midnight, the board's time. The live board is saved back into its own
 file first, so edits made on the Halloween board are in the Halloween file the next morning. Two
@@ -87,20 +90,22 @@ is a file beside the saved boards; [docs/calendar.md](docs/calendar.md) has the 
 
 <img src="docs/media/settings-live.png" alt="The top of the settings page: the board as the TV shows it, a Cast button, and the line naming the live message" width="800">
 
-**On the TV.** The page opens with the board as the TV sees it, live, and the message that is
-showing now. **Cast to TV** sends the board to a Chromecast or Google TV from Chrome (with the
+**On the TV.** The live card shows the board as the TV sees it and names the message that is
+showing now — at the top of the **Board** tab on a phone, pinned beside every tab on a desktop. **Cast to TV** sends the board to a Chromecast or Google TV from Chrome (with the
 board on `https://`; otherwise the button explains the two ways). Casting is new and we have one
 TV to try it on: tell us how it holds up for you in [#79](https://github.com/cmldexter/DepartureBoard/issues/79).
 
 <img src="docs/media/settings-messages.png" alt="The messages table: a switch and a state badge, the text, when it shows, Edit and Delete" width="800">
 
-**Messages.** One row each: a switch that turns the message off and on without opening it, its
-state (live, scheduled, expired, disabled), the text, when it shows, Edit and Delete.
+**Messages.** The **Messages** tab: one row each, with a switch that turns the message off and on
+without opening it, its state (live, scheduled, expired, disabled), the text, when it shows, Edit
+and Delete.
 
 <img src="docs/media/settings-form.png" alt="The edit form with the preview rendered as the board, the schedule fields and the capacity line" width="800">
 
 **Writing one.** The preview is the board itself: your theme, the chips, emoji and pictures,
-and a line that says how many cells the message uses and what cannot be shown. One line per
+and a line that says how many cells the message uses and what cannot be shown — on a desktop it
+sits under the live card on the right while you type. One line per
 row, or let it wrap. Three kinds of schedule: a window from one date and time to another, every
 day between two times, or chosen weekdays between two times (a window that ends before it starts
 crosses midnight). When several messages are live the highest priority wins and equals take
@@ -113,7 +118,7 @@ message has left.
 
 <img src="docs/media/settings-display.png" alt="The display form: preset, animation, sound, idle text, poll and rotate intervals, timer ring" width="800">
 
-**Look & feel.** Four theme swatches under the live card; click one and the TV follows on its
+**Look & feel.** On the **Board** tab: four theme swatches; click one and the TV follows on its
 next poll, nothing to save. Below them, *Behind the board*: a picture under the frame — one of
 the four that ship, or a poster snip uploaded right there — with blur and dim sliders the live
 card follows as they move. *Save* sends it to the TV; *Clear* takes it off. Then *The flaps*:
@@ -127,7 +132,7 @@ grid; *Classic* puts them back.
 
 <img src="docs/media/board-flaps.png" alt="The same banner across nine flaps: Classic on the left with rounded corners, gaps and split lines; Picture mode on the right with square corners, a hairline gap and no split line" width="800">
 
-**Display.** The preset for your TV size (Compact 6 × 22, Large 8 × 28, or your own), the
+**Display.** Also on the **Board** tab: the preset for your TV size (Compact 6 × 22, Large 8 × 28, or your own), the
 animation pace from instant to the mechanical click, sound and volume, the idle text
 for when nothing is live, how often the TV polls, the default time each message gets when
 several take turns, and whether the timer ring shows (off, only for messages with their own
@@ -135,7 +140,7 @@ time, or for every message taking turns).
 
 <img src="docs/media/settings-images.png" alt="The images panel: upload a picture, get a token, give it a size in cells" width="800">
 
-**QR codes.** Type a link or a line of text on the Images panel and *Make QR*: the server draws the
+**QR codes.** On the **Pictures** tab, type a link or a line of text and *Make QR*: the server draws the
 code as a picture with the same token as any upload, and *Scan to open this board* fills in the
 board's own address. A code is *drawn whole* over its block — no gap or split line through it — so
 a phone reads it from the sofa: 4 × 3 cells on Compact, 5 × 4 on Large. Any picture can be drawn
@@ -144,7 +149,7 @@ contrast rule and three recipes (a menu link, a Wi-Fi string, a guest link).
 
 <img src="docs/media/board-qr.png" alt="The board: SCAN FOR THE MENU, a QR code drawn whole across a 4 × 3 block, DRINKS AT NINE" width="800">
 
-**Pictures.** Upload a PNG, JPEG, GIF or WebP (up to 5 MB) and it becomes a token like `{img:cat}`. Give the
+**Pictures.** The **Pictures** tab: upload a PNG, JPEG, GIF or WebP (up to 5 MB) and it becomes a token like `{img:cat}`. Give the
 picture a size in cells on the panel — a wide banner reads best across a row — and it keeps its
 shape inside that block (or fills it, or stretches, your choice). The panel suggests the sizes
 that keep the shape from the file's own pixel size. In a message the picture takes its block,
@@ -152,7 +157,7 @@ pushing the lines beneath it down; `{img:cat@9x1}` sizes it for one message only
 
 <img src="docs/media/settings-guests.png" alt="The Guests section: the guest link with Copy, Rotate and Turn off, Put the QR on the board, the Auto-approve switch, a post waiting with its thumbnail and Approve and Reject, and a post on the board" width="800">
 
-**Guests.** A link for phones, off until you make it. Whoever opens it gets one small page — a
+**Guests.** The **Guests** tab: a link for phones, off until you make it. Whoever opens it gets one small page — a
 line, a photo, a first name, *Post* — and nothing else: no messages, no settings, and a wrong link
 is a plain 404. Posts wait in this section with a thumbnail, the line and the name. *Approve* turns
 one into an ordinary message — the words, the photo sized to the rows left, the name last — that
@@ -167,12 +172,12 @@ ends the evening. [docs/guests.md](docs/guests.md) is the whole safety story.
 
 <img src="docs/media/board-guest.png" alt="The board showing a guest's post: HAPPY BIRTHDAY NICK, the photo across eight by four flaps, and - ANA" width="800">
 
-**The token.** At the bottom of the page, generated on first boot (or set with
+**The token.** On the **Setup** tab with your board's addresses, generated on first boot (or set with
 `DEPARTUREBOARD_API_TOKEN`). The TV needs none; the settings page and every write to the API do.
 
-<img src="docs/media/settings-phone.png" alt="The messages table on a phone" width="300">
+<img src="docs/media/settings-phone.png" alt="The Messages tab on a phone: the tab row, then the table" width="300">
 
-The page works on a phone. For the TV side, read [docs/tv-setup.md](docs/tv-setup.md); to
+The page works on a phone, one tab at a time. For the TV side, read [docs/tv-setup.md](docs/tv-setup.md); to
 post from a script, a calendar or an agent, open `/integrate` (pictured below).
 
 ## Themes

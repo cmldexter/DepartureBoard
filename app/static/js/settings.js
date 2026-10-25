@@ -37,8 +37,11 @@
 
   // ---- tabs: six panels, hash-addressed (#messages), the last one remembered per browser.
   // Sections keep their ids inside the panels; a hash naming a section opens its tab and scrolls
-  // to it. The Board panel is never display:none'd — the live card is the page's heartbeat — it is
-  // moved off-stage instead, so its frame keeps polling and painting.
+  // to it. The live card sits in an aside: pinned beside every tab above 1100 px, shown under the
+  // Board tab below that and moved off-stage (never display:none — it is the page's heartbeat)
+  // while another tab shows.
+  const desktop = window.matchMedia("(min-width: 1100px)");
+  const side = $("#side");
   const TABS = ["board", "messages", "pictures", "guests", "boards", "setup"];
   const TAB_OF = { live: "board", look: "board", display: "board", backdrop: "board", flaps: "board", images: "pictures", calendar: "boards", addresses: "setup", token: "setup" };
   const tabButtons = TABS.map((t) => $(`#tab-${t}`));
@@ -59,15 +62,12 @@
       const btn = $(`#tab-${t}`);
       btn.setAttribute("aria-selected", String(on));
       btn.tabIndex = on ? 0 : -1;
-      const panel = $(`#panel-${t}`);
-      if (t === "board") {
-        panel.classList.toggle("offstage", !on); // keeps the live frame alive while another tab shows
-        panel.setAttribute("aria-hidden", String(!on));
-        panel.inert = !on;
-      } else {
-        panel.hidden = !on;
-      }
+      $(`#panel-${t}`).hidden = !on;
     }
+    const off = name !== "board" && !desktop.matches;
+    side.classList.toggle("offstage", off); // keeps the live frame alive while another tab shows
+    side.setAttribute("aria-hidden", String(off));
+    side.inert = off;
     try {
       localStorage.setItem("departureboard.tab", name);
     } catch {
@@ -102,6 +102,10 @@
     });
   });
   window.addEventListener("hashchange", () => openHash(location.hash, false));
+  desktop.addEventListener("change", () => {
+    showTab(currentTab);
+    placePreview();
+  });
   {
     let remembered = "";
     try {
@@ -426,10 +430,23 @@
     $("#repeat-hint").hidden = !timed;
   }
 
+  // The form's preview block: inside the form, or pinned under the live card while the form is
+  // open on a wide screen — one frame, moved, never duplicated.
+  function placePreview() {
+    const block = document.querySelector("#message-form .preview, #side .preview");
+    if (!block) return;
+    if (desktop.matches && !form.hidden) {
+      if (block.parentElement !== side) side.appendChild(block);
+    } else if (block.parentElement !== form) {
+      form.insertBefore(block, form.querySelector(".grid2"));
+    }
+  }
+
   function openForm(m, opener) {
     formOpener = opener || null;
     if (previewFrame && !previewFrame.getAttribute("src")) previewFrame.src = "/?embed&preview";
     form.hidden = false;
+    placePreview();
     $("#message-error").hidden = true;
     $("#message-form-title").textContent = m ? "Edit message" : "New message";
     form.id.value = m ? m.id : "";
@@ -451,6 +468,7 @@
 
   function closeForm() {
     form.hidden = true;
+    placePreview();
     if (formOpener && formOpener.isConnected) formOpener.focus();
     else focusRow(Number(form.id.value) || 0);
     formOpener = null;
@@ -481,6 +499,7 @@
         ? await api(`/api/messages/${id}`, { method: "PATCH", body })
         : await api("/api/messages", { method: "POST", body });
       form.hidden = true;
+      placePreview();
       toast(id ? "Saved." : "On the board.");
       await loadMessages();
       refreshLive();
