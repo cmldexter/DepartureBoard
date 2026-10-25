@@ -9,6 +9,19 @@ and a container image `ghcr.io/cmldexter/departureboard:X.Y.Z`.
 
 ### Added
 
+- **Hosting the feed** (#115). `GET /api/posts?status=pending|approved|rejected|all`,
+  `POST /api/posts/{id}/approve` and `/reject`, `DELETE /api/posts/{id}` and
+  `DELETE /api/posts?status=…` (clear). **Approve = make a message**: the post's text, its photo
+  below sized to the rows left on the current board, `- NICK` last, with `source: guest`, `post_id`
+  (now on every message), the priority from the new display setting `guest_priority` (default 1 —
+  guests take turns among themselves) and `show_seconds` from `guest_show_seconds` (default 15); a
+  post that does not fit becomes a disabled message with a `note` instead of being dropped. Reject
+  removes the message and the photo and keeps the row for the hour's count. `guest_auto_approve`
+  puts a phone post on the TV within a poll and the thank-you page says so. Settings → **Guests**:
+  the link with Copy, Rotate and Turn off, the Auto-approve switch, priority and seconds, the
+  posts waiting (thumbnail, line, name, when; Approve / Reject), the posts on the board (Remove),
+  Clear all, a waiting count in the page header and the tab title, a 10 s poll while the page is
+  visible.
 - **A guest link** (#114). The first public write path, narrow by design: `POST /api/guest/rotate`
   mints a 20-character token (the display setting `guest_token`; `""` closes the door) and
   `/guest/<token>` is one phone-sized page — a line of up to 120 characters with the flap rules

@@ -14,6 +14,7 @@ from app.models import (
     COLS_BOUNDS,
     DEFAULT_SETTINGS,
     FLAP_BOUNDS,
+    GUEST_BOUNDS,
     PRESETS,
     ROWS_BOUNDS,
     TIMER_RINGS,
@@ -91,6 +92,11 @@ def resolve_display(raw: Mapping[str, Any]) -> dict[str, Any]:
             for key, bounds in FLAP_BOUNDS.items()
         },
         "guest_token": str(merged["guest_token"] or "").strip(),
+        "guest_auto_approve": _as_bool(merged["guest_auto_approve"]),
+        **{
+            key: _clamp(_as_int(merged[key], int(DEFAULT_SETTINGS[key])), bounds)
+            for key, bounds in GUEST_BOUNDS.items()
+        },
     }
 
 

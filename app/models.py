@@ -101,7 +101,14 @@ DEFAULT_SETTINGS = {
     "split_line": "1",
     # The guest link: "" = off; a token mints with POST /api/guest/rotate. Never sent to the TV.
     "guest_token": "",
+    # Guest posts wait for the host unless auto-approve is on; each becomes a message at this
+    # priority (guests take turns among themselves), holding the board this many seconds.
+    "guest_auto_approve": "false",
+    "guest_priority": "1",
+    "guest_show_seconds": "15",
 }
+
+GUEST_BOUNDS = {"guest_priority": (-100, 100), "guest_show_seconds": (5, 600)}
 
 POST_STATUSES = ("pending", "approved", "rejected")
 

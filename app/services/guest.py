@@ -3,14 +3,19 @@ first public write path narrow. The numbers here are the ones docs/guests.md pro
 
 import hashlib
 import secrets
+from collections.abc import Mapping
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
 from fastapi import Request
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.models import Post
+from app.config import Settings
+from app.models import Message, Post
 from app.services import images
+from app.services.display import display_settings
+from app.services.text import capacity_error, layout
 
 MAX_TEXT = 120  # characters in a post
 MAX_NICK = 16  # a first name
@@ -63,3 +68,87 @@ def photo_block(px: tuple[int, int] | None) -> tuple[int, int]:
         return (PHOTO_ROWS, PHOTO_ROWS)
     w = round(px[0] / px[1] * images.CELL_ASPECT * PHOTO_ROWS)
     return (min(images.MAX_W, max(1, w)), PHOTO_ROWS)
+
+
+# ---- approve = make a message
+
+
+def photo_fit(size: Mapping[str, Any], rows_free: int, cols: int) -> tuple[int, int]:
+    """The photo's block on this board: up to PHOTO_ROWS tall within the rows left under the
+    text, as wide as keeps its shape, never wider than the board (then shorter to match)."""
+    h = max(1, min(PHOTO_ROWS, rows_free))
+    ar = size.get("ar")
+    if not ar:
+        return (max(1, min(cols, int(size["w"]))), max(1, min(h, int(size["h"]))))
+    w = round(ar * images.CELL_ASPECT * h)
+    if w > cols:
+        w, h = cols, max(1, min(h, round(cols / (ar * images.CELL_ASPECT))))
+    return (max(1, w), h)
+
+
+def message_text(post: Post, d: Mapping[str, Any], sizes: Mapping[str, Any]) -> str:
+    """The lines a post becomes: its text, the photo sized to the rows left, `- NICK` last."""
+    words = [post.text] if post.text else []
+    if post.nick:
+        words.append(f"- {post.nick}")
+    if not post.image:
+        return "\n".join(words)
+    used = len(layout("\n".join(words), d["rows"], d["cols"], sizes).rows) if words else 0
+    w, h = photo_fit(sizes.get(post.image, images.LEGACY), d["rows"] - used, d["cols"])
+    words.insert(1 if post.text else 0, f"{{img:{post.image}@{w}x{h}}}")
+    return "\n".join(words)
+
+
+def message_of(session: Session, post: Post) -> Message | None:
+    return session.scalar(select(Message).where(Message.post_id == post.id))
+
+
+def approve(session: Session, settings: Settings, post: Post) -> tuple[Message, str | None]:
+    """Approve a post: make the message it becomes (or keep the one it has). Returns the message
+    and, when the post does not fit the board, why it was left disabled instead of dropped."""
+    post.status = "approved"
+    if existing := message_of(session, post):
+        return existing, None
+    if post.image and images.find(settings, post.image) is None:
+        post.image = None  # the photo was deleted from the Images panel; the words still count
+    d = display_settings(session)
+    sizes = images.sizes(settings)
+    text = message_text(post, d, sizes)
+    note = capacity_error(layout(text, d["rows"], d["cols"], sizes))
+    m = Message(
+        text=text,
+        enabled=note is None,
+        priority=d["guest_priority"],
+        show_seconds=d["guest_show_seconds"],
+        source="guest",
+        post_id=post.id,
+        created_by=post.nick or None,
+    )
+    session.add(m)
+    session.flush()
+    return m, note
+
+
+def _drop_message(session: Session, post: Post) -> None:
+    if m := message_of(session, post):
+        session.delete(m)
+
+
+def _drop_photo(settings: Settings, post: Post) -> None:
+    if post.image and (path := images.find(settings, post.image)):
+        images.remove(path)
+    post.image = None
+
+
+def reject(session: Session, settings: Settings, post: Post) -> None:
+    """Take a post off the board (its message) and off the disk (its photo). The row stays, so
+    the hour's count still sees it."""
+    post.status = "rejected"
+    _drop_message(session, post)
+    _drop_photo(settings, post)
+
+
+def remove(session: Session, settings: Settings, post: Post) -> None:
+    """Reject, then forget the row too."""
+    reject(session, settings, post)
+    session.delete(post)

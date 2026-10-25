@@ -29,6 +29,7 @@ body { background: var(--bg); color: var(--fg); font-family: var(--font); }
 .page #give { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #222; line-height: 1.5; }
 
 /* ---- settings page */
+.page [hidden] { display: none !important; } /* a display rule on a class (.row, .badge) would beat the UA's [hidden] */
 .page .muted { color: var(--muted); }
 .page .hint { color: var(--muted); font-size: .9rem; margin: .25rem 0 .75rem; line-height: 1.6; }
 .page .hint code, .page code.token { background: #000; padding: .1rem .35rem; border-radius: .25rem; }
@@ -138,6 +139,30 @@ body { background: var(--bg); color: var(--fg); font-family: var(--font); }
 .page ul.images .chip[aria-pressed="true"] { background: var(--accent); color: #000; border-color: var(--accent); }
 .page ul.images .applied { flex-basis: 100%; font-size: .85rem; }
 @media (max-width: 36rem) { .page ul.images .chips { flex-basis: 100%; } }
+/* guests: the link card, then two lists of posts (thumb · line · actions) */
+.page nav .badge { vertical-align: middle; text-decoration: none; color: #fff; margin-left: .25rem; }
+.page .badge.pending { background: #7a5a1f; color: #fff; }
+.page .badge.removed { background: #4a4a4a; color: #bbb; }
+.page #guests h3 { margin: 1.25rem 0 .25rem; font-size: 1rem; }
+.page #guests .row h3 { margin-bottom: 0; }
+.page #guest-link p { margin: 0 0 .5rem; }
+.page #guest-off { align-items: center; }
+.page #guest-off button { margin: 0; }
+.page #guest-on { display: flex; flex-wrap: wrap; align-items: baseline; gap: .25rem .5rem; }
+.page #guest-on code { overflow-wrap: anywhere; }
+.page #guest-link label.check { margin: .75rem 0 .25rem; }
+.page #guest-link .grid2 label { margin: .5rem 0 .25rem; }
+.page #guest-status { margin: .5rem 0 0; min-height: 1.5em; }
+.page ul.posts { list-style: none; padding: 0; margin: .5rem 0 1rem; }
+.page ul.posts li { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: .35rem .75rem; padding: .5rem 0; border-bottom: 1px solid #222; }
+.page ul.posts li.muted { display: block; border: 0; }
+.page ul.posts img, .page ul.posts .thumb { width: 3.6rem; height: 3.2rem; object-fit: contain; border-radius: .25rem; background: #000; }
+.page ul.posts .thumb { display: grid; place-items: center; color: var(--muted); font-size: 1.1rem; }
+.page ul.posts .line { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; word-break: break-word; }
+.page ul.posts .meta { display: flex; align-items: baseline; gap: .5rem; flex-wrap: wrap; }
+.page ul.posts .actions { white-space: nowrap; }
+.page ul.posts .actions button { margin: 0; }
+@media (max-width: 36rem) { .page ul.posts li { grid-template-columns: auto 1fr; } .page ul.posts .actions { grid-column: 1 / -1; } }
 .page #image-form { align-items: end; }
 .page #image-form label { margin: 0; flex: 1; }
 .page #image-form button { margin: 0; }

@@ -1,4 +1,4 @@
-// The settings page: messages, display, images. Plain fetch to the API with the session
+// The settings page: messages, display, images, guests. Plain fetch to the API with the session
 // cookie; every write carries the page header so a cross-site form cannot do it.
 (() => {
   "use strict";
@@ -544,6 +544,7 @@
     form.show_seconds.placeholder = String(s.rotate_seconds); // the default a message falls back to
     fillBgForm(s);
     fillFlapForm(s);
+    fillGuestForm(s);
     syncCustom();
   }
   $$('input[name="grid_preset"]', display).forEach((r) => r.addEventListener("change", syncCustom));
@@ -735,6 +736,208 @@
     qrForm.data.focus();
   });
 
+  // ---- guests: the link, how posts show, and the queue — one GET every 10 s while the page is
+  // visible; the lists re-render only when something changed, so focus stays put.
+  const guestOff = $("#guest-off");
+  const guestOn = $("#guest-on");
+  const guestUrl = $("#guest-url");
+  const guestForm = $("#guest-form");
+  const guestStatus = $("#guest-status");
+  const pendingList = $("#guest-pending");
+  const approvedList = $("#guest-approved");
+  const boardUrl = () => {
+    const first = $("#addresses .addresses code");
+    return first ? first.textContent.trim() : location.origin;
+  };
+  function showGuestLink(token) {
+    guestOff.hidden = !!token;
+    guestOn.hidden = !token;
+    guestUrl.textContent = token ? `${boardUrl()}/guest/${token}` : "";
+  }
+  async function rotateGuest(said) {
+    try {
+      const link = await api("/api/guest/rotate", { method: "POST" });
+      showGuestLink(link.token);
+      guestUrl.textContent = link.url;
+      toast(said);
+      $("#guest-copy").focus();
+    } catch (e) {
+      toast(e.message, true);
+    }
+  }
+  $("#guest-make").addEventListener("click", () => rotateGuest("Guests are on — put the link in a QR code (Images panel) or send it."));
+  $("#guest-rotate").addEventListener("click", () => rotateGuest("New link — the old one stopped working."));
+  $("#guest-close").addEventListener("click", async () => {
+    if (!confirm("Turn guests off? The link stops working; the posts stay.")) return;
+    try {
+      const s = await api("/api/settings", { method: "PATCH", body: { guest_token: "" } });
+      showGuestLink(s.guest_token);
+      toast("Guests are off.");
+      $("#guest-make").focus();
+    } catch (e) {
+      toast(e.message, true);
+    }
+  });
+  $("#guest-copy").addEventListener("click", async () => {
+    const url = guestUrl.textContent;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast(`${url} copied.`);
+    } catch {
+      toast(url);
+    }
+  });
+  function fillGuestForm(s) {
+    showGuestLink(s.guest_token);
+    guestForm.guest_auto_approve.checked = !!s.guest_auto_approve;
+    guestForm.guest_priority.value = s.guest_priority;
+    guestForm.guest_show_seconds.value = s.guest_show_seconds;
+  }
+  async function saveGuest(body, said) {
+    try {
+      fillGuestForm(await api("/api/settings", { method: "PATCH", body }));
+      guestStatus.textContent = said;
+    } catch (e) {
+      toast(e.message, true);
+    }
+  }
+  guestForm.guest_auto_approve.addEventListener("change", () => {
+    const on = guestForm.guest_auto_approve.checked;
+    saveGuest({ guest_auto_approve: on }, on ? "Auto-approve on — a post goes on the board at once; you can still remove it." : "Auto-approve off — posts wait here for you.");
+  });
+  for (const k of ["guest_priority", "guest_show_seconds"]) {
+    guestForm[k].addEventListener("change", () => saveGuest({ [k]: Number(guestForm[k].value) }, "Saved — for posts approved from now on; edit a message to change one already on the board."));
+  }
+  guestForm.addEventListener("submit", (ev) => ev.preventDefault());
+
+  const fmtAgo = (iso) => {
+    const s = Math.round((Date.now() - new Date(iso).getTime()) / 1000);
+    if (s < 60) return "just now";
+    if (s < 3600) return `${Math.floor(s / 60)} min ago`;
+    if (s < 86400) return `${Math.floor(s / 3600)} h ago`;
+    return new Date(iso).toLocaleString([], { dateStyle: "short", timeStyle: "short" });
+  };
+  let posts = [];
+  let postsSeen = ""; // the last list rendered, serialized
+  let pendingBefore = -1; // pending count at the last render; a rise = new posts → a toast
+  function fillPosts(list, items, empty, approved) {
+    list.textContent = "";
+    if (!items.length) {
+      list.innerHTML = `<li class="muted">${empty}</li>`;
+      return;
+    }
+    for (const p of items) {
+      const li = document.createElement("li");
+      li.dataset.id = p.id;
+      li.innerHTML = `<img alt="" hidden><span class="thumb" aria-hidden="true">“ ”</span>
+        <div class="meta"><span class="line"></span> <span class="muted who"></span> <span class="badge" hidden></span></div>
+        <div class="actions"></div>`;
+      if (p.image) {
+        const img = $("img", li);
+        img.src = `/images/${p.image}`;
+        img.alt = `Photo${p.nick ? ` from ${p.nick}` : ""}`;
+        img.hidden = false;
+        $(".thumb", li).remove();
+      }
+      $(".line", li).textContent = p.text || (p.image ? "(a photo)" : "");
+      $(".who", li).textContent = `${p.nick ? `— ${p.nick} · ` : ""}${fmtAgo(p.created_at)}`;
+      const who = p.nick || `post ${p.id}`;
+      const actions = $(".actions", li);
+      if (approved) {
+        const badge = $(".badge", li);
+        const state = p.message_id ? p.message_state : "removed";
+        badge.hidden = false;
+        badge.className = `badge ${state}`;
+        badge.textContent = state === "disabled" ? "did not fit" : state;
+        if (state === "disabled") badge.title = "The message is in the list, disabled — make the board bigger or edit it.";
+        actions.innerHTML = '<button type="button" class="link remove">Remove</button>';
+        const b = $(".remove", actions);
+        b.setAttribute("aria-label", `Remove ${who} from the board`);
+        b.addEventListener("click", async () => {
+          if (!confirm(`Take ${who}'s post off the board? Its photo is deleted too.`)) return;
+          await postAction(p, "reject", "Removed from the board.");
+          $("#guest-approved-heading").focus();
+        });
+      } else {
+        actions.innerHTML = '<button type="button" class="small approve">Approve</button> <button type="button" class="link reject">Reject</button>';
+        $(".approve", actions).setAttribute("aria-label", `Approve ${who}`);
+        $(".reject", actions).setAttribute("aria-label", `Reject ${who}`);
+        $(".approve", actions).addEventListener("click", async () => {
+          const out = await postAction(p, "approve", "On the board — the TV picks it up on its next poll.");
+          if (out && out.note) toast(`Approved, but it does not fit: ${out.note} The message is in the list, disabled.`, true);
+          focusNextPending();
+        });
+        $(".reject", actions).addEventListener("click", async () => {
+          await postAction(p, "reject", "Rejected — nothing on the board.");
+          focusNextPending();
+        });
+      }
+      list.appendChild(li);
+    }
+  }
+  function focusNextPending() {
+    ($(".approve", pendingList) || $("#guest-pending-heading")).focus();
+  }
+  async function postAction(p, action, said) {
+    try {
+      const out = await api(`/api/posts/${p.id}/${action}`, { method: "POST" });
+      toast(said);
+      await loadPosts();
+      await loadMessages();
+      if (action === "reject") await loadImages(); // the photo is gone from the Images panel
+      refreshLive();
+      return out;
+    } catch (e) {
+      toast(e.message, true);
+      return null;
+    }
+  }
+  function renderPosts() {
+    const pending = posts.filter((p) => p.status === "pending");
+    const approved = posts.filter((p) => p.status === "approved");
+    for (const el of [$("#guests-waiting"), $("#guests-count")]) {
+      el.hidden = !pending.length;
+      el.textContent = `${pending.length} waiting`;
+    }
+    document.title = `${pending.length ? `(${pending.length}) ` : ""}Settings · DepartureBoard`;
+    if (pendingBefore >= 0 && pending.length > pendingBefore) {
+      const n = pending.length - pendingBefore;
+      toast(`${n} new guest post${n > 1 ? "s" : ""} waiting for you.`);
+    }
+    pendingBefore = pending.length;
+    fillPosts(pendingList, pending, "Nothing waiting.", false);
+    fillPosts(approvedList, approved, "Nothing from guests on the board.", true);
+    $("#guest-clear").disabled = !posts.length;
+  }
+  async function loadPosts() {
+    const items = await api("/api/posts?status=all");
+    const seen = JSON.stringify(items);
+    if (seen === postsSeen) return;
+    postsSeen = seen;
+    posts = items;
+    renderPosts();
+  }
+  $("#guest-clear").addEventListener("click", async () => {
+    if (!confirm("Clear every guest post? Their messages come off the board and their photos are deleted.")) return;
+    try {
+      const out = await api("/api/posts?status=all", { method: "DELETE" });
+      toast(`Cleared ${out.removed} post${out.removed === 1 ? "" : "s"} — messages and photos gone.`);
+      await loadPosts();
+      await loadMessages();
+      await loadImages();
+      refreshLive();
+      $("#guests-heading").focus();
+    } catch (e) {
+      toast(e.message, true);
+    }
+  });
+  setInterval(() => {
+    if (document.visibilityState === "visible") loadPosts().catch(() => {});
+  }, 10000);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") loadPosts().catch(() => {});
+  });
+
   // ---- server time ticks in the configured zone (rendered by the server; advance locally)
   const timeEl = $("#server-time");
   const base = new Date(timeEl.textContent.replace(" ", "T"));
@@ -750,4 +953,5 @@
   loadMessages().catch((e) => toast(e.message, true));
   loadDisplay().catch((e) => toast(e.message, true));
   loadImages().catch((e) => toast(e.message, true));
+  loadPosts().catch((e) => toast(e.message, true));
 })();

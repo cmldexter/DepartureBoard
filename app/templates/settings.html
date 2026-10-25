@@ -7,6 +7,7 @@
     <h1>DepartureBoard</h1>
     <nav><a href="/">Board</a> · <a href="/?demo">Demo</a> · <a href="/integrate">Integrate</a> · <a href="/docs">API docs</a>
       <form method="post" action="/settings/logout" class="inline"><button type="submit" class="link">Sign out</button></form>
+      <a href="#guests" id="guests-count" class="badge pending" hidden></a>
     </nav>
   </header>
   <p class="muted">Server time now: <span id="server-time">{{ server_time }}</span> ({{ tz }}). Schedules follow it.
@@ -215,6 +216,31 @@
       <span class="muted" id="qr-status" role="status"></span>
     </form>
     <ul id="image-list" class="images"></ul>
+  </section>
+
+  <section id="guests" aria-labelledby="guests-heading">
+    <div class="row"><h2 id="guests-heading">Guests</h2><span class="badge pending" id="guests-waiting" role="status" hidden></span></div>
+    <p class="muted">A link for phones: whoever opens it leaves a line or a photo that waits here for you — or goes
+      straight to the board with <em>Auto-approve</em>. An approved post is a message like any other: guests take
+      turns among themselves at the priority below, each for its seconds. <em>Rotate</em> makes a new link and kills
+      the old one; <em>Turn off</em> closes the door. Photos lose their location data before they are stored.</p>
+    <div class="card" id="guest-link">
+      <p id="guest-off" class="row"><span>Guests are off — there is no link.</span> <button type="button" class="small" id="guest-make">Make a link</button></p>
+      <p id="guest-on" hidden><span class="muted">Guest link</span> <code class="token" id="guest-url"></code>
+        <button type="button" class="link" id="guest-copy">Copy</button> · <button type="button" class="link" id="guest-rotate">Rotate</button> · <button type="button" class="link" id="guest-close">Turn off</button></p>
+      <form id="guest-form" aria-label="How guest posts show">
+        <label class="check"><span class="switch"><input type="checkbox" role="switch" name="guest_auto_approve"><span class="track" aria-hidden="true"></span></span> Auto-approve — a post goes on the board at once</label>
+        <div class="grid2">
+          <label>Priority <span class="muted">— guests take turns at this level</span><input type="number" name="guest_priority" min="-100" max="100"></label>
+          <label>Show for (s) <span class="muted">— each guest's turn</span><input type="number" name="guest_show_seconds" min="5" max="600"></label>
+        </div>
+        <p class="muted" id="guest-status" role="status"></p>
+      </form>
+    </div>
+    <h3 id="guest-pending-heading">Waiting for you</h3>
+    <ul id="guest-pending" class="posts" aria-labelledby="guest-pending-heading"></ul>
+    <div class="row"><h3 id="guest-approved-heading">On the board</h3><button type="button" class="small" id="guest-clear">Clear all</button></div>
+    <ul id="guest-approved" class="posts" aria-labelledby="guest-approved-heading"></ul>
   </section>
 
   <section>

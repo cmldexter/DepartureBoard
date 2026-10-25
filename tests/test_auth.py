@@ -72,6 +72,15 @@ def test_settings_page_panels(client, token):
         'id="flaps-classic"',
         'id="qr-form"',
         'name="data"',
+        'id="guests"',
+        'id="guest-rotate"',
+        'name="guest_auto_approve"',
+        'name="guest_priority"',
+        'name="guest_show_seconds"',
+        'id="guest-pending"',
+        'id="guest-approved"',
+        'id="guest-clear"',
+        'id="guests-count"',
         'id="qr-board"',
     ):
         assert needle in r.text, needle
