@@ -114,6 +114,15 @@ time, or for every message taking turns).
 
 <img src="docs/media/settings-images.png" alt="The images panel: upload a picture, get a token, give it a size in cells" width="800">
 
+**QR codes.** Type a link or a line of text on the Images panel and *Make QR*: the server draws the
+code as a picture with the same token as any upload, and *Scan to open this board* fills in the
+board's own address. A code is *drawn whole* over its block — no gap or split line through it — so
+a phone reads it from the sofa: 4 × 3 cells on Compact, 5 × 4 on Large. Any picture can be drawn
+whole; a logo keeps its lines that way. [docs/qr.md](docs/qr.md) has sizes against distance, the
+contrast rule and three recipes (a menu link, a Wi-Fi string, a guest link).
+
+<img src="docs/media/board-qr.png" alt="The board: SCAN FOR THE MENU, a QR code drawn whole across a 4 × 3 block, DRINKS AT NINE" width="800">
+
 **Pictures.** Upload a PNG, JPEG, GIF or WebP (up to 5 MB) and it becomes a token like `{img:cat}`. Give the
 picture a size in cells on the panel — a wide banner reads best across a row — and it keeps its
 shape inside that block (or fills it, or stretches, your choice). The panel suggests the sizes
@@ -184,4 +193,5 @@ thread about the real boards — *"come find me when that exists."* It exists.
 
 ## License
 
-[GPL-3.0](LICENSE).
+[GPL-3.0](LICENSE). Bundled third-party work — the fonts (SIL OFL) and `segno` (BSD-3-Clause), which
+draws the QR codes — is listed in [THIRD_PARTY.md](THIRD_PARTY.md).

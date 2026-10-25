@@ -184,7 +184,7 @@ def test_images_upload_token_and_board(client, auth, settings):
 
     r = client.post("/api/messages", json={"text": "HI {img:my-cat} 🎉"}, headers=auth)
     assert r.status_code == 201
-    cat = {"img": "my-cat", "w": 1, "h": 1, "x": 0, "y": 0, "fit": "contain", "ar": 1.0}
+    cat = {"img": "my-cat", "w": 1, "h": 1, "x": 0, "y": 0, "fit": "contain", "ar": 1.0, "v": 2}
     assert r.json()["rows"][0] == ["H", "I", " ", cat, " ", {"emoji": "🎉"}]
     assert r.json()["used"] == 6
     board = client.get("/api/board/current").json()
@@ -604,7 +604,7 @@ def test_qr_code_is_a_picture_the_server_makes(client, auth, settings):
     assert img["content_type"] == "image/png" and img["width"] == img["height"]
     assert (img["w"], img["h"], img["fit"], img["solid"]) == (4, 3, "contain", True)
     assert img["qr"] == {"data": "https://example.com/menu"}
-    assert img["suggested"][:3] == [[1, 1], [3, 2], [4, 3]]
+    assert img["suggested"] == [[3, 2], [4, 3], [5, 4], [6, 4]], "the blocks that scan"
     png = client.get("/images/menu").content
     assert decode_qr(png) == "https://example.com/menu"
     # the list shows the text, so the panel can offer to edit it
@@ -644,6 +644,7 @@ def test_qr_code_is_a_picture_the_server_makes(client, auth, settings):
         "y": 0,
         "solid": True,
         "qr": True,
+        "v": 2,
     }
     # solid is a switch: off → the mosaic, and the wire drops the flag
     r = client.patch("/api/images/menu", json={"solid": False}, headers=auth)
@@ -672,3 +673,31 @@ def test_solid_switch_on_an_upload(client, auth):
     cells = [c for row in client.get("/api/board/current").json()["rows"] for c in row]
     parts = [c for c in cells if isinstance(c, dict) and c.get("img") == "logo"]
     assert len(parts) == 4 and all(c["solid"] is True and "qr" not in c for c in parts)
+
+
+def test_a_remade_picture_reaches_the_tv(client, auth):
+    """Replacing a file (an upload over the slug, a QR remade with new text) bumps the picture's
+    version on the wire, so the stamp moves and the board fetches the new file."""
+    client.post("/api/images/qr", json={"slug": "menu", "data": "ONE"}, headers=auth)
+    client.post("/api/messages", json={"text": "{img:menu}"}, headers=auth)
+    before = client.get("/api/board/current")
+    part = next(c for row in before.json()["rows"] for c in row if isinstance(c, dict))
+    assert part["v"] == 1
+    client.post("/api/images/qr", json={"slug": "menu", "data": "TWO"}, headers=auth)
+    after = client.get("/api/board/current", headers={"If-None-Match": before.headers["ETag"]})
+    assert after.status_code == 200, "a remade code is a new picture to the TV"
+    part = next(c for row in after.json()["rows"] for c in row if isinstance(c, dict))
+    assert part["v"] == 2
+    client.post(
+        "/api/images",
+        files={"file": ("menu.png", io.BytesIO(PNG), "image/png")},
+        data={"slug": "menu"},
+        headers=auth,
+    )
+    part = next(
+        c
+        for row in client.get("/api/board/current").json()["rows"]
+        for c in row
+        if isinstance(c, dict)
+    )
+    assert part["v"] == 3 and "qr" not in part

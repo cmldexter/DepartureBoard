@@ -103,7 +103,7 @@
     else halfEl.removeAttribute("data-chip");
     const img = face.img;
     // a solid block is drawn whole by the board's overlay layer; its flaps stay blank
-    const url = img && !img.solid ? `url("/images/${img.img}")` : "";
+    const url = img && !img.solid ? `url("/images/${img.img}${img.v ? `?v=${img.v}` : ""}")` : "";
     if (halfEl.style.backgroundImage !== url) halfEl.style.backgroundImage = url;
     // a legacy one-cell picture keeps the stylesheet's 100% 200% split; a block gets its slice
     const legacy = !img || img.solid || (img.w === undefined && img.fit === undefined);
@@ -219,7 +219,7 @@
     const ib = b && b.img;
     if (!ia && !ib) return true;
     if (!ia || !ib) return false;
-    return ["img", "w", "h", "x", "y", "fit", "ar", "solid", "qr"].every((k) => ia[k] === ib[k]);
+    return ["img", "w", "h", "x", "y", "fit", "ar", "solid", "qr", "v"].every((k) => ia[k] === ib[k]);
   }
 
   // Show `index` (with an optional special token). With flip=true the leaf animates from the

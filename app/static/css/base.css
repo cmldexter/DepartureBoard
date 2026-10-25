@@ -130,6 +130,10 @@ body { background: var(--bg); color: var(--fg); font-family: var(--font); }
 .page ul.images .sizing select { margin: 0; padding: .3rem .4rem; }
 .page ul.images .sizing button.small { margin: 0; }
 .page ul.images .chips { color: var(--muted); }
+.page ul.images .sizing label.check { margin: 0; }
+.page ul.images .qr-text { font-style: italic; max-width: 26rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.page #qr-form label { flex: 1 1 18rem; }
+.page #qr-form label:nth-of-type(2) { flex: 0 1 10rem; }
 .page ul.images .chip { margin: 0; padding: .15rem .5rem; font-size: .85rem; border-radius: 1rem; background: #2a2a2a; color: var(--fg); border: 1px solid #444; cursor: pointer; }
 .page ul.images .chip[aria-pressed="true"] { background: var(--accent); color: #000; border-color: var(--accent); }
 .page ul.images .applied { flex-basis: 100%; font-size: .85rem; }

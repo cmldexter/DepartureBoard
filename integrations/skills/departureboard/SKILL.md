@@ -29,6 +29,7 @@ Every call except the two public ones sends `Authorization: Bearer $DB_TOKEN`.
 | Change / pause | `PATCH /api/messages/{id}` with the fields to change, e.g. `{"enabled": false}` |
 | Remove | `DELETE /api/messages/{id}` → 204 |
 | A **picture** on the board | `POST /api/images` multipart `file` (PNG/JPEG/GIF/WebP ≤ 5 MB) + optional `slug`; the response gives `"token": "{img:slug}"` to put in a message and `suggested` blocks; `PATCH /api/images/{slug}` `{"w": 9, "h": 1, "fit": "contain"}` sizes it in cells (or write `{img:slug@9x1}`) |
+| A **QR code** on the board | `POST /api/images/qr` `{"slug": "menu", "data": "https://…"}` (data ≤ 1024) → `{"token": "{img:menu}", "w": 4, "h": 3, "solid": true, …}`; put the token in a message — two calls. It is drawn whole over its 4 × 3 block so a phone scans it from the sofa; the same slug again remakes it. `{"solid": true}` on `PATCH /api/images/{slug}` draws any picture whole |
 | The display | `PATCH /api/settings` — `{"grid_preset": "compact"|"large"|"custom", "rows", "cols", "animation": 0–100, "sound_enabled", "sound_volume": 0–1, "theme": "classic-black"|"walnut"|"arctic-white"|"midnight", "idle_text", "poll_seconds", "rotate_seconds", "timer_ring": "off"|"own"|"all", "cell_radius": 0–12, "cell_gap": 0–100, "split_line": 0–3}` (partial; the last three are the shape of a flap — `0, 10, 0` is Picture mode for a banner across the flaps) |
 | Public: what the TV shows | `GET /api/board/current` (no token); `GET /images/{slug}` |
 | Reference | `GET /docs` (Swagger), `GET /llms.txt` |
@@ -44,6 +45,7 @@ Every call except the two public ones sends `Authorization: Bearer $DB_TOKEN`.
 - Token cells, **one cell each**: `{red}` `{orange}` `{yellow}` `{green}` `{blue}` `{violet}` `{white}` `{black}`
   (a solid coloured flap) and any emoji. `{img:slug}` is an uploaded picture at its block size (w × h cells;
   an unknown slug is a 422, a block wider than the board is a 422 that says so); `{img:slug@WxH}` sizes it inline.
+  A QR code (`POST /api/images/qr`) is a picture like any other, drawn whole over its block; keep its 4 × 3 and put words beside it (`SCAN FOR THE MENU`).
 - Keep it board-like: short lines, capitals, a chip or an emoji as an accent, not a paragraph.
 
 ## Do not

@@ -70,6 +70,9 @@ def test_settings_page_panels(client, token):
         'name="split_line"',
         'id="flaps-picture"',
         'id="flaps-classic"',
+        'id="qr-form"',
+        'name="data"',
+        'id="qr-board"',
     ):
         assert needle in r.text, needle
     assert 'name="theme"' not in r.text, "the theme left the Display form for the swatches"

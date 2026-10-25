@@ -18,6 +18,14 @@ and a container image `ghcr.io/cmldexter/departureboard:X.Y.Z`.
   a QR code defaults to it) draws the block as one element over the grid instead of slicing it
   through the gaps and split lines — the flaps beneath flip to blank, the picture fades in once
   they have landed and out before they move again. A QR scans from the sofa; a logo keeps its lines.
+- **QR codes from the Images panel** (#112). A *QR code* form beside *Upload*: text or a link, a
+  slug, *Make QR*; *Scan to open this board* fills in the board's own address. A code's row shows
+  its text with *Edit text*, offers the blocks that scan (4 × 3 on Compact, 5 × 4 on Large), and
+  every picture's row has a *Draw whole* switch. A replaced file (an upload over a slug, a remade
+  code) now carries a version on the wire, so the TV fetches the new picture on its next poll.
+- **The QR docs** (#113). A README paragraph with a capture, `docs/qr.md` (sizes against distance,
+  why *Draw whole* exists, the contrast rule, three recipes), `llms.txt`, the Agent Skill,
+  `examples.sh qr`, the `/integrate` page, and `THIRD_PARTY.md` naming `segno` and its licence.
 - **The shape of a flap** (#118). Display settings `cell_radius` (0–12, % of the cell's width),
   `cell_gap` (0–100, hundredths of a vmin) and `split_line` (0–3 px) replace three constants in the
   stylesheet; the TV follows on its next poll and repaints its picture slices for a new gap. *Look &
