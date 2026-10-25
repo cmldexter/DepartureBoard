@@ -113,6 +113,10 @@ def _block(slug: str, size: Mapping[str, Any] | None, w: str | None, h: str | No
         cell["h"] = min(MAX_H, max(1, int(h)))
     if size and size.get("ar"):
         cell["ar"] = round(float(size["ar"]), 3)
+    if size and size.get("solid"):  # drawn whole over the block, the flaps beneath blank
+        cell["solid"] = True
+    if size and size.get("qr"):
+        cell["qr"] = True
     return cell
 
 

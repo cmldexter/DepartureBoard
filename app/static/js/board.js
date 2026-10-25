@@ -22,6 +22,7 @@
   const Flap = window.Flap;
   const boardEl = document.getElementById("board");
   const frameEl = boardEl && boardEl.closest(".frame");
+  const overlaysEl = document.getElementById("overlays");
   const configEl = document.getElementById("board-config");
   if (!Flap || !boardEl || !frameEl || !configEl) return;
 
@@ -45,6 +46,8 @@
   let target = []; // row-major sequence indices the board is heading to
   let specials = []; // row-major token cells ({emoji} / {img}) shown once a cell lands, or null
   let active = new Map(); // cell position → { nextAt }
+  let blocks = new Map(); // solid blocks on the way: key → { parts: [pos], anchor, img, el }
+  let blockOf = []; // row-major: the key of the solid block a cell belongs to, or null
   let rafId = 0;
   let shownSomething = false; // has any non-blank content been shown since load?
 
@@ -64,6 +67,9 @@
     frameEl.style.setProperty("--cols", cols);
     const existing = boardEl.querySelectorAll(".cell");
     cells = [];
+    if (overlaysEl) overlaysEl.textContent = "";
+    blocks = new Map();
+    blockOf = [];
     if (existing.length === rows * cols) {
       existing.forEach((el) => cells.push(Flap.adoptCell(el)));
     } else {
@@ -76,6 +82,7 @@
       }
       boardEl.appendChild(frag);
     }
+    cells.forEach((c, i) => (c.pos = i));
     settings.rows = rows;
     settings.cols = cols;
     target = cells.map((c) => c.current);
@@ -139,6 +146,7 @@
     Flap.invalidateMetrics();
     const next = toTargets(rows);
     shownSomething = shownSomething || next.idx.some((i) => i !== Flap.BLANK) || next.sp.some(Boolean);
+    planBlocks(next.sp); // overlays that are leaving fade before their first flap moves
     if (instant()) {
       active = new Map();
       if (rafId) cancelAnimationFrame(rafId);
@@ -146,6 +154,7 @@
       next.idx.forEach((idx, pos) => Flap.setCell(cells[pos], idx, false, next.sp[pos]));
       target = next.idx;
       specials = next.sp;
+      blocks.forEach((b) => checkBlock(b));
       return;
     }
     const step = stepMs(settings.animation);
@@ -166,6 +175,75 @@
     });
     if (active.size && !rafId) rafId = requestAnimationFrame(tick);
   }
+
+  // ---- solid blocks: a picture drawn whole over its cells (one element in #overlays), the
+  // flaps beneath blank. The overlay fades in once every cell of the block has landed and fades
+  // out before the first of them moves again, so the cascade still frames the picture.
+  function planBlocks(sp) {
+    const nextBlocks = new Map();
+    blockOf = new Array(sp.length).fill(null);
+    sp.forEach((s, pos) => {
+      const img = s && s.img;
+      if (!img || !img.solid) return;
+      const anchor = pos - (img.y || 0) * settings.cols - (img.x || 0);
+      const key = `${anchor}:${img.img}:${img.w}x${img.h}:${img.fit}`;
+      let b = nextBlocks.get(key);
+      if (!b) {
+        b = { key, anchor, img, parts: [], el: null };
+        nextBlocks.set(key, b);
+      }
+      b.parts.push(pos);
+      blockOf[pos] = key;
+    });
+    blocks.forEach((old, key) => {
+      const kept = nextBlocks.get(key);
+      if (kept && old.el) kept.el = old.el; // still there: keep the element, keep it showing
+      else if (old.el) dropOverlay(old.el);
+    });
+    blocks = nextBlocks;
+  }
+  function dropOverlay(el) {
+    el.classList.remove("on");
+    const gone = () => el.remove();
+    if (reducedMotion) gone();
+    else setTimeout(gone, 400);
+  }
+  // The block's box in the stage's coordinates, from the anchor cell's own box and the grid's
+  // gap — the same metrics the mosaic slices use.
+  function placeOverlay(b) {
+    const anchorEl = cells[b.anchor] && cells[b.anchor].el;
+    if (!anchorEl || !b.el) return;
+    const stage = overlaysEl.getBoundingClientRect();
+    const a = anchorEl.getBoundingClientRect();
+    const gap = parseFloat(getComputedStyle(boardEl).columnGap) || 0;
+    const w = b.img.w || 1;
+    const h = b.img.h || 1;
+    b.el.style.left = `${a.left - stage.left}px`;
+    b.el.style.top = `${a.top - stage.top}px`;
+    b.el.style.width = `${w * a.width + (w - 1) * gap}px`;
+    b.el.style.height = `${h * a.height + (h - 1) * gap}px`;
+  }
+  function placeOverlays() {
+    blocks.forEach((b) => placeOverlay(b));
+  }
+  function blockLanded(b) {
+    return b.parts.every((pos) => landed(pos) && cells[pos].pending === null);
+  }
+  function checkBlock(b) {
+    if (!b || !overlaysEl || b.el || !blockLanded(b)) return;
+    const el = document.createElement("div");
+    el.className = `overlay${b.img.qr ? " qr" : ""}`;
+    el.dataset.fit = b.img.fit || "contain";
+    el.style.backgroundImage = `url("/images/${b.img.img}")`;
+    b.el = el;
+    overlaysEl.appendChild(el);
+    placeOverlay(b);
+    requestAnimationFrame(() => el.classList.add("on")); // after the first paint, so it fades in
+  }
+  Flap.onLand((cell) => {
+    const key = blockOf[cell.pos];
+    if (key) checkBlock(blocks.get(key));
+  });
 
   // A picture behind the board: "img:<slug>" is an upload, "builtin:<name>" ships with the app.
   // The backdrop layer takes the url, blur, dim and fit as CSS variables; <html> gets a class.
@@ -381,6 +459,7 @@
         Flap.setCell(cell, cell.current, false, sp);
       }
     });
+    placeOverlays();
   }
   let resizeTimer = 0;
   window.addEventListener("resize", () => {
@@ -391,7 +470,7 @@
   settings.poll_seconds = Number(config.poll_seconds) || 5;
   if (!config.demo && !config.preview) fetchBoard();
 
-  window.Board = { show, applySettings, applyTheme, applyBackdrop, applyFlapShape, settings, stepMs, soundReady, poll, fetchBoard, timer, timerRemaining };
+  window.Board = { show, applySettings, applyTheme, applyBackdrop, applyFlapShape, placeOverlays, settings, stepMs, soundReady, poll, fetchBoard, timer, timerRemaining };
 
   if (framed) {
     window.addEventListener("message", (e) => {

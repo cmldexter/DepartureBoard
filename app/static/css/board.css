@@ -56,6 +56,28 @@ html.has-backdrop .frame {
   overflow: hidden;
 }
 
+/* The stage holds the grid and, over it, the overlays: pictures drawn whole over their block
+   (a cell's `solid`, e.g. a QR code) so no gap or split line cuts them. */
+.stage { position: relative; }
+#overlays {
+  position: absolute;
+  inset: 0;
+  overflow: hidden; /* a block cut at the board's bottom edge stays cut */
+  pointer-events: none;
+  z-index: 3;
+}
+.overlay {
+  position: absolute;
+  background: center / contain no-repeat;
+  opacity: 0;
+  transition: opacity 0.35s ease-out;
+}
+.overlay.on { opacity: 1; }
+.overlay[data-fit="cover"] { background-size: cover; }
+.overlay[data-fit="stretch"] { background-size: 100% 100%; }
+.overlay.qr { image-rendering: pixelated; } /* modules stay crisp */
+@media (prefers-reduced-motion: reduce) { .overlay { transition: none; } }
+
 .board {
   display: grid;
   grid-template-columns: repeat(var(--cols), var(--cell-w));
