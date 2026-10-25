@@ -35,6 +35,7 @@
   const STAGGER_RATIO = 0.7;
 
   const settings = { rows: 0, cols: 0, animation: 60, theme: "classic-black", timer_ring: "off" };
+  const BG_KEYS = ["background_image", "background_blur", "background_dim", "background_fit"];
   let cells = []; // row-major cell records
   let target = []; // row-major sequence indices the board is heading to
   let specials = []; // row-major token cells ({emoji} / {img}) shown once a cell lands, or null
@@ -161,6 +162,30 @@
     if (active.size && !rafId) rafId = requestAnimationFrame(tick);
   }
 
+  // A picture behind the board: "img:<slug>" is an upload, "builtin:<name>" ships with the app.
+  // The backdrop layer takes the url, blur, dim and fit as CSS variables; <html> gets a class.
+  const backdrop = document.getElementById("backdrop");
+  function backdropUrl(image) {
+    const v = String(image || "");
+    if (/^img:[a-z0-9][a-z0-9-]{0,39}$/.test(v)) return `/images/${v.slice(4)}`;
+    if (/^builtin:[a-z0-9][a-z0-9-]{0,39}$/.test(v)) return `/static/backgrounds/${v.slice(8)}.jpg`;
+    return "";
+  }
+  function applyBackdrop(s) {
+    if (!backdrop) return;
+    BG_KEYS.forEach((k) => {
+      if (s[k] !== undefined) settings[k] = s[k];
+    });
+    const url = backdropUrl(settings.background_image);
+    const blur = Math.max(0, Math.min(40, Number(settings.background_blur) || 0));
+    const dim = Math.max(0, Math.min(90, Number(settings.background_dim) || 0));
+    backdrop.style.setProperty("--bg-image", url ? `url("${url}")` : "none");
+    backdrop.style.setProperty("--bg-blur", `${blur}px`);
+    backdrop.style.setProperty("--bg-dim", String(dim / 100));
+    backdrop.style.setProperty("--bg-fit", settings.background_fit === "contain" ? "contain" : "cover");
+    document.documentElement.classList.toggle("has-backdrop", !!url);
+  }
+
   // The theme is a stylesheet; swapping the link's href is the whole change.
   function applyTheme(id) {
     const link = document.getElementById("theme");
@@ -181,6 +206,7 @@
       settings.timer_ring = String(next.timer_ring);
       renderTimer();
     }
+    if (BG_KEYS.some((k) => next[k] !== undefined)) applyBackdrop(next);
     const rows = Number(next.rows) || settings.rows;
     const cols = Number(next.cols) || settings.cols;
     if (rows !== settings.rows || cols !== settings.cols) {
@@ -196,6 +222,7 @@
   settings.animation = Number(config.animation);
   settings.theme = config.theme || settings.theme;
   settings.timer_ring = config.timer_ring || settings.timer_ring;
+  applyBackdrop(config);
   if (window.Sound) window.Sound.configure(config);
 
   // The sound just unlocked (fullscreen click): nothing to do now — the next cascade clicks.
@@ -340,7 +367,7 @@
   settings.poll_seconds = Number(config.poll_seconds) || 5;
   if (!config.demo && !config.preview) fetchBoard();
 
-  window.Board = { show, applySettings, applyTheme, settings, stepMs, soundReady, poll, fetchBoard, timer, timerRemaining };
+  window.Board = { show, applySettings, applyTheme, applyBackdrop, settings, stepMs, soundReady, poll, fetchBoard, timer, timerRemaining };
 
   if (framed) {
     window.addEventListener("message", (e) => {

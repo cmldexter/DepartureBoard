@@ -1,11 +1,13 @@
 """Display settings: what the board looks like. Bearer token."""
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.deps import get_session
+from app.config import Settings
+from app.deps import app_settings, get_session
 from app.models import PRESETS, Setting
 from app.schemas import SettingsOut, SettingsPatch
+from app.services import images
 from app.services.auth import Authenticated
 from app.services.display import display_settings
 
@@ -23,8 +25,18 @@ def read_settings(session: Session = Depends(get_session)):
     description="Send only the keys to change. A preset sets rows and cols; `custom` keeps them.",
     response_model=SettingsOut,
 )
-def patch_settings(body: SettingsPatch, session: Session = Depends(get_session)):
+def patch_settings(
+    body: SettingsPatch,
+    session: Session = Depends(get_session),
+    settings: Settings = Depends(app_settings),
+):
     changes = body.model_dump(exclude_unset=True)
+    bg = changes.get("background_image") or ""
+    if bg.startswith("img:") and images.find(settings, bg[4:]) is None:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            f"No uploaded picture {bg[4:]!r}. Upload it first: POST /api/images.",
+        )
     preset = changes.get("grid_preset")
     if preset in PRESETS:
         changes["rows"], changes["cols"] = PRESETS[preset]

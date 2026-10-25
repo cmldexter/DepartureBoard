@@ -92,8 +92,11 @@ message has left.
 
 <img src="docs/media/settings-display.png" alt="The display form: preset, animation, sound, theme, idle text, poll and rotate intervals" width="800">
 
+**Look & feel.** Four theme swatches under the live card; click one and the TV follows on its
+next poll, nothing to save.
+
 **Display.** The preset for your TV size (Compact 6 × 22, Large 8 × 28, or your own), the
-animation pace from instant to the mechanical click, sound and volume, the theme, the idle text
+animation pace from instant to the mechanical click, sound and volume, the idle text
 for when nothing is live, how often the TV polls, the default time each message gets when
 several take turns, and whether the timer ring shows (off, only for messages with their own
 time, or for every message taking turns).

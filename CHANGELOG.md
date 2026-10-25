@@ -9,6 +9,16 @@ and a container image `ghcr.io/cmldexter/departureboard:X.Y.Z`.
 
 ### Added
 
+- **A picture behind the board** (#94). Display settings `background_image` (`""`, `img:<slug>`
+  for an uploaded picture, or `builtin:<name>`), `background_blur` (0–40 px), `background_dim`
+  (0–90 %) and `background_fit` (`cover` or `contain`). The board draws the picture on a layer
+  under the frame, blurred and dimmed; the frame turns translucent over it and the flaps keep
+  their theme. Nothing changes until a picture is set. The live card and the form preview show
+  it too.
+- **Look & feel on the settings page** (#93). The four themes as swatches under the live card;
+  one click applies the theme at once and the TV follows on its next poll. The theme select left
+  the Display form.
+
 - **Pictures that fit** (#89, #90, #91). A picture has a size on the board: `w` × `h` cells and a
   `fit` (`contain` keeps its shape, `cover` fills and crops, `stretch` fills), set with
   `PATCH /api/images/{slug}` and kept in a small file beside the picture — no table, no

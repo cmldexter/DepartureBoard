@@ -79,6 +79,15 @@ body { background: var(--bg); color: var(--fg); font-family: var(--font); }
 .page .screen { aspect-ratio: 16 / 9; width: 100%; background: #000; border-radius: .6rem; overflow: hidden; }
 .page .screen iframe { display: block; width: 100%; height: 100%; border: 0; pointer-events: none; }
 .page #live h2 { margin-top: 1rem; }
+/* look & feel: theme swatches as radio cards */
+.page #look h2 { margin-top: 1.5rem; }
+.page .swatches { display: grid; grid-template-columns: repeat(4, 1fr); gap: .75rem; margin: .5rem 0; }
+.page .swatch { margin: 0; padding: .35rem; display: grid; gap: .35rem; background: #1a1a1a; border: 2px solid #2a2a2a; border-radius: .6rem; color: var(--fg); font-weight: 500; font-size: .9rem; text-align: center; cursor: pointer; }
+.page .swatch img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; border-radius: .35rem; background: #000; }
+.page .swatch[aria-checked="true"] { border-color: var(--accent); }
+.page .swatch:focus-visible { outline-offset: 1px; }
+.page #look-status { margin: .25rem 0 0; min-height: 1.5em; }
+@media (max-width: 36rem) { .page .swatches { grid-template-columns: repeat(2, 1fr); } }
 .page #live .row { align-items: center; }
 .page #cast[data-state="connected"] { background: #2f6b3a; color: #fff; }
 .page #cast[data-state="connecting"] { opacity: .7; }

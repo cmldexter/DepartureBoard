@@ -281,6 +281,46 @@
     }
   });
 
+  // ---- look & feel: the theme swatches apply at once (one PATCH, the row-switch pattern)
+  let currentTheme = "classic-black";
+  const swatches = $$("#look .swatch");
+  function markTheme(theme) {
+    currentTheme = theme;
+    swatches.forEach((b) => {
+      const on = b.dataset.theme === theme;
+      b.setAttribute("aria-checked", String(on));
+      b.tabIndex = on ? 0 : -1;
+    });
+    if (lastPreview) {
+      lastPreview.settings.theme = theme;
+      post(previewFrame, lastPreview);
+    }
+  }
+  async function chooseTheme(theme, focus) {
+    const was = currentTheme;
+    markTheme(theme);
+    try {
+      const saved = await api("/api/settings", { method: "PATCH", body: { theme } });
+      markTheme(saved.theme);
+      $("#look-status").textContent = `${theme.replace(/-/g, " ")} — the TV picks it up on its next poll.`;
+      refreshLive();
+    } catch (e) {
+      markTheme(was);
+      toast(e.message, true);
+    }
+    if (focus) swatches.find((b) => b.dataset.theme === currentTheme)?.focus();
+  }
+  swatches.forEach((b, i) => {
+    b.addEventListener("click", () => chooseTheme(b.dataset.theme, false));
+    b.addEventListener("keydown", (ev) => {
+      const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[ev.key];
+      if (!step) return;
+      ev.preventDefault();
+      const next = swatches[(i + step + swatches.length) % swatches.length];
+      chooseTheme(next.dataset.theme, true);
+    });
+  });
+
   // ---- preview (the server lays the text out, so it can never differ from the board)
   let previewTimer = 0;
   async function preview() {
@@ -290,7 +330,7 @@
       lastPreview = {
         type: "board:show",
         rows: p.rows,
-        settings: { rows: p.grid_rows, cols: p.grid_cols, animation: 0, theme: display.theme.value },
+        settings: { rows: p.grid_rows, cols: p.grid_cols, animation: 0, theme: currentTheme },
       };
       post(previewFrame, lastPreview);
       const bits = [`${p.used} / ${p.capacity} cells`];
@@ -309,13 +349,6 @@
     clearTimeout(previewTimer);
     previewTimer = setTimeout(preview, 150);
   });
-  // The theme select previews before it is saved; the grid stays the saved one (saving checks
-  // the text against it).
-  display.theme.addEventListener("change", () => {
-    if (form.hidden || !lastPreview) return;
-    lastPreview.settings.theme = display.theme.value;
-    post(previewFrame, lastPreview);
-  });
 
   // ---- display
   function syncCustom() {
@@ -332,7 +365,7 @@
     $("#animation-value").value = s.animation;
     display.sound_enabled.checked = s.sound_enabled;
     display.sound_volume.value = s.sound_volume;
-    display.theme.value = s.theme;
+    markTheme(s.theme);
     display.idle_text.value = s.idle_text;
     display.poll_seconds.value = s.poll_seconds;
     display.rotate_seconds.value = s.rotate_seconds;
@@ -349,7 +382,6 @@
       animation: Number(display.animation.value),
       sound_enabled: display.sound_enabled.checked,
       sound_volume: Number(display.sound_volume.value),
-      theme: display.theme.value,
       idle_text: display.idle_text.value,
       poll_seconds: Number(display.poll_seconds.value),
       rotate_seconds: Number(display.rotate_seconds.value),

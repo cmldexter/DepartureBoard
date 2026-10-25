@@ -36,6 +36,20 @@
     <p id="cast-note" class="muted" role="status" hidden></p>
   </section>
 
+  <section id="look" aria-labelledby="look-heading">
+    <h2 id="look-heading">Look &amp; feel</h2>
+    <p class="muted">Pick a theme — the TV follows on its next poll, nothing to save.</p>
+    <div class="swatches" role="radiogroup" aria-label="Theme">
+      {% for t in themes %}
+      <button type="button" class="swatch" role="radio" aria-checked="false" data-theme="{{ t }}" tabindex="-1">
+        <img src="/static/themes/{{ t }}.png" alt="" width="320" height="180">
+        <span>{{ t.replace('-', ' ').title() }}</span>
+      </button>
+      {% endfor %}
+    </div>
+    <p class="muted" id="look-status" role="status"></p>
+  </section>
+
   <dialog id="cast-help" aria-labelledby="cast-help-title">
     <h3 id="cast-help-title">Cast to the TV</h3>
     <p>Casting sends pictures of the board from this computer to a Chromecast or Google TV, so this
@@ -125,11 +139,6 @@
       <div class="grid2">
         <label class="check"><input type="checkbox" name="sound_enabled"> Sound</label>
         <label>Volume <input type="range" name="sound_volume" min="0" max="1" step="0.05"></label>
-        <label>Theme
-          <select name="theme">
-            {% for t in themes %}<option value="{{ t }}">{{ t.replace('-', ' ').title() }}</option>{% endfor %}
-          </select>
-        </label>
         <label>Idle text <span class="muted">— when nothing is live</span><input type="text" name="idle_text" maxlength="2000"></label>
         <label>Poll every (s) <input type="number" name="poll_seconds" min="2" max="60"></label>
         <label>Rotate every (s) <span class="muted">— the default; a message can set its own</span><input type="number" name="rotate_seconds" min="5" max="600"></label>

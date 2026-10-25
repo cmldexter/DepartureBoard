@@ -72,6 +72,12 @@ def resolve_display(raw: Mapping[str, Any]) -> dict[str, Any]:
             if str(merged["timer_ring"]).strip().lower() in TIMER_RINGS
             else DEFAULT_SETTINGS["timer_ring"]
         ),
+        "background_image": str(merged["background_image"] or "").strip(),
+        "background_blur": _clamp(_as_int(merged["background_blur"], 12), (0, 40)),
+        "background_dim": _clamp(_as_int(merged["background_dim"], 30), (0, 90)),
+        "background_fit": (
+            "contain" if str(merged["background_fit"]).strip().lower() == "contain" else "cover"
+        ),
     }
 
 
