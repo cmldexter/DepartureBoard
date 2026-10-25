@@ -13,6 +13,9 @@ _Nothing yet._
 
 ### Added
 
+- **The logo.** The project's own mark — nine flaps mid-flip with a green tick — at the top of
+  the README, as the favicon and as the home-screen icons (a maskable one with the safe zone kept;
+  the placeholder icons drawn in the browser are retired).
 - **The settings page in tabs** (#122). Six tabs — *Board*, *Messages*, *Pictures*, *Guests*,
   *Boards*, *Setup* — over the same sections with their ids kept, so every link still lands:
   hash-addressed (`/settings#messages`), the last one remembered per browser, arrow keys across

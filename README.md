@@ -1,4 +1,5 @@
 <div align="center">
+  <img src="docs/media/logo.png" alt="The DepartureBoard logo: nine flaps spelling DEP, O7:, LA with a green tick, mid-flip" width="160">
   <h1>DepartureBoard</h1>
   <p><b>An open-source split-flap departure board for any TV. One command, one board.</b></p>
   <img src="docs/media/board-demo.gif" alt="The board flipping from a departures list to a message, one column after another" width="800">
