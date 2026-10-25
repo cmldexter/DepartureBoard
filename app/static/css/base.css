@@ -140,6 +140,7 @@ body { background: var(--bg); color: var(--fg); font-family: var(--font); }
 @media (max-width: 36rem) { .page ul.images .chips { flex-basis: 100%; } }
 /* guests: the link card, then two lists of posts (thumb · line · actions) */
 .page nav .badge { vertical-align: middle; text-decoration: none; color: #fff; margin-left: .25rem; }
+.page .badge[hidden] { display: none; } /* the author display rule would beat the UA's [hidden] */
 .page .badge.pending { background: #7a5a1f; color: #fff; }
 .page .badge.removed { background: #4a4a4a; color: #bbb; }
 .page #guests h3 { margin: 1.25rem 0 .25rem; font-size: 1rem; }
