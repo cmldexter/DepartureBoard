@@ -27,8 +27,10 @@ class Message(Base):
     repeat_end: Mapped[str | None] = mapped_column(String(5))
     # Seconds this message holds the board when rotating with equals; None = rotate_seconds
     show_seconds: Mapped[int | None] = mapped_column(Integer)
-    # ui | api | agent
+    # ui | api | agent | guest
     source: Mapped[str] = mapped_column(String(8), nullable=False, default="api")
+    # The guest post this message was made from (source guest); clearing the post removes it
+    post_id: Mapped[int | None] = mapped_column(Integer)
     created_by: Mapped[str | None] = mapped_column(String(80))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
@@ -36,6 +38,23 @@ class Message(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
     )
+
+
+class Post(Base):
+    """What a guest left through the guest link: a line, a photo or both, waiting for the host."""
+
+    __tablename__ = "posts"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    nick: Mapped[str] = mapped_column(String(16), nullable=False, default="")
+    text: Mapped[str] = mapped_column(String(120), nullable=False, default="")
+    # the slug of the photo under <data_dir>/images (guest-<id>), or None
+    image: Mapped[str | None] = mapped_column(String(40))
+    # pending | approved | rejected
+    status: Mapped[str] = mapped_column(String(8), nullable=False, default="pending")
+    # a salted hash of the poster's address, for the hourly limit — never the address itself
+    ip_hash: Mapped[str] = mapped_column(String(16), nullable=False, default="")
 
 
 class Setting(Base):
@@ -80,7 +99,11 @@ DEFAULT_SETTINGS = {
     "cell_radius": "6",
     "cell_gap": "35",
     "split_line": "1",
+    # The guest link: "" = off; a token mints with POST /api/guest/rotate. Never sent to the TV.
+    "guest_token": "",
 }
+
+POST_STATUSES = ("pending", "approved", "rejected")
 
 # Shipped backgrounds: app/static/backgrounds/<name>.jpg, 1920×1080, drawn by the project (no
 # third-party pictures), with a 320×180 thumbnail under thumbs/. Chosen as "builtin:<name>".

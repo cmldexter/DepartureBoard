@@ -9,6 +9,15 @@ and a container image `ghcr.io/cmldexter/departureboard:X.Y.Z`.
 
 ### Added
 
+- **A guest link** (#114). The first public write path, narrow by design: `POST /api/guest/rotate`
+  mints a 20-character token (the display setting `guest_token`; `""` closes the door) and
+  `/guest/<token>` is one phone-sized page — a line of up to 120 characters with the flap rules
+  shown as they type, an optional photo (PNG, JPEG or WebP up to 5 MB), an optional first name —
+  that posts into a queue the host approves. Photos lose their metadata before they are stored
+  (JPEG APP segments, PNG text and eXIf chunks, WebP EXIF and XMP) and are sized to keep their
+  shape four rows tall. Twenty posts an hour from one phone, two hundred for the board; the
+  page says so kindly. Nothing else about the board is reachable from it. Migration `0003`
+  adds the `posts` table and `post_id` on messages.
 - **A QR code on the board** (#110). `POST /api/images/qr` with `slug` and `data` (text or a URL,
   up to 1024 characters) makes a picture the server draws with `segno` (pure Python, BSD): error
   correction M, a quiet zone, dark on white whatever the theme. The same token, size, sidecar and
