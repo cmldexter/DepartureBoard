@@ -18,6 +18,9 @@ and a container image `ghcr.io/cmldexter/departureboard:X.Y.Z`.
   camera), Make a QR code, a picture's size, Plan a board. Targets are thumb-sized. A web app
   manifest and icons make *Add to Home Screen* an app-like remote (no service worker: the API is
   never cached). The desktop layout is unchanged.
+- **Docs: the board in your pocket** (#125). A *From your phone* paragraph in the README with the
+  Board and Messages tabs as a phone shows them and *Add to Home Screen* in three lines;
+  `docs/tv-setup.md` gets *The phone as the remote*.
 - **The desktop layout** (#123). Above 1100 px the settings page is two columns: the tab's content
   on the left and the live card pinned on the right whatever tab you are on — with the message
   form's preview under it while you type, so a slider, a message or an approval shows its effect
