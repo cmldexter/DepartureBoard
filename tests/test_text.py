@@ -168,3 +168,31 @@ def test_padded_rows_cut_a_block_at_the_edge():
 def test_legacy_picture_is_one_bare_cell():
     lay = layout("{img:old} HI", 6, 22, {})
     assert lay.rows[0] == [{"img": "old"}, " ", "H", "I"] and lay.used == 4
+
+
+def test_solid_block_marks_every_part():
+    """A picture drawn whole (`solid`, e.g. a QR code) says so on every part, so the board can lay
+    one overlay over the block; a sliced picture carries no flag at all."""
+    qr = {"menu": {"w": 4, "h": 3, "fit": "contain", "ar": 1.0, "solid": True, "qr": True}}
+    rows = layout("{img:menu}", 6, 22, qr).rows
+    parts = [c for row in rows for c in row if isinstance(c, dict)]
+    assert len(parts) == 12
+    assert all(c["solid"] is True and c["qr"] is True for c in parts)
+    assert parts[0] == {
+        "img": "menu",
+        "w": 4,
+        "h": 3,
+        "fit": "contain",
+        "ar": 1.0,
+        "solid": True,
+        "qr": True,
+        "x": 0,
+        "y": 0,
+    }
+    plain = {"menu": {**qr["menu"], "solid": False, "qr": False}}
+    assert all(
+        "solid" not in c and "qr" not in c
+        for row in layout("{img:menu}", 6, 22, plain).rows
+        for c in row
+        if isinstance(c, dict)
+    )

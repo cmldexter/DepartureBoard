@@ -21,6 +21,7 @@ volume. Vanilla JS and CSS on the board; no bundler, no SPA.
 | `app/services/scheduler.py` | Which messages are live; rotation among equals |
 | `app/services/text.py` | Message text → cells: the flap set (`static/flapset.json`), `{chip}` / `{img:slug}` / emoji tokens, word-wrap, capacity |
 | `app/services/images.py` | Uploaded images under `<data_dir>/images/`, shown with `{img:slug}` |
+| `app/services/qr.py` | A QR code as a picture the server makes (`segno`), drawn whole over its block |
 | `app/deps.py` | `get_session`, `now` (tests set `app.state.clock`), `tz` |
 | `app/templates/` · `app/static/` | Jinja2 pages; CSS, JS, themes, fonts |
 | `integrations/` | curl examples, the Agent Skill, agent examples |

@@ -9,6 +9,7 @@
 {% block body %}
 <div id="backdrop" aria-hidden="true"></div>
 <main class="frame" style="--rows: {{ rows }}; --cols: {{ cols }}; --cell-radius: {{ config.cell_radius }}; --cell-gap: {{ config.cell_gap }}; --split-line: {{ config.split_line }};">
+  <div class="stage">
   <div class="board" id="board" aria-label="Departure board">
     {% for row in grid %}
       {% for ch in row %}
@@ -23,6 +24,8 @@
         </div>
       {% endfor %}
     {% endfor %}
+  </div>
+  <div id="overlays" aria-hidden="true"></div>
   </div>
 </main>
 <svg id="timer" class="timer" viewBox="0 0 36 36" aria-hidden="true" hidden>

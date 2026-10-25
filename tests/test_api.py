@@ -144,9 +144,11 @@ def test_images_upload_token_and_board(client, auth, settings):
         "w": 1,
         "h": 1,
         "fit": "contain",
+        "solid": False,
         "width": 1,
         "height": 1,
         "suggested": [[1, 1], [3, 2], [4, 3]],
+        "qr": None,
     }
     assert (settings.data_dir / "images" / "my-cat.png").read_bytes() == PNG
     assert (settings.data_dir / "images" / "my-cat.json").exists(), "the sidecar"
@@ -586,3 +588,87 @@ def test_flap_shape_settings(client, auth):
         assert client.patch("/api/settings", json=bad, headers=auth).status_code == 422, bad
     r = client.patch("/api/settings", json={"cell_gap": 100}, headers=auth)
     assert r.json()["cell_gap"] == 100 and r.json()["cell_radius"] == 0, "one key at a time"
+
+
+def test_qr_code_is_a_picture_the_server_makes(client, auth, settings):
+    """POST /api/images/qr: the same token, size and panel as any upload; a decoder reads it back;
+    the same slug again remakes it; the block is drawn whole (`solid`) on the wire."""
+    from tests._qr import decode_qr
+
+    r = client.post(
+        "/api/images/qr", json={"slug": "menu", "data": "https://example.com/menu"}, headers=auth
+    )
+    assert r.status_code == 201, r.text
+    img = r.json()
+    assert img["token"] == "{img:menu}" and img["url"] == "/images/menu"
+    assert img["content_type"] == "image/png" and img["width"] == img["height"]
+    assert (img["w"], img["h"], img["fit"], img["solid"]) == (4, 3, "contain", True)
+    assert img["qr"] == {"data": "https://example.com/menu"}
+    assert img["suggested"][:3] == [[1, 1], [3, 2], [4, 3]]
+    png = client.get("/images/menu").content
+    assert decode_qr(png) == "https://example.com/menu"
+    # the list shows the text, so the panel can offer to edit it
+    listed = {i["slug"]: i for i in client.get("/api/images", headers=auth).json()}
+    assert listed["menu"]["qr"] == {"data": "https://example.com/menu"}
+    # the same slug again remakes the picture (200) and keeps the size its owner set
+    client.patch("/api/images/menu", json={"w": 6, "h": 4}, headers=auth)
+    r = client.post(
+        "/api/images/qr", json={"slug": "menu", "data": "WIFI: partytime"}, headers=auth
+    )
+    assert r.status_code == 200
+    assert (r.json()["w"], r.json()["h"], r.json()["solid"]) == (6, 4, True)
+    assert decode_qr(client.get("/images/menu").content) == "WIFI: partytime"
+    # bounds
+    for bad in (
+        {"slug": "menu", "data": ""},
+        {"slug": "menu", "data": "x" * 1025},
+        {"slug": "Bad Slug", "data": "hi"},
+        {"slug": "", "data": "hi"},
+        {"data": "hi"},
+    ):
+        assert client.post("/api/images/qr", json=bad, headers=auth).status_code == 422, bad
+    # the token lays out and renders as any picture; every part of the block says `solid`
+    r = client.post("/api/messages", json={"text": "SCAN ME {img:menu}"}, headers=auth)
+    assert r.status_code == 201, r.text
+    cells = [c for row in client.get("/api/board/current").json()["rows"] for c in row]
+    parts = [c for c in cells if isinstance(c, dict) and c.get("img") == "menu"]
+    assert len(parts) == 6 * 4
+    assert all(c["solid"] is True and c["qr"] is True for c in parts)
+    assert parts[0] == {
+        "img": "menu",
+        "w": 6,
+        "h": 4,
+        "fit": "contain",
+        "ar": 1.0,
+        "x": 0,
+        "y": 0,
+        "solid": True,
+        "qr": True,
+    }
+    # solid is a switch: off → the mosaic, and the wire drops the flag
+    r = client.patch("/api/images/menu", json={"solid": False}, headers=auth)
+    assert r.status_code == 200 and r.json()["solid"] is False
+    cells = [c for row in client.get("/api/board/current").json()["rows"] for c in row]
+    assert all("solid" not in c for c in cells if isinstance(c, dict) and c.get("img") == "menu")
+    # an upload over the slug is a plain picture again: size and drawing mode kept, the text gone
+    r = client.post(
+        "/api/images",
+        files={"file": ("menu.png", io.BytesIO(PNG), "image/png")},
+        data={"slug": "menu"},
+        headers=auth,
+    )
+    assert r.status_code == 200
+    assert (r.json()["w"], r.json()["h"], r.json()["solid"], r.json()["qr"]) == (6, 4, False, None)
+
+
+def test_solid_switch_on_an_upload(client, auth):
+    """Any picture can be drawn whole — a logo too; the wire carries `solid` only when it is on."""
+    client.post(
+        "/api/images", files={"file": ("logo.png", io.BytesIO(PNG), "image/png")}, headers=auth
+    )
+    r = client.patch("/api/images/logo", json={"w": 2, "h": 2, "solid": True}, headers=auth)
+    assert r.status_code == 200 and r.json()["solid"] is True and r.json()["qr"] is None
+    client.post("/api/messages", json={"text": "{img:logo}"}, headers=auth)
+    cells = [c for row in client.get("/api/board/current").json()["rows"] for c in row]
+    parts = [c for c in cells if isinstance(c, dict) and c.get("img") == "logo"]
+    assert len(parts) == 4 and all(c["solid"] is True and "qr" not in c for c in parts)

@@ -102,10 +102,11 @@
     if (face.chip) halfEl.setAttribute("data-chip", face.chip);
     else halfEl.removeAttribute("data-chip");
     const img = face.img;
-    const url = img ? `url("/images/${img.img}")` : "";
+    // a solid block is drawn whole by the board's overlay layer; its flaps stay blank
+    const url = img && !img.solid ? `url("/images/${img.img}")` : "";
     if (halfEl.style.backgroundImage !== url) halfEl.style.backgroundImage = url;
     // a legacy one-cell picture keeps the stylesheet's 100% 200% split; a block gets its slice
-    const legacy = !img || (img.w === undefined && img.fit === undefined);
+    const legacy = !img || img.solid || (img.w === undefined && img.fit === undefined);
     const s = legacy ? { size: "", position: "" } : slice(img, halfEl.parentElement, bottom);
     if (halfEl.style.backgroundSize !== s.size) halfEl.style.backgroundSize = s.size;
     if (halfEl.style.backgroundPosition !== s.position) halfEl.style.backgroundPosition = s.position;
@@ -202,6 +203,14 @@
     cell.pending = null;
     cell.pendingSpecial = null;
     stopFlip(cell); // the leaf returns to rest showing the front, which now carries the face
+    if (landHook) landHook(cell);
+  }
+
+  // Called with a cell whenever its leaf has landed (board.js shows a solid block's overlay once
+  // every cell beneath it has).
+  let landHook = null;
+  function onLand(fn) {
+    landHook = fn;
   }
 
   function sameSpecial(a, b) {
@@ -210,7 +219,7 @@
     const ib = b && b.img;
     if (!ia && !ib) return true;
     if (!ia || !ib) return false;
-    return ["img", "w", "h", "x", "y", "fit", "ar"].every((k) => ia[k] === ib[k]);
+    return ["img", "w", "h", "x", "y", "fit", "ar", "solid", "qr"].every((k) => ia[k] === ib[k]);
   }
 
   // Show `index` (with an optional special token). With flip=true the leaf animates from the
@@ -271,5 +280,6 @@
     adoptCell,
     setCell,
     commit,
+    onLand,
   };
 })();
