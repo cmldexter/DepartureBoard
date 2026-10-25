@@ -15,6 +15,11 @@ and a container image `ghcr.io/cmldexter/departureboard:X.Y.Z`.
   under the frame, blurred and dimmed; the frame turns translucent over it and the flaps keep
   their theme. Nothing changes until a picture is set. The live card and the form preview show
   it too.
+- **Four backgrounds that ship with the app** (#95): `builtin:terminal` (concrete grey),
+  `builtin:wood` (dark walnut), `builtin:gala` (navy with gold bokeh, the formal one) and
+  `builtin:paper` (warm off-white), drawn by the project at 1920 × 1080 under
+  `app/static/backgrounds/`, each with a thumbnail. `docs/backgrounds.md` is the guide for making
+  your own, with `docs/background-template.png` showing the flap boxes for both presets.
 - **Look & feel on the settings page** (#93). The four themes as swatches under the live card;
   one click applies the theme at once and the TV follows on its next poll. The theme select left
   the Display form.

@@ -127,6 +127,10 @@ post from a script, a calendar or an agent, open `/integrate` (pictured below).
 Each theme is one stylesheet under `app/static/themes/` with its font bundled, so the board
 works on a LAN with no internet. A new theme is a welcome pull request.
 
+Behind any theme can sit a picture: four ship with the app (*terminal*, *wood*, *gala*, *paper*)
+and your own uploads work too, blurred and dimmed to taste. [docs/backgrounds.md](docs/backgrounds.md)
+has the four-click recipe, the safe area and a 1920 × 1080 template.
+
 ## Bring your own integration
 
 <img src="docs/media/integrate.png" alt="The integrate page: curl lines pre-filled with this host and token, with a Test it button" width="800">

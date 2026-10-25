@@ -544,6 +544,9 @@ def test_background_settings(client, auth):
         assert client.patch("/api/settings", json=bad, headers=auth).status_code == 422, bad
     r = client.patch("/api/settings", json={"background_fit": "contain"}, headers=auth)
     assert r.json()["background_fit"] == "contain"
+    r = client.patch("/api/settings", json={"background_image": "builtin:gala"}, headers=auth)
+    assert r.status_code == 200 and r.json()["background_image"] == "builtin:gala"
+    assert client.get("/api/board/current").json()["settings"]["background_image"] == "builtin:gala"
     r = client.patch("/api/settings", json={"background_image": ""}, headers=auth)
     assert r.json()["background_image"] == "" and r.json()["background_blur"] == 20, (
         "clearing keeps the sliders"

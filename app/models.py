@@ -74,8 +74,9 @@ DEFAULT_SETTINGS = {
     "background_fit": "cover",
 }
 
-# Shipped backgrounds: app/static/backgrounds/<name>.jpg (none yet — Epic 12 S2 adds them).
-BUILTIN_BACKGROUNDS: tuple[str, ...] = ()
+# Shipped backgrounds: app/static/backgrounds/<name>.jpg, 1920×1080, drawn by the project (no
+# third-party pictures), with a 320×180 thumbnail under thumbs/. Chosen as "builtin:<name>".
+BUILTIN_BACKGROUNDS: tuple[str, ...] = ("terminal", "wood", "gala", "paper")
 
 # The countdown ring in the board's corner: never, for messages with their own show_seconds, or
 # for every rotating message.

@@ -123,6 +123,24 @@ def test_theme_assets_exist(client):
         assert client.get(f"/static/video/{v}").status_code == 200, v
 
 
+def test_builtin_backgrounds_ship_with_a_thumbnail_each(client):
+    """Every name the settings accept as builtin:<name> is a 1920×1080 JPEG the board can load,
+    with a thumbnail for the picker; the template for making your own is in docs/."""
+    from pathlib import Path
+
+    from app.models import BUILTIN_BACKGROUNDS
+
+    assert BUILTIN_BACKGROUNDS == ("terminal", "wood", "gala", "paper")
+    root = Path(__file__).resolve().parents[1]
+    for name in BUILTIN_BACKGROUNDS:
+        r = client.get(f"/static/backgrounds/{name}.jpg")
+        assert r.status_code == 200 and r.content[:2] == b"\xff\xd8", name
+        assert len(r.content) <= 400 * 1024, f"{name}: keep each under 400 KB"
+        assert client.get(f"/static/backgrounds/thumbs/{name}.jpg").status_code == 200, name
+    assert (root / "docs" / "background-template.png").read_bytes()[:8] == b"\x89PNG\r\n\x1a\n"
+    assert (root / "docs" / "backgrounds.md").exists()
+
+
 CONFIG_KEYS = {
     "rows",
     "cols",
