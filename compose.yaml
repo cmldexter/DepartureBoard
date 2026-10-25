@@ -4,7 +4,7 @@
 #   open http://<this machine>:8080 on the TV, and http://<this machine>:8080/settings on your laptop
 #
 # This pulls the published image. For a board on a wall, pin a version instead of `latest`:
-# put DEPARTUREBOARD_IMAGE=ghcr.io/cmldexter/departureboard:0.2.0 in .env (see .env.example).
+# put DEPARTUREBOARD_IMAGE=ghcr.io/cmldexter/departureboard:0.3.0 in .env (see .env.example).
 # HTTPS (optional): DEPARTUREBOARD_TLS=self-signed in .env serves https://<this machine>:8080 instead; docs/tv-setup.md.
 #
 # Contributors build from this checkout instead:

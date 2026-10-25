@@ -7,10 +7,9 @@ and a container image `ghcr.io/cmldexter/departureboard:X.Y.Z`.
 
 ## [Unreleased]
 
-### Changed
+_Nothing yet._
 
-- **Uploads may be 5 MB** (#97), up from 512 KB — a phone screenshot of a poster fits. The 413
-  says so; the Images panel shows a file's size in MB past 1 MB.
+## [0.3.0] — 2026-10-24
 
 ### Added
 
@@ -33,7 +32,6 @@ and a container image `ghcr.io/cmldexter/departureboard:X.Y.Z`.
 - **Look & feel on the settings page** (#93). The four themes as swatches under the live card;
   one click applies the theme at once and the TV follows on its next poll. The theme select left
   the Display form.
-
 - **Pictures that fit** (#89, #90, #91). A picture has a size on the board: `w` × `h` cells and a
   `fit` (`contain` keeps its shape, `cover` fills and crops, `stretch` fills), set with
   `PATCH /api/images/{slug}` and kept in a small file beside the picture — no table, no
@@ -45,7 +43,6 @@ and a container image `ghcr.io/cmldexter/departureboard:X.Y.Z`.
   uploaded before this release is still one cell, exactly as it was. The Images panel (#92) has
   the controls: cells wide × tall, the fit, the suggested sizes as one-click chips, and the
   pixel size next to the file size.
-
 - **A message's own time on the board** (#98, #99, #100). `show_seconds` (5–600) on a message, or
   on `/api/messages/now`, is how long it holds the board when several messages take turns; the
   others keep the display's *Rotate every*. The rotation stays stateless — every screen shows
@@ -57,13 +54,14 @@ and a container image `ghcr.io/cmldexter/departureboard:X.Y.Z`.
   translucent countdown in the board's top-right corner while a message's slot runs — for
   messages with their own time, or for every message taking turns. `/api/board/current` carries
   `timer {seconds, remaining, own}` while messages rotate; it is left out of the `ETag`.
-
 - **A line on the sign-in page**, under the token help: this board is free, the mechanical one it
   imitates costs about $3,500, and a fraction of that is worth more to people still rebuilding
   after the June 2026 earthquakes in Venezuela, with a link to Direct Relief's response.
 
 ### Changed
 
+- **Uploads may be 5 MB** (#97), up from 512 KB — a phone screenshot of a poster fits. The 413
+  says so; the Images panel shows a file's size in MB past 1 MB.
 - **The sign-in page says where the token is, as commands.** One labelled terminal line per way
   of running the board (the container, a `uv run` server, the first-boot log), each with a Copy
   button, and a note that every server has its own token. The old sentence offered
@@ -150,6 +148,7 @@ can afford — *"come find me when that exists."*
 - The board endpoint and the pictures are public so the TV never holds a secret; everything
   else needs the token. CORS is off unless origins are listed.
 
-[Unreleased]: https://github.com/cmldexter/DepartureBoard/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/cmldexter/DepartureBoard/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/cmldexter/DepartureBoard/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/cmldexter/DepartureBoard/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/cmldexter/DepartureBoard/releases/tag/v0.1.0
