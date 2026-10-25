@@ -96,6 +96,12 @@ def test_settings_page_panels(client, token):
         'id="token"',
         'aria-controls="panel-guests"',
         'id="side"',
+        'id="now-form"',
+        'id="sheet"',
+        'data-sheet="display-form"',
+        'rel="manifest"',
+        'capture="environment"',
+        'id="live-toggle"',
         'class="layout"',
         'id="qr-board"',
     ):
@@ -273,3 +279,40 @@ def test_every_section_sits_in_its_tab_panel(client, token):
     )
     for tab in panels:
         assert f'id="tab-{tab}" aria-controls="panel-{tab}"' in html, tab
+
+
+def test_the_manifest_makes_a_home_screen_app(client, token):
+    """Add to Home Screen: a manifest with the fields Chrome wants, the icons on disk, the theme
+    colour following the board's theme; no service worker anywhere (the API is never cached)."""
+    from pathlib import Path
+
+    from app.models import Setting
+
+    r = client.get("/manifest.webmanifest")
+    assert r.status_code == 200 and r.headers["content-type"].startswith(
+        "application/manifest+json"
+    )
+    m = r.json()
+    assert (m["name"], m["short_name"], m["start_url"], m["display"]) == (
+        "DepartureBoard",
+        "Board",
+        "/settings",
+        "standalone",
+    )
+    assert m["theme_color"] == "#000000", "classic black by default"
+    sizes = {i["sizes"] for i in m["icons"]}
+    assert {"192x192", "512x512"} <= sizes
+    for icon in m["icons"]:
+        assert client.get(icon["src"]).status_code == 200, icon["src"]
+    assert client.get("/static/icons/apple-touch-icon.png").status_code == 200
+    with next(client.app.state.db.session()) as session:
+        session.add(Setting(key="theme", value="walnut"))
+        session.commit()
+    assert client.get("/manifest.webmanifest").json()["theme_color"] == "#1a120c"
+    html = client.get("/settings", headers={"Authorization": f"Bearer {token}"}).text
+    assert 'rel="apple-touch-icon"' in html and 'name="theme-color"' in html
+    static = Path(__file__).resolve().parents[1] / "app" / "static"
+    assert (
+        not list(static.rglob("sw.js"))
+        and "serviceWorker" not in (static / "js" / "settings.js").read_text()
+    )
