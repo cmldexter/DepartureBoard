@@ -9,6 +9,15 @@ and a container image `ghcr.io/cmldexter/departureboard:X.Y.Z`.
 
 ### Added
 
+- **A QR code on the board** (#110). `POST /api/images/qr` with `slug` and `data` (text or a URL,
+  up to 1024 characters) makes a picture the server draws with `segno` (pure Python, BSD): error
+  correction M, a quiet zone, dark on white whatever the theme. The same token, size, sidecar and
+  panel as any upload; a new code takes 4 × 3 cells; the same slug again remakes it and keeps the
+  size; `qr.data` on the image says what it carries.
+- **A picture drawn whole over its block** (#111). `solid` on a picture (`PATCH /api/images/{slug}`;
+  a QR code defaults to it) draws the block as one element over the grid instead of slicing it
+  through the gaps and split lines — the flaps beneath flip to blank, the picture fades in once
+  they have landed and out before they move again. A QR scans from the sofa; a logo keeps its lines.
 - **The shape of a flap** (#118). Display settings `cell_radius` (0–12, % of the cell's width),
   `cell_gap` (0–100, hundredths of a vmin) and `split_line` (0–3 px) replace three constants in the
   stylesheet; the TV follows on its next poll and repaints its picture slices for a new gap. *Look &
