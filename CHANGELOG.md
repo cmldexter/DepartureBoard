@@ -9,6 +9,14 @@ and a container image `ghcr.io/cmldexter/departureboard:X.Y.Z`.
 
 ### Added
 
+- **The QR that opens the guest page** (#116). `POST /api/guest/qr` makes the picture `guest-qr`
+  from the current guest link and a ready-made message `SCAN TO POST A PHOTO` + `{img:guest-qr}`,
+  disabled until you switch it on (201; 200 remade; 409 while guests are off); *Put the QR on the
+  board* in Settings → Guests does the same. Rotating the link remakes the code and the TV follows
+  on its next poll; turning guests off disables every message carrying the code.
+- **Docs: guests and the safety story** (#117). A *Guests* section in the README with captures,
+  `docs/guests.md` — what a guest can and cannot do, every limit the code enforces (a test keeps the
+  numbers honest), privacy, how to end a party —, `llms.txt`, the Agent Skill and `SECURITY.md`.
 - **Hosting the feed** (#115). `GET /api/posts?status=pending|approved|rejected|all`,
   `POST /api/posts/{id}/approve` and `/reject`, `DELETE /api/posts/{id}` and
   `DELETE /api/posts?status=…` (clear). **Approve = make a message**: the post's text, its photo

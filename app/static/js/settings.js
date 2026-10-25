@@ -787,7 +787,9 @@
     try {
       const s = await api("/api/settings", { method: "PATCH", body: { guest_token: "" } });
       showGuestLink(s.guest_token);
-      toast("Guests are off.");
+      toast("Guests are off — the SCAN TO POST A PHOTO message, if any, is switched off.");
+      await loadMessages(); // the server disabled the QR message
+      refreshLive();
       $("#guest-make").focus();
     } catch (e) {
       toast(e.message, true);

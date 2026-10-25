@@ -30,6 +30,7 @@ Every call except the two public ones sends `Authorization: Bearer $DB_TOKEN`.
 | Remove | `DELETE /api/messages/{id}` → 204 |
 | A **picture** on the board | `POST /api/images` multipart `file` (PNG/JPEG/GIF/WebP ≤ 5 MB) + optional `slug`; the response gives `"token": "{img:slug}"` to put in a message and `suggested` blocks; `PATCH /api/images/{slug}` `{"w": 9, "h": 1, "fit": "contain"}` sizes it in cells (or write `{img:slug@9x1}`) |
 | A **QR code** on the board | `POST /api/images/qr` `{"slug": "menu", "data": "https://…"}` (data ≤ 1024) → `{"token": "{img:menu}", "w": 4, "h": 3, "solid": true, …}`; put the token in a message — two calls. It is drawn whole over its 4 × 3 block so a phone scans it from the sofa; the same slug again remakes it. `{"solid": true}` on `PATCH /api/images/{slug}` draws any picture whole |
+| **Guests** post to the board | `POST /api/guest/rotate` → `{"token", "url"}` opens a public phone page `/guest/<token>` that posts a line or a photo into a queue (off until then; `PATCH /api/settings {"guest_token": ""}` closes it); `POST /api/guest/qr` makes `{img:guest-qr}` and a disabled `SCAN TO POST A PHOTO` message; `GET /api/posts?status=pending` lists what waits; `POST /api/posts/{id}/approve` makes an ordinary message from a post (`source: guest`; `note` says why it was left disabled when it did not fit); `/reject`; `DELETE /api/posts?status=all` clears. `PATCH /api/settings` `{"guest_auto_approve": true, "guest_priority": 1, "guest_show_seconds": 15}` |
 | The display | `PATCH /api/settings` — `{"grid_preset": "compact"|"large"|"custom", "rows", "cols", "animation": 0–100, "sound_enabled", "sound_volume": 0–1, "theme": "classic-black"|"walnut"|"arctic-white"|"midnight", "idle_text", "poll_seconds", "rotate_seconds", "timer_ring": "off"|"own"|"all", "cell_radius": 0–12, "cell_gap": 0–100, "split_line": 0–3}` (partial; the last three are the shape of a flap — `0, 10, 0` is Picture mode for a banner across the flaps) |
 | Public: what the TV shows | `GET /api/board/current` (no token); `GET /images/{slug}` |
 | Reference | `GET /docs` (Swagger), `GET /llms.txt` |
@@ -65,4 +66,4 @@ User: *"Put HAPPY BIRTHDAY NICK on the board tomorrow from 7am to 11pm, make it 
    `{"text": "HAPPY BIRTHDAY NICK {yellow}", "starts_at": "2026-10-21T07:00:00-04:00", "ends_at": "2026-10-21T23:00:00-04:00", "priority": 5}`
 4. Reply with the state from the response (`scheduled`) and the id, so the user can remove it.
 
-Written against DepartureBoard 0.3.0 (API as of 2026-10-24; `show_seconds` and `timer_ring` need 0.3.0 or later).
+Written against DepartureBoard 0.3.0 (API as of 2026-10-25; `show_seconds` and `timer_ring` need 0.3.0 or later; QR codes, `solid`, the flap shape and guests need 0.4.0 or later).

@@ -129,6 +129,23 @@ shape inside that block (or fills it, or stretches, your choice). The panel sugg
 that keep the shape from the file's own pixel size. In a message the picture takes its block,
 pushing the lines beneath it down; `{img:cat@9x1}` sizes it for one message only.
 
+<img src="docs/media/settings-guests.png" alt="The Guests section: the guest link with Copy, Rotate and Turn off, Put the QR on the board, the Auto-approve switch, a post waiting with its thumbnail and Approve and Reject, and a post on the board" width="800">
+
+**Guests.** A link for phones, off until you make it. Whoever opens it gets one small page — a
+line, a photo, a first name, *Post* — and nothing else: no messages, no settings, and a wrong link
+is a plain 404. Posts wait in this section with a thumbnail, the line and the name. *Approve* turns
+one into an ordinary message — the words, the photo sized to the rows left, the name last — that
+takes turns with the other guests at the priority and for the seconds you set here; *Reject*
+throws it away. Switch on *Auto-approve* and a post is on the TV before you look. *Put the QR on
+the board* makes a code for the link and a ready-made `SCAN TO POST A PHOTO` message, disabled
+until the party starts. Photos lose their location data before they are stored, a phone gets
+twenty posts an hour and the board two hundred, *Rotate* kills the link at once and *Clear all*
+ends the evening. [docs/guests.md](docs/guests.md) is the whole safety story.
+
+<img src="docs/media/guests-phone.png" alt="The guest page on a phone: a line with the flap rules previewed, Add a photo, a name, Post" width="300">
+
+<img src="docs/media/board-guest.png" alt="The board showing a guest's post: HAPPY BIRTHDAY NICK, the photo across eight by four flaps, and - ANA" width="800">
+
 **The token.** At the bottom of the page, generated on first boot (or set with
 `DEPARTUREBOARD_API_TOKEN`). The TV needs none; the settings page and every write to the API do.
 
