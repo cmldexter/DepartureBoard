@@ -5,7 +5,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Form, Request, status
-from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse
 
 from app import __version__
 from app.models import BUILTIN_BACKGROUNDS, THEMES
@@ -14,6 +14,13 @@ from app.services.display import display_settings, resolve_display
 from app.services.tls import local_ipv4s
 
 router = APIRouter(include_in_schema=False)
+# The page background of each theme (its --bg), for the home-screen app's chrome.
+THEME_COLORS = {
+    "classic-black": "#000000",
+    "walnut": "#1a120c",
+    "arctic-white": "#d9dde2",
+    "midnight": "#050a18",
+}
 LLMS_TXT = Path(__file__).resolve().parent.parent.parent / "llms.txt"
 _LOOPBACK = {"localhost", "127.0.0.1", "::1"}
 
@@ -152,6 +159,36 @@ def integrate_page(request: Request):
         request,
         "integrate.html",
         {"token": request.app.state.api_token, "base_url": base, "version": __version__},
+    )
+
+
+@router.get("/manifest.webmanifest")
+def manifest(request: Request):
+    """A web app manifest, so *Add to Home Screen* gives an app-like remote (`display:
+    standalone`). No service worker on purpose: the API must never be cached."""
+    with next(request.app.state.db.session()) as session:
+        theme = display_settings(session)["theme"]
+    return JSONResponse(
+        {
+            "name": "DepartureBoard",
+            "short_name": "Board",
+            "description": "The remote for your split-flap board.",
+            "start_url": "/settings",
+            "scope": "/",
+            "display": "standalone",
+            "background_color": "#111111",
+            "theme_color": THEME_COLORS.get(theme, "#111111"),
+            "icons": [
+                {"src": "/static/icons/icon-192.png", "sizes": "192x192", "type": "image/png"},
+                {
+                    "src": "/static/icons/icon-512.png",
+                    "sizes": "512x512",
+                    "type": "image/png",
+                    "purpose": "any maskable",
+                },
+            ],
+        },
+        media_type="application/manifest+json",
     )
 
 

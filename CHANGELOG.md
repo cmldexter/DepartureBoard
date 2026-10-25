@@ -9,6 +9,15 @@ and a container image `ghcr.io/cmldexter/departureboard:X.Y.Z`.
 
 ### Added
 
+- **The board in your pocket** (#124). Under 700 px the settings page is a phone page: the tabs
+  are a bottom bar with icons; the Board tab opens on *Show something now* — a line, a chip for
+  30 s / 2 min / 10 min or until replaced, *Show now* — with the live card folded to a strip that
+  says what is on and expands on tap; the main screens stay short, and an edit takes you to a
+  screen of its own that brings you back when it is done: Theme, Behind the board, The flaps,
+  Display, a new or edited message, Upload a picture (with *Take a photo* straight from the
+  camera), Make a QR code, a picture's size, Plan a board. Targets are thumb-sized. A web app
+  manifest and icons make *Add to Home Screen* an app-like remote (no service worker: the API is
+  never cached). The desktop layout is unchanged.
 - **The desktop layout** (#123). Above 1100 px the settings page is two columns: the tab's content
   on the left and the live card pinned on the right whatever tab you are on — with the message
   form's preview under it while you type, so a slider, a message or an approval shows its effect

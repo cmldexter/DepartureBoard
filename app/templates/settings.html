@@ -29,20 +29,39 @@
   <p id="toast" class="toast" role="status" aria-live="polite" hidden></p>
 
   <div class="tabs" role="tablist" aria-label="Settings">
-    <button type="button" role="tab" id="tab-board" aria-controls="panel-board" aria-selected="true">Board</button>
-    <button type="button" role="tab" id="tab-messages" aria-controls="panel-messages" aria-selected="false" tabindex="-1">Messages</button>
-    <button type="button" role="tab" id="tab-pictures" aria-controls="panel-pictures" aria-selected="false" tabindex="-1">Pictures</button>
-    <button type="button" role="tab" id="tab-guests" aria-controls="panel-guests" aria-selected="false" tabindex="-1">Guests <span id="guests-count" class="badge pending" hidden></span></button>
-    <button type="button" role="tab" id="tab-boards" aria-controls="panel-boards" aria-selected="false" tabindex="-1">Boards <span id="tab-boards-dot" class="tab-dot" title="This board has changes since it was saved" hidden>●</span></button>
-    <button type="button" role="tab" id="tab-setup" aria-controls="panel-setup" aria-selected="false" tabindex="-1">Setup</button>
+    <button type="button" role="tab" id="tab-board" aria-controls="panel-board" aria-selected="true"><span class="ico" aria-hidden="true">📺</span><span class="lbl">Board</span></button>
+    <button type="button" role="tab" id="tab-messages" aria-controls="panel-messages" aria-selected="false" tabindex="-1"><span class="ico" aria-hidden="true">💬</span><span class="lbl">Messages</span></button>
+    <button type="button" role="tab" id="tab-pictures" aria-controls="panel-pictures" aria-selected="false" tabindex="-1"><span class="ico" aria-hidden="true">🖼️</span><span class="lbl">Pictures</span></button>
+    <button type="button" role="tab" id="tab-guests" aria-controls="panel-guests" aria-selected="false" tabindex="-1"><span class="ico" aria-hidden="true">🎉</span><span class="lbl">Guests</span> <span id="guests-count" class="badge pending" hidden></span></button>
+    <button type="button" role="tab" id="tab-boards" aria-controls="panel-boards" aria-selected="false" tabindex="-1"><span class="ico" aria-hidden="true">🗓️</span><span class="lbl">Boards</span> <span id="tab-boards-dot" class="tab-dot" title="This board has changes since it was saved" hidden>●</span></button>
+    <button type="button" role="tab" id="tab-setup" aria-controls="panel-setup" aria-selected="false" tabindex="-1"><span class="ico" aria-hidden="true">⚙️</span><span class="lbl">Setup</span></button>
   </div>
 
   <div class="layout">
   <div class="main-col">
 
   <div id="panel-board" class="panel" role="tabpanel" aria-labelledby="tab-board" tabindex="0">
-  <section id="look" aria-labelledby="look-heading">
+  <form id="now-form" class="card now" aria-labelledby="now-heading">
+    <h2 id="now-heading">Show something now</h2>
+    <label for="now-text" class="sr-only">The line to show</label>
+    <input id="now-text" name="text" type="text" maxlength="2000" placeholder="DINNER IS READY 🍝" autocomplete="off" required>
+    <fieldset class="chips" role="radiogroup" aria-label="For how long">
+      <label class="chip"><input type="radio" name="show_seconds" value="" checked> until replaced</label>
+      <label class="chip"><input type="radio" name="show_seconds" value="30"> 30 s</label>
+      <label class="chip"><input type="radio" name="show_seconds" value="120"> 2 min</label>
+      <label class="chip"><input type="radio" name="show_seconds" value="600"> 10 min</label>
+    </fieldset>
+    <div class="row"><button type="submit" id="now-send">Show now</button><span class="muted" id="now-status" role="status"></span></div>
+  </form>
+  <nav class="rows phone-only" aria-label="Look and display">
+    <button type="button" data-sheet="look-theme" data-title="Theme">Theme</button>
+    <button type="button" data-sheet="backdrop-form" data-title="Behind the board">Behind the board</button>
+    <button type="button" data-sheet="flaps-form" data-title="The flaps">The flaps</button>
+    <button type="button" data-sheet="display-form" data-title="Display">Display</button>
+  </nav>
+  <section id="look" class="sheet-host" aria-labelledby="look-heading">
     <h2 id="look-heading">Look &amp; feel</h2>
+    <div id="look-theme" class="sheet-block">
     <p class="muted">Pick a theme — the TV follows on its next poll, nothing to save.</p>
     <div class="swatches" id="theme-choices" role="radiogroup" aria-label="Theme">
       {% for t in themes %}
@@ -53,8 +72,9 @@
       {% endfor %}
     </div>
     <p class="muted" id="look-status" role="status"></p>
+    </div>
 
-    <form id="backdrop-form" class="backdrop" aria-labelledby="backdrop-heading">
+    <form id="backdrop-form" class="backdrop sheet-block" aria-labelledby="backdrop-heading">
       <h3 id="backdrop-heading">Behind the board</h3>
       <p class="muted">A picture under the frame: a poster snip blurred into a mood for a party, or one of ours for a
         quieter look. The card above follows every choice; <em>Save</em> sends it to the TV.
@@ -85,7 +105,7 @@
         <span class="muted" id="backdrop-status" role="status"></span></div>
     </form>
 
-    <form id="flaps-form" class="backdrop flaps" aria-labelledby="flaps-heading">
+    <form id="flaps-form" class="backdrop flaps sheet-block" aria-labelledby="flaps-heading">
       <h3 id="flaps-heading">The flaps</h3>
       <p class="muted">How round, how far apart, how thick the line across. Tighter flaps lose less of a picture
         spread over them; <em>Picture mode</em> sets all three at once, <em>Classic</em> puts them back. The card
@@ -101,9 +121,9 @@
     </form>
   </section>
 
-  <section id="display">
+  <section id="display" class="sheet-host">
     <h2>Display</h2>
-    <form id="display-form" class="card">
+    <form id="display-form" class="card sheet-block">
       <fieldset>
         <legend>Preset</legend>
         <label class="check"><input type="radio" name="grid_preset" value="compact"> Compact · 6 × 22 · 42–48" TV</label>
@@ -196,12 +216,18 @@
   <section id="images">
     <h2>Images</h2>
     <p class="muted">PNG, JPEG, GIF or WebP up to 5 MB. A new picture takes one cell; give it a size below — a wide one reads best across a row — and it keeps its shape inside that block unless you choose otherwise. Or make a <strong>QR code</strong> from a link or a line of text: it is drawn whole over its block so a phone can scan it from the sofa.</p>
-    <form id="image-form" class="card row">
+    <nav class="rows phone-only" aria-label="Add a picture">
+      <button type="button" data-sheet="image-form" data-title="Upload a picture">Upload a picture</button>
+      <button type="button" data-sheet="qr-form" data-title="Make a QR code">Make a QR code</button>
+    </nav>
+    <form id="image-form" class="card row sheet-block">
       <label>File <input type="file" name="file" accept="image/png,image/jpeg,image/gif,image/webp" required></label>
       <label>Slug <span class="muted">(optional)</span> <input type="text" name="slug" pattern="[a-z0-9][a-z0-9\-]{0,39}" placeholder="my-cat"></label>
       <button type="submit">Upload</button>
+      <p class="phone-only camera"><label class="file-button">Take a photo <input type="file" name="camera" accept="image/*" capture="environment" class="sr-only"></label>
+        <span class="muted">— straight from the camera; it uploads at once.</span></p>
     </form>
-    <form id="qr-form" class="card row" aria-label="Make a QR code">
+    <form id="qr-form" class="card row sheet-block" aria-label="Make a QR code">
       <label>QR code: text or link <input type="text" name="data" maxlength="1024" placeholder="https://… or WIFI:T:WPA;S:name;P:password;;" required></label>
       <label>Slug <input type="text" name="slug" pattern="[a-z0-9][a-z0-9\-]{0,39}" placeholder="menu" required></label>
       <span><button type="submit">Make QR</button> <button type="button" class="small" id="qr-board">Scan to open this board</button></span>
@@ -249,7 +275,8 @@
       the later start wins; the <em>everyday board</em> shows between planned days. Click a day to start a plan there.</p>
     <div class="months" id="calendar-months"></div>
     <p class="legend muted" id="calendar-legend"></p>
-    <form id="calendar-form" class="card" aria-labelledby="calendar-form-title">
+    <nav class="rows phone-only" aria-label="Plan"><button type="button" data-sheet="calendar-form" data-title="Plan a board">Plan a board</button></nav>
+    <form id="calendar-form" class="card sheet-block" aria-labelledby="calendar-form-title">
       <h3 id="calendar-form-title">Plan a board</h3>
       <input type="hidden" name="id">
       <div class="grid2">
@@ -296,9 +323,10 @@
   <section id="live" aria-labelledby="live-heading">
     <div class="row">
       <h2 id="live-heading">On the TV</h2>
-      <button type="button" class="small" id="cast" aria-pressed="false"><span class="label">Cast to TV</span></button>
+      <span><button type="button" class="link phone-only" id="live-toggle" aria-expanded="false" aria-controls="live-screen">Show</button>
+      <button type="button" class="small" id="cast" aria-pressed="false"><span class="label">Cast to TV</span></button></span>
     </div>
-    <div class="screen" aria-hidden="true"><iframe id="live-board" src="/?embed" title="The board, live" tabindex="-1"></iframe></div>
+    <div id="live-screen" class="live-screen"><div class="screen" aria-hidden="true"><iframe id="live-board" src="/?embed" title="The board, live" tabindex="-1"></iframe></div></div>
     <p id="live-now" class="muted">Waiting for the board…</p>
     <p id="cast-note" class="muted" role="status" hidden></p>
   </section>
@@ -329,6 +357,15 @@
 
 
 
+
+  <dialog id="sheet" class="sheet" aria-labelledby="sheet-title">
+    <header class="row">
+      <button type="button" class="link" id="sheet-back">‹ Back</button>
+      <h2 id="sheet-title"></h2>
+      <span class="muted" id="sheet-hint">changes come back with you</span>
+    </header>
+    <div id="sheet-body"></div>
+  </dialog>
 
   <footer>
     <p>Asked for by <a href="https://www.instagram.com/feltbykraft/" rel="noopener">@feltbykraft</a>

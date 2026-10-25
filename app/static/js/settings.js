@@ -121,6 +121,93 @@
     if (a && openHash(a.getAttribute("href"), false)) ev.preventDefault();
   });
 
+  // ---- the phone: a sheet is a screen of its own. A block that lives in a section (a form, the
+  // theme chooser) is moved into the dialog, the host makes the change, and Back — or a save —
+  // puts the block back and returns to the screen they came from. Nothing is duplicated.
+  const phone = window.matchMedia("(max-width: 700px)");
+  const sheet = $("#sheet");
+  const sheetBody = $("#sheet-body");
+  let sheetHome = null; // where the block came from: { el, parent, next }
+  function openSheet(el, title) {
+    if (!el) return;
+    closeSheet();
+    sheetHome = { el, parent: el.parentNode, next: el.nextSibling };
+    sheetBody.appendChild(el);
+    $("#sheet-title").textContent = title;
+    if (!sheet.open) sheet.showModal();
+    document.body.classList.add("sheet-open");
+    sheet.scrollTop = 0;
+    const first = el.querySelector("input:not([type=hidden]):not(.sr-only):not([type=file]), select, textarea, [role=radio][tabindex='0'], button");
+    if (first) first.focus();
+  }
+  function closeSheet() {
+    if (!sheetHome) return;
+    const { el, parent, next } = sheetHome;
+    sheetHome = null;
+    parent.insertBefore(el, next);
+    if (sheet.open) sheet.close();
+    document.body.classList.remove("sheet-open");
+    // Back on a form that was mid-edit: it goes home closed, not half-open on the main screen
+    // (a form with an <input name="id"> answers form.id with that input — read the attribute)
+    const id = el.getAttribute("id");
+    if (id === "message-form" && !el.hidden) closeForm();
+    if (id === "calendar-form" && !$("#calendar-cancel").hidden) $("#calendar-cancel").click();
+  }
+  // a block's job is done (saved, applied): back to the screen it came from
+  function sheetDone(el) {
+    if (sheetHome && el && (sheetHome.el === el || sheetHome.el.contains(el))) {
+      const opener = document.querySelector(`[data-sheet="${sheetHome.el.getAttribute("id")}"]`);
+      closeSheet();
+      if (opener) opener.focus();
+    }
+  }
+  sheet.addEventListener("close", closeSheet); // Esc, or the browser's own back gesture
+  $("#sheet-back").addEventListener("click", closeSheet);
+  document.addEventListener("click", (ev) => {
+    const b = ev.target.closest("[data-sheet]");
+    if (!b) return;
+    openSheet(document.getElementById(b.dataset.sheet), b.dataset.title || b.textContent.trim());
+  });
+  phone.addEventListener("change", () => {
+    if (!phone.matches) closeSheet();
+    syncLiveStrip();
+  });
+  // the live card on a phone: a strip that says what is on, the picture on tap
+  const liveSection = $("#live");
+  const liveToggle = $("#live-toggle");
+  let liveExpanded = false;
+  function syncLiveStrip() {
+    const mini = phone.matches && !liveExpanded;
+    liveSection.classList.toggle("mini", mini);
+    liveToggle.setAttribute("aria-expanded", String(!mini));
+    liveToggle.textContent = mini ? "Show" : "Hide";
+  }
+  liveToggle.addEventListener("click", () => {
+    liveExpanded = !liveExpanded;
+    syncLiveStrip();
+  });
+  syncLiveStrip();
+
+  // ---- show something now: the line a host types from the sofa
+  const nowForm = $("#now-form");
+  const NOW_LABEL = { 30: "30 seconds", 120: "2 minutes", 600: "10 minutes" };
+  nowForm.addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    const text = nowForm.text.value.trim();
+    if (!text) return;
+    const secs = nowForm.show_seconds.value ? Number(nowForm.show_seconds.value) : null;
+    try {
+      await api("/api/messages/now", { method: "POST", body: { text, show_seconds: secs } });
+      nowForm.text.value = "";
+      $("#now-status").textContent = `${text} — on the TV ${secs ? `for ${NOW_LABEL[secs]} when taking turns` : "until it is replaced"}.`;
+      toast(`On the board: ${text}`);
+      await loadMessages();
+      refreshLive();
+    } catch (e) {
+      toast(e.message, true);
+    }
+  });
+
   // ---- the addresses under the header: one Copy per line.
   for (const b of $$("#addresses .copy")) {
     b.addEventListener("click", async () => {
@@ -447,6 +534,7 @@
     if (previewFrame && !previewFrame.getAttribute("src")) previewFrame.src = "/?embed&preview";
     form.hidden = false;
     placePreview();
+    if (phone.matches) openSheet(form, m ? "Edit message" : "New message");
     $("#message-error").hidden = true;
     $("#message-form-title").textContent = m ? "Edit message" : "New message";
     form.id.value = m ? m.id : "";
@@ -469,6 +557,7 @@
   function closeForm() {
     form.hidden = true;
     placePreview();
+    sheetDone(form);
     if (formOpener && formOpener.isConnected) formOpener.focus();
     else focusRow(Number(form.id.value) || 0);
     formOpener = null;
@@ -500,6 +589,7 @@
         : await api("/api/messages", { method: "POST", body });
       form.hidden = true;
       placePreview();
+      sheetDone(form);
       toast(id ? "Saved." : "On the board.");
       await loadMessages();
       refreshLive();
@@ -535,6 +625,7 @@
       markTheme(saved.theme);
       $("#look-status").textContent = `${theme.replace(/-/g, " ")} — the TV picks it up on its next poll.`;
       refreshLive();
+      sheetDone($("#look-theme"));
     } catch (e) {
       markTheme(was);
       toast(e.message, true);
@@ -644,6 +735,7 @@
       fillBgForm(saved);
       bgStatus.textContent = said;
       refreshLive();
+      sheetDone(bgForm);
     } catch (e) {
       toast(e.message, true);
     }
@@ -714,6 +806,7 @@
       fillFlapForm(saved);
       flapStatus.textContent = "Saved — the TV picks it up on its next poll.";
       refreshLive();
+      sheetDone(flapForm);
     } catch (e) {
       toast(e.message, true);
     }
@@ -800,6 +893,7 @@
       if (!form.hidden) preview();
       await loadMessages(); // capacity may have changed the states' layout
       refreshLive();
+      sheetDone(display);
     } catch (e) {
       toast(e.message, true);
     }
@@ -820,7 +914,8 @@
       li.innerHTML = `<img alt=""><div class="meta"><code class="token"></code>
         <button type="button" class="link copy">Copy token</button> <button type="button" class="link delete">Delete</button>
         <span class="muted size"></span><span class="muted qr-text" hidden></span> <button type="button" class="link edit" hidden>Edit text</button></div>
-        <form class="sizing" aria-label="Size on the board">
+        <button type="button" class="link phone-only size-open">Size ›</button>
+        <form class="sizing sheet-block" aria-label="Size on the board">
           <label>Wide <input type="number" name="w" min="1" max="36" required></label>
           <span class="muted">×</span>
           <label>Tall <input type="number" name="h" min="1" max="10" required></label>
@@ -836,6 +931,9 @@
       $(".size", li).textContent = `${kb >= 1000 ? `${(kb / 1024).toFixed(1)} MB` : kb < 1 ? "under 1 KB" : `${Math.round(kb)} KB`}${img.width ? ` · ${img.width} × ${img.height} px` : ""}`;
       const sizing = $(".sizing", li);
       sizing.setAttribute("aria-label", `Size of ${img.token} on the board`);
+      sizing.id = `sizing-${img.slug}`;
+      $(".size-open", li).dataset.sheet = sizing.id;
+      $(".size-open", li).dataset.title = `${img.token} on the board`;
       sizing.w.value = img.w;
       sizing.h.value = img.h;
       sizing.fit.value = img.fit;
@@ -879,8 +977,8 @@
           if (i) chips.append(" · ");
           chips.append(b);
         });
-        if (img.w === 1 && img.h === 1 && img.width && img.width / img.height > 1.6) $(".applied", li).textContent = "This picture is wide — try the first size.";
-        if (img.qr && !img.solid) $(".applied", li).textContent = "Draw whole is off — a code sliced through the flaps will not scan.";
+        if (img.w === 1 && img.h === 1 && img.width && img.width / img.height > 1.6) $(".applied", sizing).textContent = "This picture is wide — try the first size.";
+        if (img.qr && !img.solid) $(".applied", sizing).textContent = "Draw whole is off — a code sliced through the flaps will not scan.";
       } else if (img.width === null) {
         chips.textContent = "Pixel size unreadable — set the cells by hand.";
       }
@@ -891,8 +989,9 @@
           const saved = await api(`/api/images/${img.slug}`, { method: "PATCH", body });
           Object.assign(img, saved);
           $$(".chip", chips).forEach((b) => b.setAttribute("aria-pressed", String(b.textContent === `${saved.w} × ${saved.h}`)));
-          $(".applied", li).textContent = `${saved.w} × ${saved.h}, ${sizing.fit.selectedOptions[0].textContent}${saved.solid ? ", drawn whole" : ""} — the board picks it up on its next poll.`;
+          $(".applied", sizing).textContent = `${saved.w} × ${saved.h}, ${sizing.fit.selectedOptions[0].textContent}${saved.solid ? ", drawn whole" : ""} — the board picks it up on its next poll.`;
           toast(`${img.token} is ${saved.w} × ${saved.h} cells.`);
+          sheetDone(sizing);
           if (!form.hidden) preview();
           await loadMessages(); // a bigger picture can overflow a message
           refreshLive();
@@ -930,6 +1029,26 @@
       const img = await api("/api/images", { method: "POST", form: fd });
       toast(`Uploaded. Put ${img.token} in a message.`);
       f.reset();
+      sheetDone(f);
+      await loadImages();
+      if (!form.hidden) preview();
+    } catch (e) {
+      toast(e.message, true);
+    }
+  });
+
+  // the camera on a phone: a photo uploads the moment it is taken
+  $("#image-form").camera.addEventListener("change", async () => {
+    const f = $("#image-form");
+    const file = f.camera.files[0];
+    if (!file) return;
+    const fd = new FormData();
+    fd.append("file", file);
+    try {
+      const img = await api("/api/images", { method: "POST", form: fd });
+      toast(`Uploaded. Put ${img.token} in a message.`);
+      f.reset();
+      sheetDone(f);
       await loadImages();
       if (!form.hidden) preview();
     } catch (e) {
@@ -948,6 +1067,7 @@
       qrStatus.textContent = `${img.token} is a ${img.w} × ${img.h} code — put it in a message.`;
       toast(`${img.token} made. Put it in a message; it scans from the sofa at ${img.w} × ${img.h}.`);
       qrForm.reset();
+      sheetDone(qrForm);
       await loadImages();
       if (!form.hidden) preview();
       refreshLive(); // a remade code is a new picture to the TV
@@ -1256,6 +1376,7 @@
           $("#calendar-save").textContent = "Add to the plan";
           $("#calendar-cancel").hidden = true;
           calStatus.textContent = `${fmtDay(iso)} — pick a board, stretch Until if you like.`;
+          if (phone.matches) openSheet(calForm, "Plan a board");
           calForm.profile.focus();
         });
         td.appendChild(b);
@@ -1308,7 +1429,8 @@
         $("#calendar-form-title").textContent = "Change the plan";
         $("#calendar-save").textContent = "Save the plan";
         $("#calendar-cancel").hidden = false;
-        calForm.scrollIntoView({ block: "nearest" });
+        if (phone.matches) openSheet(calForm, "Change the plan");
+        else calForm.scrollIntoView({ block: "nearest" });
         calForm.profile.focus();
       });
       $(".delete", li).addEventListener("click", async () => {
@@ -1372,6 +1494,7 @@
       $("#calendar-form-title").textContent = "Plan a board";
       $("#calendar-save").textContent = "Add to the plan";
       $("#calendar-cancel").hidden = true;
+      sheetDone(calForm);
       await applyAndRefresh(`${e.name} ${id ? "planned" : "added"} for ${fmtRange(e)}.`);
       toast(`${e.name}: ${fmtRange(e)}.`);
     } catch (err) {
@@ -1385,6 +1508,7 @@
     $("#calendar-save").textContent = "Add to the plan";
     $("#calendar-cancel").hidden = true;
     calStatus.textContent = "";
+    sheetDone(calForm);
   });
   calEveryday.addEventListener("change", async () => {
     try {
