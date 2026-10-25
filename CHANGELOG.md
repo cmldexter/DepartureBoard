@@ -7,72 +7,19 @@ and a container image `ghcr.io/cmldexter/departureboard:X.Y.Z`.
 
 ## [Unreleased]
 
+_Nothing yet._
+
+## [0.4.0] — 2026-10-25
+
 ### Added
 
-- **The Calendar section** (#143). Settings → Calendar: this month and the next as grids, each
-  planned day tinted by its board and today outlined, a legend, the plan as a list with Edit and
-  Delete, a form to plan a board (board, from, until, note; a click on a day pre-fills it), the
-  everyday board, and *Today: …*. Every change is applied at once; when today's board changes the
-  Boards strip and the live card follow.
-- **Docs: planning boards ahead** (#144). `docs/calendar.md` (the rules — midnight in the board's
-  time, the save-back, overlaps, the everyday board, a deleted board —, the file, the API), a
-  README *Calendar* paragraph with a capture, `llms.txt`, the Agent Skill, `examples.sh calendar
-  add|list|delete`.
-- **A calendar of boards** (#142). Saved boards assigned to date ranges in `calendar.json` beside
-  the profiles: `GET /api/calendar` (the plan, the everyday board, what today resolves to),
-  `POST /api/calendar` (`profile`, `start`, `end` inclusive or null, `note`), `PATCH`/`DELETE
-  /api/calendar/{id}`, `POST /api/calendar/apply`. A background tick (every
-  `DEPARTUREBOARD_CALENDAR_TICK_SECONDS`, 30) puts the planned board on the TV at the day boundary
-  in the board's timezone — **after saving the live board back into its active profile** (or into
-  `unsaved-<date>` when it has none), so edits made on the Halloween board end up in
-  `halloween.json`. When two entries cover a day the later start wins; an entry whose board was
-  deleted is listed `missing` and skipped; the new setting `calendar_everyday` names the board
-  between planned days (`""` = stay on the last one); `calendar_applied` remembers the decision.
-- **The Boards strip** (#121). Under the settings page's header: *This board: Party* with
-  *Switch…*, *Save*, *Save as…* and a ⋯ menu for Duplicate, Rename and Delete, each one call; a
-  dot after the name when the live board differs from its saved file (`changed` on the listing);
-  switching asks first when there are unsaved changes; the live card and every list follow a load.
-- **Docs: boards from the API** (#132). `docs/profiles.md` (the file, what a switch replaces and
-  keeps — every message travels, a `/now` one too —, the cron recipe), a README *Boards* paragraph
-  with a capture, `llms.txt`, the Agent Skill, `examples.sh profile save|load|list`.
-- **Boards you can switch** (#120). The live board — its messages and display settings — saved
-  under a name as a plain JSON file, `profiles/<slug>.json`, in the data directory: `GET
-  /api/profiles`, `POST /api/profiles/{slug}/save`, `POST /api/profiles/{slug}/load` (replaces the
-  live board in one transaction; a message that does not fit the profile's own grid is kept
-  disabled with its reason, a background picture that is gone is cleared), `/copy`, `PATCH`
-  (rename), `DELETE`, and `GET`/`PUT /api/profiles/{slug}` for the file itself — the export and
-  import format. A new display setting `active_profile` says which was loaded or saved last. The
-  guest link's token is not part of a profile; pictures are shared by slug and stay on disk.
-- **The QR that opens the guest page** (#116). `POST /api/guest/qr` makes the picture `guest-qr`
-  from the current guest link and a ready-made message `SCAN TO POST A PHOTO` + `{img:guest-qr}`,
-  disabled until you switch it on (201; 200 remade; 409 while guests are off); *Put the QR on the
-  board* in Settings → Guests does the same. Rotating the link remakes the code and the TV follows
-  on its next poll; turning guests off disables every message carrying the code.
-- **Docs: guests and the safety story** (#117). A *Guests* section in the README with captures,
-  `docs/guests.md` — what a guest can and cannot do, every limit the code enforces (a test keeps the
-  numbers honest), privacy, how to end a party —, `llms.txt`, the Agent Skill and `SECURITY.md`.
-- **Hosting the feed** (#115). `GET /api/posts?status=pending|approved|rejected|all`,
-  `POST /api/posts/{id}/approve` and `/reject`, `DELETE /api/posts/{id}` and
-  `DELETE /api/posts?status=…` (clear). **Approve = make a message**: the post's text, its photo
-  below sized to the rows left on the current board, `- NICK` last, with `source: guest`, `post_id`
-  (now on every message), the priority from the new display setting `guest_priority` (default 1 —
-  guests take turns among themselves) and `show_seconds` from `guest_show_seconds` (default 15); a
-  post that does not fit becomes a disabled message with a `note` instead of being dropped. Reject
-  removes the message and the photo and keeps the row for the hour's count. `guest_auto_approve`
-  puts a phone post on the TV within a poll and the thank-you page says so. Settings → **Guests**:
-  the link with Copy, Rotate and Turn off, the Auto-approve switch, priority and seconds, the
-  posts waiting (thumbnail, line, name, when; Approve / Reject), the posts on the board (Remove),
-  Clear all, a waiting count in the page header and the tab title, a 10 s poll while the page is
-  visible.
-- **A guest link** (#114). The first public write path, narrow by design: `POST /api/guest/rotate`
-  mints a 20-character token (the display setting `guest_token`; `""` closes the door) and
-  `/guest/<token>` is one phone-sized page — a line of up to 120 characters with the flap rules
-  shown as they type, an optional photo (PNG, JPEG or WebP up to 5 MB), an optional first name —
-  that posts into a queue the host approves. Photos lose their metadata before they are stored
-  (JPEG APP segments, PNG text and eXIf chunks, WebP EXIF and XMP) and are sized to keep their
-  shape four rows tall. Twenty posts an hour from one phone, two hundred for the board; the
-  page says so kindly. Nothing else about the board is reachable from it. Migration `0003`
-  adds the `posts` table and `post_id` on messages.
+- **The shape of a flap** (#118). Display settings `cell_radius` (0–12, % of the cell's width),
+  `cell_gap` (0–100, hundredths of a vmin) and `split_line` (0–3 px) replace three constants in the
+  stylesheet; the TV follows on its next poll and repaints its picture slices for a new gap. *Look &
+  feel* gains *The flaps*: three sliders the live card follows before Save, a *Picture mode* button
+  (square corners, a hairline gap, no split line — a banner across the flaps loses less to the grid)
+  and *Classic* to put them back. The README, `docs/backgrounds.md`, `llms.txt` and the Agent Skill
+  name the three (#119).
 - **A QR code on the board** (#110). `POST /api/images/qr` with `slug` and `data` (text or a URL,
   up to 1024 characters) makes a picture the server draws with `segno` (pure Python, BSD): error
   correction M, a quiet zone, dark on white whatever the theme. The same token, size, sidecar and
@@ -90,13 +37,70 @@ and a container image `ghcr.io/cmldexter/departureboard:X.Y.Z`.
 - **The QR docs** (#113). A README paragraph with a capture, `docs/qr.md` (sizes against distance,
   why *Draw whole* exists, the contrast rule, three recipes), `llms.txt`, the Agent Skill,
   `examples.sh qr`, the `/integrate` page, and `THIRD_PARTY.md` naming `segno` and its licence.
-- **The shape of a flap** (#118). Display settings `cell_radius` (0–12, % of the cell's width),
-  `cell_gap` (0–100, hundredths of a vmin) and `split_line` (0–3 px) replace three constants in the
-  stylesheet; the TV follows on its next poll and repaints its picture slices for a new gap. *Look &
-  feel* gains *The flaps*: three sliders the live card follows before Save, a *Picture mode* button
-  (square corners, a hairline gap, no split line — a banner across the flaps loses less to the grid)
-  and *Classic* to put them back. The README, `docs/backgrounds.md`, `llms.txt` and the Agent Skill
-  name the three (#119).
+- **A guest link** (#114). The first public write path, narrow by design: `POST /api/guest/rotate`
+  mints a 20-character token (the display setting `guest_token`; `""` closes the door) and
+  `/guest/<token>` is one phone-sized page — a line of up to 120 characters with the flap rules
+  shown as they type, an optional photo (PNG, JPEG or WebP up to 5 MB), an optional first name —
+  that posts into a queue the host approves. Photos lose their metadata before they are stored
+  (JPEG APP segments, PNG text and eXIf chunks, WebP EXIF and XMP) and are sized to keep their
+  shape four rows tall. Twenty posts an hour from one phone, two hundred for the board; the
+  page says so kindly. Nothing else about the board is reachable from it. Migration `0003`
+  adds the `posts` table and `post_id` on messages.
+- **Hosting the feed** (#115). `GET /api/posts?status=pending|approved|rejected|all`,
+  `POST /api/posts/{id}/approve` and `/reject`, `DELETE /api/posts/{id}` and
+  `DELETE /api/posts?status=…` (clear). **Approve = make a message**: the post's text, its photo
+  below sized to the rows left on the current board, `- NICK` last, with `source: guest`, `post_id`
+  (now on every message), the priority from the new display setting `guest_priority` (default 1 —
+  guests take turns among themselves) and `show_seconds` from `guest_show_seconds` (default 15); a
+  post that does not fit becomes a disabled message with a `note` instead of being dropped. Reject
+  removes the message and the photo and keeps the row for the hour's count. `guest_auto_approve`
+  puts a phone post on the TV within a poll and the thank-you page says so. Settings → **Guests**:
+  the link with Copy, Rotate and Turn off, the Auto-approve switch, priority and seconds, the
+  posts waiting (thumbnail, line, name, when; Approve / Reject), the posts on the board (Remove),
+  Clear all, a waiting count in the page header and the tab title, a 10 s poll while the page is
+  visible.
+- **The QR that opens the guest page** (#116). `POST /api/guest/qr` makes the picture `guest-qr`
+  from the current guest link and a ready-made message `SCAN TO POST A PHOTO` + `{img:guest-qr}`,
+  disabled until you switch it on (201; 200 remade; 409 while guests are off); *Put the QR on the
+  board* in Settings → Guests does the same. Rotating the link remakes the code and the TV follows
+  on its next poll; turning guests off disables every message carrying the code.
+- **Docs: guests and the safety story** (#117). A *Guests* section in the README with captures,
+  `docs/guests.md` — what a guest can and cannot do, every limit the code enforces (a test keeps the
+  numbers honest), privacy, how to end a party —, `llms.txt`, the Agent Skill and `SECURITY.md`.
+- **Boards you can switch** (#120). The live board — its messages and display settings — saved
+  under a name as a plain JSON file, `profiles/<slug>.json`, in the data directory: `GET
+  /api/profiles`, `POST /api/profiles/{slug}/save`, `POST /api/profiles/{slug}/load` (replaces the
+  live board in one transaction; a message that does not fit the profile's own grid is kept
+  disabled with its reason, a background picture that is gone is cleared), `/copy`, `PATCH`
+  (rename), `DELETE`, and `GET`/`PUT /api/profiles/{slug}` for the file itself — the export and
+  import format. A new display setting `active_profile` says which was loaded or saved last. The
+  guest link's token is not part of a profile; pictures are shared by slug and stay on disk.
+- **The Boards strip** (#121). Under the settings page's header: *This board: Party* with
+  *Switch…*, *Save*, *Save as…* and a ⋯ menu for Duplicate, Rename and Delete, each one call; a
+  dot after the name when the live board differs from its saved file (`changed` on the listing);
+  switching asks first when there are unsaved changes; the live card and every list follow a load.
+- **Docs: boards from the API** (#132). `docs/profiles.md` (the file, what a switch replaces and
+  keeps — every message travels, a `/now` one too —, the cron recipe), a README *Boards* paragraph
+  with a capture, `llms.txt`, the Agent Skill, `examples.sh profile save|load|list`.
+- **A calendar of boards** (#142). Saved boards assigned to date ranges in `calendar.json` beside
+  the profiles: `GET /api/calendar` (the plan, the everyday board, what today resolves to),
+  `POST /api/calendar` (`profile`, `start`, `end` inclusive or null, `note`), `PATCH`/`DELETE
+  /api/calendar/{id}`, `POST /api/calendar/apply`. A background tick (every
+  `DEPARTUREBOARD_CALENDAR_TICK_SECONDS`, 30) puts the planned board on the TV at the day boundary
+  in the board's timezone — **after saving the live board back into its active profile** (or into
+  `unsaved-<date>` when it has none), so edits made on the Halloween board end up in
+  `halloween.json`. When two entries cover a day the later start wins; an entry whose board was
+  deleted is listed `missing` and skipped; the new setting `calendar_everyday` names the board
+  between planned days (`""` = stay on the last one); `calendar_applied` remembers the decision.
+- **The Calendar section** (#143). Settings → Calendar: this month and the next as grids, each
+  planned day tinted by its board and today outlined, a legend, the plan as a list with Edit and
+  Delete, a form to plan a board (board, from, until, note; a click on a day pre-fills it), the
+  everyday board, and *Today: …*. Every change is applied at once; when today's board changes the
+  Boards strip and the live card follow.
+- **Docs: planning boards ahead** (#144). `docs/calendar.md` (the rules — midnight in the board's
+  time, the save-back, overlaps, the everyday board, a deleted board —, the file, the API), a
+  README *Calendar* paragraph with a capture, `llms.txt`, the Agent Skill, `examples.sh calendar
+  add|list|delete`.
 
 ## [0.3.0] — 2026-10-24
 
@@ -246,7 +250,8 @@ can afford — *"come find me when that exists."*
 - The board endpoint and the pictures are public so the TV never holds a secret; everything
   else needs the token. CORS is off unless origins are listed.
 
-[Unreleased]: https://github.com/cmldexter/DepartureBoard/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/cmldexter/DepartureBoard/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/cmldexter/DepartureBoard/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/cmldexter/DepartureBoard/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/cmldexter/DepartureBoard/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/cmldexter/DepartureBoard/releases/tag/v0.1.0
