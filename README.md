@@ -95,11 +95,16 @@ message has left.
 **Look & feel.** Four theme swatches under the live card; click one and the TV follows on its
 next poll, nothing to save. Below them, *Behind the board*: a picture under the frame — one of
 the four that ship, or a poster snip uploaded right there — with blur and dim sliders the live
-card follows as they move. *Save* sends it to the TV; *Clear* takes it off.
+card follows as they move. *Save* sends it to the TV; *Clear* takes it off. Then *The flaps*:
+three sliders — corners (0–12 % of a cell), gap (0–1 vmin) and the split line (0–3 px) — and a
+*Picture mode* button that tightens all three, so a banner across the board loses less to the
+grid; *Classic* puts them back.
 
 <img src="docs/media/settings-look.png" alt="Look & feel: four theme swatches, then the background picker with None, the built-in pictures, an upload, and the blur and dim sliders" width="800">
 
 <img src="docs/media/board-background.png" alt="The board on Classic Black over a blurred, dimmed party poster" width="800">
+
+<img src="docs/media/board-flaps.png" alt="The same banner across nine flaps: Classic on the left with rounded corners, gaps and split lines; Picture mode on the right with square corners, a hairline gap and no split line" width="800">
 
 **Display.** The preset for your TV size (Compact 6 × 22, Large 8 × 28, or your own), the
 animation pace from instant to the mechanical click, sound and volume, the idle text

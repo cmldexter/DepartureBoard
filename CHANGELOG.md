@@ -7,7 +7,15 @@ and a container image `ghcr.io/cmldexter/departureboard:X.Y.Z`.
 
 ## [Unreleased]
 
-_Nothing yet._
+### Added
+
+- **The shape of a flap** (#118). Display settings `cell_radius` (0–12, % of the cell's width),
+  `cell_gap` (0–100, hundredths of a vmin) and `split_line` (0–3 px) replace three constants in the
+  stylesheet; the TV follows on its next poll and repaints its picture slices for a new gap. *Look &
+  feel* gains *The flaps*: three sliders the live card follows before Save, a *Picture mode* button
+  (square corners, a hairline gap, no split line — a banner across the flaps loses less to the grid)
+  and *Classic* to put them back. The README, `docs/backgrounds.md`, `llms.txt` and the Agent Skill
+  name the three (#119).
 
 ## [0.3.0] — 2026-10-24
 
