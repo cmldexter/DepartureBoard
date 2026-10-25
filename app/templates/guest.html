@@ -7,11 +7,11 @@
   {% if done %}
   <section class="thanks" aria-live="polite">
     <p class="big">Thanks{% if nick %}, {{ nick }}{% endif %}!</p>
-    <p>The host approves posts before they show on the board.</p>
+    {% if live %}<p>It is on the board.</p>{% else %}<p>The host approves posts before they show on the board.</p>{% endif %}
     <p><a href="">Post another</a></p>
   </section>
   {% else %}
-  <p class="muted">Leave a line or a photo for the board. The host approves posts before they show.</p>
+  <p class="muted">Leave a line or a photo for the board. {% if auto %}It shows right away.{% else %}The host approves posts before they show.{% endif %}</p>
   {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
   <form method="post" enctype="multipart/form-data" aria-label="Post to the board">
     <label for="text">Your line</label>

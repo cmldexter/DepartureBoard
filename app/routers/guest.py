@@ -39,13 +39,16 @@ def rotate(request: Request, session: Session = Depends(get_session)):
     return GuestLink(token=token, url=f"{board_addresses(request)[0]['url']}/guest/{token}")
 
 
-def _open_door(token: str, session: Session) -> None:
-    """404 — not 401 — when the link is wrong or guests are off: nothing to learn from the page."""
+def _open_door(token: str, session: Session) -> dict:
+    """404 — not 401 — when the link is wrong or guests are off: nothing to learn from the page.
+    Returns the display settings (auto-approve decides what the page says)."""
     import secrets
 
-    current = display_settings(session)["guest_token"]
+    d = display_settings(session)
+    current = d["guest_token"]
     if not current or not secrets.compare_digest(current, token):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Not found")
+    return d
 
 
 def _page(request: Request, **ctx):
@@ -65,8 +68,8 @@ def _page(request: Request, **ctx):
 
 @public.get("/guest/{token}", response_class=HTMLResponse)
 def guest_page(token: str, request: Request, session: Session = Depends(get_session)):
-    _open_door(token, session)
-    return _page(request)
+    d = _open_door(token, session)
+    return _page(request, auto=d["guest_auto_approve"])
 
 
 @public.post("/guest/{token}", response_class=HTMLResponse)
@@ -79,11 +82,11 @@ async def guest_post(
     session: Session = Depends(get_session),
     at: datetime = Depends(now),
 ):
-    _open_door(token, session)
+    d = _open_door(token, session)
     settings = app_settings(request)
     text = " ".join(text.split())
     nick = " ".join(nick.split())
-    form = {"text": text, "nick": nick}
+    form = {"text": text, "nick": nick, "auto": d["guest_auto_approve"]}
     data = b""
     content_type = ""
     if photo is not None and photo.filename:
@@ -119,5 +122,9 @@ async def guest_post(
         w, h = guest.photo_block(dimensions(clean))
         images.set_size(path, w, h, "contain")
         post.image = path.stem
+    live = False
+    if d["guest_auto_approve"]:
+        message, _ = guest.approve(session, settings, post)
+        live = message.enabled
     session.commit()
-    return _page(request, done=True, nick=nick)
+    return _page(request, done=True, nick=nick, live=live, auto=d["guest_auto_approve"])

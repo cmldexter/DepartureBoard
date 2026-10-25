@@ -14,6 +14,8 @@ BackgroundFit = Literal["cover", "contain"]
 _BG_IMAGE = re.compile(r"^(img:[a-z0-9][a-z0-9-]{0,39}|builtin:[a-z0-9][a-z0-9-]{0,39})$")
 _GUEST_TOKEN = re.compile(r"^[A-Za-z0-9_-]{20,64}$")
 State = Literal["live", "scheduled", "expired", "disabled"]
+PostStatus = Literal["pending", "approved", "rejected"]
+PostFilter = Literal["pending", "approved", "rejected", "all"]
 Cell = str | dict[str, Any]  # see app.services.text
 
 _HHMM = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
@@ -127,6 +129,7 @@ class MessageOut(BaseModel):
     repeat_end: str | None
     show_seconds: int | None
     source: str
+    post_id: int | None = Field(None, description="The guest post this message was made from")
     created_by: str | None
     created_at: datetime
     updated_at: datetime
@@ -174,6 +177,9 @@ class SettingsOut(BaseModel):
     cell_gap: int
     split_line: int
     guest_token: str = Field(description='The guest link\'s token; "" when guests are off')
+    guest_auto_approve: bool = Field(description="A guest post goes on the board at once")
+    guest_priority: int = Field(description="The priority a guest post's message gets")
+    guest_show_seconds: int = Field(description="Its turn on the board, in seconds")
 
 
 class SettingsPatch(BaseModel):
@@ -227,6 +233,16 @@ class SettingsPatch(BaseModel):
             '"" closes the guest link; POST /api/guest/rotate mints a new one. Or bring your own: '
             "20–64 letters, digits, dashes or underscores."
         ),
+    )
+
+    guest_auto_approve: bool | None = Field(
+        None, description="A guest post becomes a message at once instead of waiting for you"
+    )
+    guest_priority: int | None = Field(
+        None, ge=-100, le=100, description="The priority a guest post's message gets (default 1)"
+    )
+    guest_show_seconds: int | None = Field(
+        None, ge=5, le=600, description="A guest post's turn on the board, seconds (default 15)"
     )
 
     @field_validator("guest_token")
@@ -283,6 +299,30 @@ class GuestLink(BaseModel):
 
     token: str
     url: str
+
+
+class PostOut(BaseModel):
+    """A guest post in the queue and, once approved, the message it became."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    created_at: datetime
+    nick: str
+    text: str
+    image: str | None = Field(description="The photo's slug (`GET /images/{slug}`), or null")
+    status: PostStatus
+    message_id: int | None = Field(None, description="The message this post became, if approved")
+    message_state: State | None = Field(
+        None, description="That message's state; disabled when the post did not fit the board"
+    )
+    note: str | None = Field(
+        None, description="On approve: why the message was left disabled (it does not fit)"
+    )
+
+
+class PostsCleared(BaseModel):
+    removed: int = Field(description="Posts removed, with their messages and photos")
 
 
 class BoardTimer(BaseModel):
