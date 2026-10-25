@@ -9,6 +9,15 @@ and a container image `ghcr.io/cmldexter/departureboard:X.Y.Z`.
 
 ### Added
 
+- **The Calendar section** (#143). Settings → Calendar: this month and the next as grids, each
+  planned day tinted by its board and today outlined, a legend, the plan as a list with Edit and
+  Delete, a form to plan a board (board, from, until, note; a click on a day pre-fills it), the
+  everyday board, and *Today: …*. Every change is applied at once; when today's board changes the
+  Boards strip and the live card follow.
+- **Docs: planning boards ahead** (#144). `docs/calendar.md` (the rules — midnight in the board's
+  time, the save-back, overlaps, the everyday board, a deleted board —, the file, the API), a
+  README *Calendar* paragraph with a capture, `llms.txt`, the Agent Skill, `examples.sh calendar
+  add|list|delete`.
 - **A calendar of boards** (#142). Saved boards assigned to date ranges in `calendar.json` beside
   the profiles: `GET /api/calendar` (the plan, the everyday board, what today resolves to),
   `POST /api/calendar` (`profile`, `start`, `end` inclusive or null, `note`), `PATCH`/`DELETE

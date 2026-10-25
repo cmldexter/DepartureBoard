@@ -75,6 +75,16 @@ format — so a party board, a work board and a holiday board are a switch apart
 swap them on a schedule. [docs/profiles.md](docs/profiles.md) has the format and what a switch
 replaces.
 
+<img src="docs/media/settings-calendar.png" alt="The Calendar section: two month grids with planned days tinted by board and today outlined, the plan as a list, a form to plan a board, the everyday board" width="800">
+
+**Calendar.** Plan the boards ahead instead of tending the board every day: pick a saved board
+and a day or a range — *Halloween* on the 31st, *Christmas* from the 20th to the 26th — and the
+board comes up by itself at midnight, the board's time. The live board is saved back into its own
+file first, so edits made on the Halloween board are in the Halloween file the next morning. Two
+month grids show the plan tinted by board with today outlined; click a day to start a plan there.
+When days overlap the later start wins, and the *everyday board* fills the days between. The plan
+is a file beside the saved boards; [docs/calendar.md](docs/calendar.md) has the rules.
+
 <img src="docs/media/settings-live.png" alt="The top of the settings page: the board as the TV shows it, a Cast button, and the line naming the live message" width="800">
 
 **On the TV.** The page opens with the board as the TV sees it, live, and the message that is
