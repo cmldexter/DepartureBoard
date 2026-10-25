@@ -90,6 +90,7 @@ def resolve_display(raw: Mapping[str, Any]) -> dict[str, Any]:
             key: _clamp(_as_int(merged[key], int(DEFAULT_SETTINGS[key])), bounds)
             for key, bounds in FLAP_BOUNDS.items()
         },
+        "guest_token": str(merged["guest_token"] or "").strip(),
     }
 
 

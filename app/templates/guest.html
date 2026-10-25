@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Post to {{ name }}{% endblock %}
+{% block body_class %}page guest{% endblock %}
+{% block body %}
+<main class="narrow">
+  <h1>{{ name }}</h1>
+  {% if done %}
+  <section class="thanks" aria-live="polite">
+    <p class="big">Thanks{% if nick %}, {{ nick }}{% endif %}!</p>
+    <p>The host approves posts before they show on the board.</p>
+    <p><a href="">Post another</a></p>
+  </section>
+  {% else %}
+  <p class="muted">Leave a line or a photo for the board. The host approves posts before they show.</p>
+  {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+  <form method="post" enctype="multipart/form-data" aria-label="Post to the board">
+    <label for="text">Your line</label>
+    <textarea id="text" name="text" rows="3" maxlength="{{ max_text }}" autocapitalize="characters" placeholder="HAPPY BIRTHDAY {{ '{' }}yellow{{ '}' }} 🎉">{{ text or '' }}</textarea>
+    <p class="muted rules"><output id="count" for="text">{{ (text or '')|length }}</output>/{{ max_text }} · the board shows capitals, digits and a few marks; the rest turns blank
+      <span id="preview" class="preview" aria-live="polite"></span></p>
+    <p class="photo">
+      <label class="file-button">Add a photo <input type="file" name="photo" accept="image/png,image/jpeg,image/webp" class="sr-only"></label>
+      <span id="photo-name" class="muted" aria-live="polite"></span>
+    </p>
+    <label for="nick">Your name <span class="muted">(optional, up to {{ max_nick }})</span></label>
+    <input id="nick" name="nick" type="text" maxlength="{{ max_nick }}" autocomplete="given-name" value="{{ nick or '' }}">
+    <button type="submit" class="post">Post</button>
+  </form>
+  <p class="muted small">PNG, JPEG or WebP up to 5 MB. Photos lose their location data before they are stored. Nothing else about the board is on this page.</p>
+  {% endif %}
+</main>
+<script src="/static/js/guest.js" defer></script>
+{% endblock %}

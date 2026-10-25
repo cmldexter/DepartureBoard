@@ -30,5 +30,7 @@ def test_upgrade_from_baseline_keeps_rows(tmp_path):
         rows = client.get("/api/messages", headers={"Authorization": f"Bearer {token}"}).json()
     assert [(r["text"], r["show_seconds"]) for r in rows] == [("OLD ROW", None)]
     db = sqlite3.connect(settings.data_dir / "departureboard.db")
-    assert db.execute("SELECT version_num FROM alembic_version").fetchone() == ("0002",)
+    assert db.execute("SELECT version_num FROM alembic_version").fetchone() == ("0003",)
+    assert db.execute("SELECT count(*) FROM posts").fetchone() == (0,), "the guest queue exists"
+    assert "post_id" in [c[1] for c in db.execute("PRAGMA table_info(messages)")], "and its link"
     db.close()

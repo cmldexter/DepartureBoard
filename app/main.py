@@ -12,7 +12,7 @@ from fastapi.templating import Jinja2Templates
 from app import __version__
 from app.config import Settings, get_settings
 from app.db import Database, migrate
-from app.routers import board, health, images, messages, pages
+from app.routers import board, guest, health, images, messages, pages
 from app.routers import settings as settings_api
 from app.services.auth import load_or_create_token
 
@@ -54,6 +54,13 @@ TAGS = [
         "description": (
             "Pictures for `{img:slug}` cells: uploads, or a QR code the server makes "
             "(`POST /api/images/qr`). Token to write."
+        ),
+    },
+    {
+        "name": "guests",
+        "description": (
+            "The guest link: a public phone page that posts a line or a photo into a queue the "
+            "host approves. Off until a token is minted. Token to manage."
         ),
     },
     {"name": "system", "description": "Health."},
@@ -99,6 +106,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(settings_api.router)
     app.include_router(images.api)
     app.include_router(images.public)
+    app.include_router(guest.api)
+    app.include_router(guest.public)
     app.include_router(pages.router)
     return app
 

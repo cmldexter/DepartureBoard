@@ -12,6 +12,7 @@ Repeat = Literal["none", "daily", "weekly"]
 TimerRing = Literal["off", "own", "all"]
 BackgroundFit = Literal["cover", "contain"]
 _BG_IMAGE = re.compile(r"^(img:[a-z0-9][a-z0-9-]{0,39}|builtin:[a-z0-9][a-z0-9-]{0,39})$")
+_GUEST_TOKEN = re.compile(r"^[A-Za-z0-9_-]{20,64}$")
 State = Literal["live", "scheduled", "expired", "disabled"]
 Cell = str | dict[str, Any]  # see app.services.text
 
@@ -172,6 +173,7 @@ class SettingsOut(BaseModel):
     cell_radius: int
     cell_gap: int
     split_line: int
+    guest_token: str = Field(description='The guest link\'s token; "" when guests are off')
 
 
 class SettingsPatch(BaseModel):
@@ -219,6 +221,23 @@ class SettingsPatch(BaseModel):
     split_line: int | None = Field(
         None, ge=0, le=3, description="The line across a flap's middle, px (0 hides it)"
     )
+    guest_token: str | None = Field(
+        None,
+        description=(
+            '"" closes the guest link; POST /api/guest/rotate mints a new one. Or bring your own: '
+            "20–64 letters, digits, dashes or underscores."
+        ),
+    )
+
+    @field_validator("guest_token")
+    @classmethod
+    def _guest_token(cls, v: str | None) -> str | None:
+        if v is None or v == "":
+            return v
+        v = v.strip()
+        if not _GUEST_TOKEN.match(v):
+            raise ValueError('guest_token: 20–64 letters, digits, dashes or underscores, or ""')
+        return v
 
     @field_validator("background_image")
     @classmethod
@@ -257,6 +276,13 @@ class BoardSettings(BaseModel):
     cell_radius: int
     cell_gap: int
     split_line: int
+
+
+class GuestLink(BaseModel):
+    """The guest link after a rotate: the token and the full address to put in a QR code."""
+
+    token: str
+    url: str
 
 
 class BoardTimer(BaseModel):

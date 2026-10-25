@@ -159,3 +159,16 @@ body { background: var(--bg); color: var(--fg); font-family: var(--font); }
 .page #connection label.check { flex: 0 0 auto; }
 .page #connection button { margin: 0; }
 .page #test-result { flex-basis: 100%; }
+/* the guest page: one phone-sized form, big targets, nothing else */
+.page.guest .narrow { max-width: 28rem; padding: 1.5rem 1rem; }
+.page.guest h1 { font-size: 1.4rem; }
+.page.guest textarea { width: 100%; font-size: 1.1rem; line-height: 1.4; padding: .6rem; margin: 0; }
+.page.guest input[type="text"] { width: 100%; font-size: 1.1rem; padding: .6rem; margin: 0; }
+.page.guest .rules { margin: .35rem 0 1rem; font-size: .9rem; }
+.page.guest .preview { display: block; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .08em; color: var(--fg); min-height: 1.4em; word-break: break-all; }
+.page.guest .preview .blank { color: var(--muted); }
+.page.guest .photo { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; margin: 0 0 1rem; }
+.page.guest .file-button { font-size: 1rem; padding: .55rem 1rem; }
+.page.guest button.post { width: 100%; font-size: 1.15rem; padding: .8rem; margin-top: 1.25rem; }
+.page.guest .thanks .big { font-size: 1.6rem; margin: 1rem 0 .5rem; }
+.page.guest .small { font-size: .85rem; }
