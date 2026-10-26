@@ -37,11 +37,16 @@
   const STEP_MS_MAX = 50;
   const STAGGER_RATIO = 0.7;
 
-  const settings = { rows: 0, cols: 0, animation: 60, theme: "classic-black", timer_ring: "off", cell_radius: 6, cell_gap: 35, split_line: 1 };
+  const settings = { rows: 0, cols: 0, animation: 60, theme: "classic-black", timer_ring: "off", cell_radius: 6, cell_gap: 35, split_line: 1, frame_color: "", frame_width: "", frame_radius: "", frame_finish: "theme", frame_glow: "" };
   const BG_KEYS = ["background_image", "background_blur", "background_dim", "background_fit"];
   // The shape of a flap: unitless numbers board.css turns into lengths (see .frame).
   const FLAP_KEYS = ["cell_radius", "cell_gap", "split_line"];
   const FLAP_BOUNDS = { cell_radius: [0, 12], cell_gap: [0, 100], split_line: [0, 3] };
+  // The frame: "" on any key = as the theme (no inline var); finish is an attribute on .frame.
+  const FRAME_KEYS = ["frame_color", "frame_width", "frame_radius", "frame_finish", "frame_glow"];
+  const FRAME_BOUNDS = { frame_width: [0, 10], frame_radius: [0, 30] };
+  const FRAME_FINISHES = ["theme", "matte", "chrome", "neon"];
+  const HEX = /^#[0-9a-f]{6}$/i;
   let cells = []; // row-major cell records
   let target = []; // row-major sequence indices the board is heading to
   let specials = []; // row-major token cells ({emoji} / {img}) shown once a cell lands, or null
@@ -245,14 +250,41 @@
     if (key) checkBlock(blocks.get(key));
   });
 
-  // A picture behind the board: "img:<slug>" is an upload, "builtin:<name>" ships with the app.
-  // The backdrop layer takes the url, blur, dim and fit as CSS variables; <html> gets a class.
+  // Behind the board: "img:<slug>" is an upload, "builtin:<name>" ships with the app, "video:<slug>"
+  // is an uploaded clip the <video> child plays muted in a loop. The backdrop layer takes the url,
+  // blur, dim and fit as CSS variables; <html> gets a class (two for a video).
   const backdrop = document.getElementById("backdrop");
+  const backdropVideo = document.getElementById("backdrop-video");
   function backdropUrl(image) {
     const v = String(image || "");
     if (/^img:[a-z0-9][a-z0-9-]{0,39}$/.test(v)) return `/images/${v.slice(4)}`;
     if (/^builtin:[a-z0-9][a-z0-9-]{0,39}$/.test(v)) return `/static/backgrounds/${v.slice(8)}.jpg`;
+    if (/^video:[a-z0-9][a-z0-9-]{0,39}$/.test(v)) return `/videos/${v.slice(6)}`;
     return "";
+  }
+  // The clip: src set only when it changes (a poll must not restart it); under reduced motion
+  // it rests on its first frame, a still.
+  function applyVideo(url) {
+    if (!backdropVideo) return;
+    if (!url) {
+      if (backdropVideo.getAttribute("src")) {
+        backdropVideo.pause();
+        backdropVideo.removeAttribute("src");
+        backdropVideo.load();
+      }
+      return;
+    }
+    if (backdropVideo.getAttribute("src") !== url) {
+      backdropVideo.setAttribute("src", url);
+      backdropVideo.load();
+    }
+    if (reducedMotion) {
+      backdropVideo.pause();
+      backdropVideo.currentTime = 0;
+    } else {
+      const p = backdropVideo.play();
+      if (p && p.catch) p.catch(() => {});
+    }
   }
   function applyBackdrop(s) {
     if (!backdrop) return;
@@ -260,13 +292,38 @@
       if (s[k] !== undefined) settings[k] = s[k];
     });
     const url = backdropUrl(settings.background_image);
+    const isVideo = String(settings.background_image || "").startsWith("video:");
     const blur = Math.max(0, Math.min(40, Number(settings.background_blur) || 0));
     const dim = Math.max(0, Math.min(90, Number(settings.background_dim) || 0));
-    backdrop.style.setProperty("--bg-image", url ? `url("${url}")` : "none");
+    backdrop.style.setProperty("--bg-image", url && !isVideo ? `url("${url}")` : "none");
     backdrop.style.setProperty("--bg-blur", `${blur}px`);
     backdrop.style.setProperty("--bg-dim", String(dim / 100));
     backdrop.style.setProperty("--bg-fit", settings.background_fit === "contain" ? "contain" : "cover");
     document.documentElement.classList.toggle("has-backdrop", !!url);
+    document.documentElement.classList.toggle("has-video", isVideo && !!url);
+    applyVideo(isVideo ? url : "");
+  }
+
+  // The frame (display settings frame_*): inline vars on .frame only for the keys that are set —
+  // "" leaves the theme's own value; the finish is an attribute board.css styles.
+  function applyFrame(s) {
+    FRAME_KEYS.forEach((k) => {
+      if (s[k] === undefined) return;
+      const v = s[k] === null ? "" : String(s[k]).trim();
+      if (k === "frame_finish") settings[k] = FRAME_FINISHES.includes(v) ? v : "theme";
+      else if (k === "frame_color" || k === "frame_glow") settings[k] = HEX.test(v) ? v.toLowerCase() : "";
+      else if (v === "") settings[k] = "";
+      else {
+        const [lo, hi] = FRAME_BOUNDS[k];
+        settings[k] = Math.max(lo, Math.min(hi, Number(v) || 0));
+      }
+    });
+    const set = (name, value) => (value === "" ? frameEl.style.removeProperty(name) : frameEl.style.setProperty(name, value));
+    set("--frame-color", settings.frame_color);
+    set("--frame-glow", settings.frame_glow);
+    set("--frame-n", settings.frame_width === "" ? "" : String(settings.frame_width));
+    set("--frame-radius", settings.frame_radius === "" ? "" : String(settings.frame_radius));
+    frameEl.dataset.finish = settings.frame_finish;
   }
 
   // Corners, gap and split line go on the frame, where the server rendered them inline for the first
@@ -306,6 +363,7 @@
     }
     if (BG_KEYS.some((k) => next[k] !== undefined)) applyBackdrop(next);
     if (FLAP_KEYS.some((k) => next[k] !== undefined)) applyFlapShape(next);
+    if (FRAME_KEYS.some((k) => next[k] !== undefined)) applyFrame(next);
     const rows = Number(next.rows) || settings.rows;
     const cols = Number(next.cols) || settings.cols;
     if (rows !== settings.rows || cols !== settings.cols) {
@@ -323,6 +381,7 @@
   settings.timer_ring = config.timer_ring || settings.timer_ring;
   applyBackdrop(config);
   applyFlapShape(config);
+  applyFrame(config);
   if (window.Sound) window.Sound.configure(config);
 
   // The sound just unlocked (fullscreen click): nothing to do now — the next cascade clicks.
@@ -470,7 +529,7 @@
   settings.poll_seconds = Number(config.poll_seconds) || 5;
   if (!config.demo && !config.preview) fetchBoard();
 
-  window.Board = { show, applySettings, applyTheme, applyBackdrop, applyFlapShape, placeOverlays, settings, stepMs, soundReady, poll, fetchBoard, timer, timerRemaining };
+  window.Board = { show, applySettings, applyTheme, applyBackdrop, applyFlapShape, applyFrame, placeOverlays, settings, stepMs, soundReady, poll, fetchBoard, timer, timerRemaining };
 
   if (framed) {
     window.addEventListener("message", (e) => {

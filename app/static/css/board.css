@@ -5,14 +5,16 @@
 html.board-page, .board-page { overflow: hidden; }
 .board-page { background: var(--bg); text-size-adjust: none; -webkit-text-size-adjust: none; }
 
-/* ---- a picture behind the board (display settings background_*): a fixed layer under the
-   frame, blurred and dimmed; the frame turns translucent over it, the board keeps its own colour. */
+/* ---- behind the board (display settings background_*): a fixed layer under the frame — a
+   picture (background-image) or a video (the <video> child, muted in a loop) — blurred and
+   dimmed; a matte frame turns translucent over it, the board keeps its own colour. */
 #backdrop {
   display: none;
   position: fixed;
   inset: 0;
   z-index: 0;
   pointer-events: none;
+  overflow: hidden;
   background: var(--bg) center / cover no-repeat;
 }
 html.has-backdrop #backdrop {
@@ -22,21 +24,43 @@ html.has-backdrop #backdrop {
   background-size: var(--bg-fit, cover);
   filter: blur(var(--bg-blur, 0px));
 }
+#backdrop video {
+  display: none;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: var(--bg-fit, cover);
+  background: var(--bg);
+}
+html.has-video #backdrop video { display: block; }
 #backdrop::after {
   content: "";
   position: absolute;
   inset: 0;
   background: rgba(0, 0, 0, var(--bg-dim, 0));
 }
+/* A matte bezel lets the picture through (--frame-alpha, read by the default surface below);
+   chrome and neon surfaces are opaque by construction, so they stay solid objects over it. */
 html.has-backdrop .frame {
   position: relative;
   z-index: 1;
-  background: transparent;
-  background: color-mix(in srgb, var(--frame-color) 35%, transparent);
+  --frame-alpha: 35%;
 }
 
 .frame {
-  --frame: var(--frame-width, 3vmin);
+  /* The frame's shape (display settings frame_*, else the theme's): --frame-n is the width in vmin
+     as a number; the outer corner radius is capped at 3.4 × the width — a rounder corner would clip
+     the corner flaps. The page (or the backdrop) shows in the rounded corners. */
+  --frame: calc(var(--frame-n, 3) * 1vmin);
+  --frame-r: min(var(--frame-radius, 0), calc(var(--frame-n, 3) * 3.4));
+  border-radius: calc(var(--frame-r) * 1vmin);
+  /* The finish: a surface, a shadow and a lip around the board, as tokens. The default is matte
+     (the colour, see-through over a backdrop); a theme may carry its own tokens on :root;
+     frame_finish (data-finish on this element) overrides both. */
+  background: var(--frame-color);
+  background: var(--frame-surface, color-mix(in srgb, var(--frame-color) var(--frame-alpha, 100%), transparent));
+  box-shadow: var(--frame-shadow, none);
   /* The shape of a flap (display settings cell_radius / cell_gap / split_line, rendered inline on
      this element and set by board.js applyFlapShape): unitless numbers, the classic look as fallback. */
   --gap: calc(var(--cell-gap, 35) * 0.01vmin);
@@ -52,8 +76,36 @@ html.has-backdrop .frame {
   display: grid;
   place-items: center;
   padding: var(--frame);
-  background: var(--frame-color);
   overflow: hidden;
+}
+.frame[data-finish="matte"] {
+  --frame-surface: initial;
+  --frame-shadow: initial;
+  --board-lip: initial;
+}
+.frame[data-finish="chrome"] {
+  --frame-surface: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--frame-color) 62%, white) 0%,
+    color-mix(in srgb, var(--frame-color) 90%, white) 22%,
+    var(--frame-color) 42%,
+    color-mix(in srgb, var(--frame-color) 80%, black) 64%,
+    color-mix(in srgb, var(--frame-color) 88%, white) 86%,
+    color-mix(in srgb, var(--frame-color) 70%, white) 100%
+  );
+  --frame-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.22),
+    inset 0 0.25vmin 1vmin rgba(255, 255, 255, 0.16),
+    inset 0 -0.4vmin 1.4vmin rgba(0, 0, 0, 0.65);
+  --board-lip: 0 0 0 1px rgba(0, 0, 0, 0.8), 0 0 1.2vmin rgba(0, 0, 0, 0.6);
+}
+.frame[data-finish="neon"] {
+  --frame-surface: var(--frame-color);
+  --frame-shadow:
+    0 0 1.5vmin var(--frame-glow, #01fdfe),
+    inset 0 0 0 0.25vmin var(--frame-glow, #01fdfe),
+    inset 0 0 1.2vmin color-mix(in srgb, var(--frame-glow, #01fdfe) 45%, transparent);
+  --board-lip: 0 0 1vmin color-mix(in srgb, var(--frame-glow, #01fdfe) 60%, transparent);
 }
 
 /* The stage holds the grid and, over it, the overlays: pictures drawn whole over their block
@@ -85,7 +137,9 @@ html.has-backdrop .frame {
   gap: var(--gap);
   padding: var(--gap);
   background: var(--board-bg);
-  border-radius: 0.6vmin;
+  /* The inner edge follows the frame's outer curve. */
+  border-radius: max(0.6vmin, calc((var(--frame-r) - var(--frame-n, 3)) * 1vmin));
+  box-shadow: var(--board-lip, none);
 }
 
 .cell {

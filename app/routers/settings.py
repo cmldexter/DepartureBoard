@@ -7,7 +7,7 @@ from app.config import Settings
 from app.deps import app_settings, get_session
 from app.models import PRESETS, Setting
 from app.schemas import SettingsOut, SettingsPatch
-from app.services import guest, images, profiles
+from app.services import guest, images, profiles, videos
 from app.services.auth import Authenticated
 from app.services.display import display_settings
 
@@ -36,6 +36,11 @@ def patch_settings(
         raise HTTPException(
             status.HTTP_422_UNPROCESSABLE_CONTENT,
             f"No uploaded picture {bg[4:]!r}. Upload it first: POST /api/images.",
+        )
+    if bg.startswith("video:") and videos.find(settings, bg[6:]) is None:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            f"No uploaded video {bg[6:]!r}. Upload it first: POST /api/videos.",
         )
     preset = changes.get("grid_preset")
     if preset in PRESETS:

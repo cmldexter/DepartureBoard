@@ -43,7 +43,7 @@
   const desktop = window.matchMedia("(min-width: 1100px)");
   const side = $("#side");
   const TABS = ["board", "messages", "pictures", "guests", "boards", "setup"];
-  const TAB_OF = { live: "board", look: "board", display: "board", backdrop: "board", flaps: "board", images: "pictures", calendar: "boards", addresses: "setup", token: "setup" };
+  const TAB_OF = { live: "board", look: "board", display: "board", backdrop: "board", flaps: "board", frame: "board", images: "pictures", calendar: "boards", addresses: "setup", token: "setup" };
   const tabButtons = TABS.map((t) => $(`#tab-${t}`));
   let currentTab = "";
   function tabForHash(hash) {
@@ -272,6 +272,7 @@
     renderBoards();
   }
   async function refreshAll() {
+    await loadVideos();
     await loadMessages();
     await loadDisplay();
     await loadImages();
@@ -426,8 +427,8 @@
       post(previewFrame, lastPreview);
     }
     // a poll that brought new settings re-applied the saved background and flap shape; put the drafts back
-    if (e.data.type === "board:current" && fromLive && (bgDirty() || flapDirty())) {
-      post(liveFrame, { type: "board:settings", settings: { ...bgDraft, ...flapDraft } });
+    if (e.data.type === "board:current" && fromLive && (bgDirty() || flapDirty() || frameDirty())) {
+      post(liveFrame, { type: "board:settings", settings: { ...bgDraft, ...flapDraft, ...frameDraft } });
     }
   });
 
@@ -707,6 +708,26 @@
     markBg(bgDraft.background_image);
     showBgDraft();
   }
+  // The video tiles: one per upload, the clip's first frame as the thumb (the media fragment makes
+  // Safari paint one), a play mark, a cross that deletes the file.
+  function renderBgVideos(items) {
+    $$(".tile", bgChoices).forEach((t) => t.remove());
+    for (const v of items) {
+      const tile = document.createElement("div");
+      tile.className = "tile";
+      tile.innerHTML = '<button type="button" class="swatch video" role="radio" aria-checked="false" tabindex="-1"><video muted playsinline preload="metadata" aria-hidden="true"></video><span class="play" aria-hidden="true">▶ video</span><span></span></button><button type="button" class="remove" aria-label="Delete this video" title="Delete this video">×</button>';
+      const b = $(".swatch", tile);
+      b.dataset.bg = `video:${v.slug}`;
+      $("video", b).src = `${v.url}?v=${v.bytes}#t=0.5`;
+      $("span:not(.play)", b).textContent = v.slug;
+      $(".remove", tile).dataset.slug = v.slug;
+      bgChoices.appendChild(tile);
+    }
+    markBg(bgDraft.background_image);
+  }
+  async function loadVideos() {
+    renderBgVideos(await api("/api/videos"));
+  }
   function renderBgUploads(items) {
     bgSwatches().filter((b) => b.dataset.bg.startsWith("img:")).forEach((b) => b.remove());
     for (const img of items) {
@@ -723,14 +744,36 @@
     }
     markBg(bgDraft.background_image);
   }
-  const bgName = (v) => (v.startsWith("img:") ? v.slice(4) : v.startsWith("builtin:") ? v.slice(8) : "none");
+  const bgName = (v) => (v.startsWith("img:") ? v.slice(4) : v.startsWith("builtin:") ? v.slice(8) : v.startsWith("video:") ? `the video ${v.slice(6)}` : "none");
   function pickBg(value, focus) {
+    // a moving picture under a blur filter is what a TV stick cannot afford: a video starts sharp
+    if (value.startsWith("video:") && !bgDraft.background_image.startsWith("video:") && bgDraft.background_blur === bgSaved.background_blur) {
+      bgDraft.background_blur = 0;
+      bgForm.background_blur.value = 0;
+    }
     markBg(value);
     showBgDraft();
     bgStatus.textContent = value ? `${bgName(value)} on the card — Save to put it on the TV.` : "No picture — Save to take it off the TV.";
     if (focus) bgSwatches().find((b) => b.dataset.bg === value)?.focus();
   }
-  bgChoices.addEventListener("click", (e) => {
+  bgChoices.addEventListener("click", async (e) => {
+    const x = e.target.closest(".remove");
+    if (x) {
+      const slug = x.dataset.slug;
+      if (!confirm(`Delete the video ${slug}? If it is on the TV, the TV goes back to no picture.`)) return;
+      try {
+        await api(`/api/videos/${slug}`, { method: "DELETE" });
+        if (bgDraft.background_image === `video:${slug}`) bgDraft.background_image = "";
+        if (bgSaved.background_image === `video:${slug}`) bgSaved.background_image = "";
+        await loadVideos();
+        showBgDraft();
+        bgStatus.textContent = `${slug} deleted.`;
+        refreshLive();
+      } catch (err) {
+        toast(err.message, true);
+      }
+      return;
+    }
     const b = e.target.closest(".swatch");
     if (b) pickBg(b.dataset.bg, false);
   });
@@ -772,6 +815,46 @@
     saveBg(body, body.background_image ? "Saved — the TV picks it up on its next poll." : "Saved with no picture.");
   });
   $("#backdrop-clear").addEventListener("click", () => saveBg({ background_image: "" }, "Cleared — the blur and dim are kept for next time."));
+  // A video is big: XMLHttpRequest for its upload progress; the token header as api() sends it.
+  function uploadVideo(file) {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", "/api/videos");
+      Object.entries(HEADERS).forEach(([k, v]) => xhr.setRequestHeader(k, v)); // the session cookie goes along
+      xhr.upload.addEventListener("progress", (ev) => {
+        if (ev.lengthComputable) bgStatus.textContent = `Uploading ${file.name}… ${Math.round((ev.loaded / ev.total) * 100)} %`;
+      });
+      xhr.addEventListener("load", () => {
+        let body = null;
+        try {
+          body = JSON.parse(xhr.responseText);
+        } catch (e) {
+          /* no body */
+        }
+        if (xhr.status >= 200 && xhr.status < 300) resolve(body);
+        else reject(new Error((body && (typeof body.detail === "string" ? body.detail : JSON.stringify(body.detail))) || `${xhr.status} ${xhr.statusText}`));
+      });
+      xhr.addEventListener("error", () => reject(new Error("The upload failed — is the board reachable?")));
+      const fd = new FormData();
+      fd.append("file", file);
+      xhr.send(fd);
+    });
+  }
+  bgForm.video.addEventListener("change", async () => {
+    const file = bgForm.video.files[0];
+    if (!file) return;
+    bgStatus.textContent = `Uploading ${file.name}…`;
+    try {
+      const v = await uploadVideo(file);
+      bgForm.video.value = "";
+      await loadVideos();
+      pickBg(`video:${v.slug}`, false);
+      bgStatus.textContent = `${v.slug} uploaded and on the card — Save to put it on the TV.`;
+    } catch (e) {
+      bgStatus.textContent = "";
+      toast(e.message, true);
+    }
+  });
   bgForm.file.addEventListener("change", async () => {
     const file = bgForm.file.files[0];
     if (!file) return;
@@ -838,6 +921,90 @@
     }
   });
 
+  // ---- look & feel: the frame. Five settings the frames follow at once through board:settings;
+  // "" on a key = as the theme (the colour wells have an "as the theme" box beside them); Save
+  // writes the five in one PATCH; two presets set the draft.
+  const frameForm = $("#frame-form");
+  const frameStatus = $("#frame-status");
+  const FRAME = ["frame_color", "frame_width", "frame_radius", "frame_finish", "frame_glow"];
+  const FRAME_THEME = { frame_color: "", frame_width: "", frame_radius: "", frame_finish: "theme", frame_glow: "" };
+  const FRAME_BLACK_CHROME = { frame_color: "#050308", frame_width: 4, frame_radius: 8, frame_finish: "chrome", frame_glow: "" };
+  const frameDraft = { ...FRAME_THEME };
+  let frameSaved = { ...frameDraft };
+  const frameDirty = () => FRAME.some((k) => frameDraft[k] !== frameSaved[k]);
+  function showFrameDraft() {
+    const d = frameDraft;
+    frameForm.frame_color_theme.checked = d.frame_color === "";
+    frameForm.frame_color.disabled = d.frame_color === "";
+    if (d.frame_color) frameForm.frame_color.value = d.frame_color;
+    frameForm.frame_glow_theme.checked = d.frame_glow === "";
+    frameForm.frame_glow.disabled = d.frame_glow === "";
+    if (d.frame_glow) frameForm.frame_glow.value = d.frame_glow;
+    if (d.frame_width !== "") frameForm.frame_width.value = d.frame_width;
+    if (d.frame_radius !== "") frameForm.frame_radius.value = d.frame_radius;
+    $("#frame-width-value").textContent = d.frame_width === "" ? "as the theme" : `${d.frame_width} vmin`;
+    const w = d.frame_width === "" ? 3 : Number(d.frame_width);
+    const capped = d.frame_radius !== "" && Number(d.frame_radius) > w * 3.4;
+    $("#frame-radius-value").textContent = d.frame_radius === "" ? "as the theme" : `${d.frame_radius} vmin${capped ? " · capped by the width" : ""}`;
+    frameForm.frame_finish.value = d.frame_finish;
+    $("#frame-glow-row").hidden = d.frame_finish !== "neon";
+    const msg = { type: "board:settings", settings: { ...d } };
+    post(liveFrame, msg);
+    post(previewFrame, msg);
+  }
+  function fillFrameForm(s) {
+    FRAME.forEach((k) => (frameSaved[k] = s[k] === null || s[k] === undefined ? "" : s[k]));
+    Object.assign(frameDraft, frameSaved);
+    showFrameDraft();
+  }
+  frameForm.frame_color.addEventListener("input", () => {
+    frameDraft.frame_color = frameForm.frame_color.value;
+    showFrameDraft();
+  });
+  frameForm.frame_color_theme.addEventListener("change", () => {
+    frameDraft.frame_color = frameForm.frame_color_theme.checked ? "" : frameForm.frame_color.value;
+    showFrameDraft();
+  });
+  frameForm.frame_glow.addEventListener("input", () => {
+    frameDraft.frame_glow = frameForm.frame_glow.value;
+    showFrameDraft();
+  });
+  frameForm.frame_glow_theme.addEventListener("change", () => {
+    frameDraft.frame_glow = frameForm.frame_glow_theme.checked ? "" : frameForm.frame_glow.value;
+    showFrameDraft();
+  });
+  ["frame_width", "frame_radius"].forEach((k) =>
+    frameForm[k].addEventListener("input", () => {
+      frameDraft[k] = Number(frameForm[k].value);
+      showFrameDraft();
+    }),
+  );
+  $$('input[name="frame_finish"]', frameForm).forEach((r) =>
+    r.addEventListener("change", () => {
+      frameDraft.frame_finish = r.value;
+      showFrameDraft();
+    }),
+  );
+  function presetFrame(values, said) {
+    Object.assign(frameDraft, values);
+    showFrameDraft();
+    frameStatus.textContent = said;
+  }
+  $("#frame-black-chrome").addEventListener("click", () => presetFrame(FRAME_BLACK_CHROME, "Black chrome on the card — Save to put it on the TV."));
+  $("#frame-theme").addEventListener("click", () => presetFrame(FRAME_THEME, "The theme's own frame on the card — Save to put it on the TV."));
+  frameForm.addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    try {
+      const saved = await api("/api/settings", { method: "PATCH", body: { ...frameDraft } });
+      fillFrameForm(saved);
+      frameStatus.textContent = "Saved — the TV picks it up on its next poll.";
+      refreshLive();
+      sheetDone(frameForm);
+    } catch (e) {
+      toast(e.message, true);
+    }
+  });
+
   // ---- preview (the server lays the text out, so it can never differ from the board)
   let previewTimer = 0;
   async function preview() {
@@ -890,6 +1057,7 @@
     form.show_seconds.placeholder = String(s.rotate_seconds); // the default a message falls back to
     fillBgForm(s);
     fillFlapForm(s);
+    fillFrameForm(s);
     fillGuestForm(s);
     syncCustom();
     loadProfiles().catch(() => {});
@@ -1693,6 +1861,7 @@
   loadMessages().catch((e) => toast(e.message, true));
   loadDisplay().catch((e) => toast(e.message, true));
   loadImages().catch((e) => toast(e.message, true));
+  loadVideos().catch((e) => toast(e.message, true));
   loadPosts().catch((e) => toast(e.message, true));
   loadProfiles().then(() => loadCalendar()).catch((e) => toast(e.message, true));
 })();

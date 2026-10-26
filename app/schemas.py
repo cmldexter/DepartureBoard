@@ -2,7 +2,7 @@
 
 import re
 from datetime import date, datetime
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -11,7 +11,9 @@ from app.models import BUILTIN_BACKGROUNDS, THEMES, TIMER_RINGS
 Repeat = Literal["none", "daily", "weekly"]
 TimerRing = Literal["off", "own", "all"]
 BackgroundFit = Literal["cover", "contain"]
-_BG_IMAGE = re.compile(r"^(img:[a-z0-9][a-z0-9-]{0,39}|builtin:[a-z0-9][a-z0-9-]{0,39})$")
+FrameFinish = Literal["theme", "matte", "chrome", "neon"]
+_BG_IMAGE = re.compile(r"^(img|builtin|video):[a-z0-9][a-z0-9-]{0,39}$")
+_HEX_COLOR = r"^(#[0-9a-fA-F]{6})?$"  # or "" = as the theme
 _GUEST_TOKEN = re.compile(r"^[A-Za-z0-9_-]{20,64}$")
 State = Literal["live", "scheduled", "expired", "disabled"]
 PostStatus = Literal["pending", "approved", "rejected"]
@@ -176,6 +178,15 @@ class SettingsOut(BaseModel):
     cell_radius: int
     cell_gap: int
     split_line: int
+    frame_color: str = Field(description='The frame\'s colour, "#rrggbb"; "" = as the theme')
+    frame_width: int | Literal[""] = Field(
+        description='The frame\'s width, vmin; "" = as the theme'
+    )
+    frame_radius: int | Literal[""] = Field(
+        description='The frame\'s outer corner radius, vmin; "" = as the theme'
+    )
+    frame_finish: FrameFinish = Field(description="theme (its own), matte, chrome or neon")
+    frame_glow: str = Field(description='The neon edge\'s colour, "#rrggbb"; "" = as the theme')
     guest_token: str = Field(description='The guest link\'s token; "" when guests are off')
     guest_auto_approve: bool = Field(description="A guest post goes on the board at once")
     guest_priority: int = Field(description="The priority a guest post's message gets")
@@ -199,7 +210,14 @@ class SettingsPatch(BaseModel):
                 {"animation": 0, "sound_enabled": False},
                 {"theme": "walnut", "idle_text": "WELCOME HOME"},
                 {"background_image": "img:poster", "background_blur": 20, "background_dim": 40},
+                {"background_image": "video:rain", "background_blur": 0},
                 {"cell_radius": 0, "cell_gap": 10, "split_line": 0},
+                {
+                    "frame_color": "#050308",
+                    "frame_width": 4,
+                    "frame_radius": 8,
+                    "frame_finish": "chrome",
+                },
             ]
         }
     )
@@ -219,8 +237,8 @@ class SettingsPatch(BaseModel):
     background_image: str | None = Field(
         None,
         description=(
-            'A picture behind the board: "" for none, "img:<slug>" for an uploaded picture, '
-            '"builtin:<name>" for a shipped one'
+            'Behind the board: "" for none, "img:<slug>" for an uploaded picture, '
+            '"builtin:<name>" for a shipped one, "video:<slug>" for an uploaded clip'
         ),
     )
     background_blur: int | None = Field(None, ge=0, le=40, description="Blur, px")
@@ -234,6 +252,25 @@ class SettingsPatch(BaseModel):
     )
     split_line: int | None = Field(
         None, ge=0, le=3, description="The line across a flap's middle, px (0 hides it)"
+    )
+    frame_color: str | None = Field(
+        None, pattern=_HEX_COLOR, description='The frame\'s colour "#rrggbb"; "" = as the theme'
+    )
+    frame_width: Annotated[int, Field(ge=0, le=10)] | Literal[""] | None = Field(
+        None, description='The frame\'s width in vmin (0–10); "" = as the theme'
+    )
+    frame_radius: Annotated[int, Field(ge=0, le=30)] | Literal[""] | None = Field(
+        None,
+        description=(
+            "The frame's outer corner radius in vmin (0–30; capped at about 3.4 × the width so "
+            'no flap is clipped); "" = as the theme'
+        ),
+    )
+    frame_finish: FrameFinish | None = Field(
+        None, description="theme = the theme's own look; matte; chrome (a metallic bezel); neon"
+    )
+    frame_glow: str | None = Field(
+        None, pattern=_HEX_COLOR, description='The neon edge\'s colour "#rrggbb"; "" = as the theme'
     )
     setup_done: Literal["", "1"] | None = Field(
         None, description='"1" = the first-run walkthrough is done; "" shows it again'
@@ -291,7 +328,9 @@ class SettingsPatch(BaseModel):
             return v
         v = v.strip()
         if not _BG_IMAGE.match(v):
-            raise ValueError('background_image must be "", "img:<slug>" or "builtin:<name>"')
+            raise ValueError(
+                'background_image must be "", "img:<slug>", "builtin:<name>" or "video:<slug>"'
+            )
         if v.startswith("builtin:") and v[8:] not in BUILTIN_BACKGROUNDS:
             known = ", ".join(BUILTIN_BACKGROUNDS) or "none shipped yet"
             raise ValueError(f"no built-in background {v[8:]!r} ({known})")
@@ -321,6 +360,11 @@ class BoardSettings(BaseModel):
     cell_radius: int
     cell_gap: int
     split_line: int
+    frame_color: str
+    frame_width: int | Literal[""]
+    frame_radius: int | Literal[""]
+    frame_finish: FrameFinish
+    frame_glow: str
 
 
 class ProfileFile(BaseModel):
@@ -509,6 +553,14 @@ Fit = Literal["contain", "cover", "stretch"]
 
 class QrInfo(BaseModel):
     data: str
+
+
+class VideoOut(BaseModel):
+    slug: str
+    url: str = Field(description="Where the board plays it from; answers Range requests")
+    token: str = Field(description="The `background_image` value that puts it behind the board")
+    content_type: str
+    bytes: int
 
 
 class ImageOut(BaseModel):

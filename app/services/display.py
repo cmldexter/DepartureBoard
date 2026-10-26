@@ -4,6 +4,7 @@ Reads the `settings` table, overlays the defaults, and resolves the grid preset 
 columns. Pure over a session so the board page, and later the board and settings APIs, share it.
 """
 
+import re
 from collections.abc import Mapping
 from typing import Any
 
@@ -14,6 +15,8 @@ from app.models import (
     COLS_BOUNDS,
     DEFAULT_SETTINGS,
     FLAP_BOUNDS,
+    FRAME_BOUNDS,
+    FRAME_FINISHES,
     GUEST_BOUNDS,
     PRESETS,
     ROWS_BOUNDS,
@@ -45,6 +48,25 @@ def _as_float(value: Any, default: float) -> float:
 
 def _as_bool(value: Any) -> bool:
     return str(value).strip().lower() in {"1", "true", "yes", "on"}
+
+
+_HEX = re.compile(r"^#[0-9a-f]{6}$")
+
+
+def _as_color(value: Any) -> str:
+    """A "#rrggbb" colour lowercased, else "" (as the theme)."""
+    v = str(value or "").strip().lower()
+    return v if _HEX.match(v) else ""
+
+
+def _opt_int(value: Any, bounds: tuple[int, int]) -> int | str:
+    """ "" stays "" (as the theme); anything else is an int clamped to the bounds."""
+    if value is None or str(value).strip() == "":
+        return ""
+    try:
+        return _clamp(int(value), bounds)
+    except (TypeError, ValueError):
+        return ""
 
 
 def resolve_display(raw: Mapping[str, Any]) -> dict[str, Any]:
@@ -91,6 +113,15 @@ def resolve_display(raw: Mapping[str, Any]) -> dict[str, Any]:
             key: _clamp(_as_int(merged[key], int(DEFAULT_SETTINGS[key])), bounds)
             for key, bounds in FLAP_BOUNDS.items()
         },
+        "frame_color": _as_color(merged["frame_color"]),
+        "frame_width": _opt_int(merged["frame_width"], FRAME_BOUNDS["frame_width"]),
+        "frame_radius": _opt_int(merged["frame_radius"], FRAME_BOUNDS["frame_radius"]),
+        "frame_finish": (
+            str(merged["frame_finish"]).strip().lower()
+            if str(merged["frame_finish"]).strip().lower() in FRAME_FINISHES
+            else DEFAULT_SETTINGS["frame_finish"]
+        ),
+        "frame_glow": _as_color(merged["frame_glow"]),
         "guest_token": str(merged["guest_token"] or "").strip(),
         "guest_auto_approve": _as_bool(merged["guest_auto_approve"]),
         "setup_done": "1" if str(merged["setup_done"] or "").strip() == "1" else "",

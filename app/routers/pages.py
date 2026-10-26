@@ -9,7 +9,7 @@ from fastapi import APIRouter, Form, Request, status
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse
 
 from app import __version__
-from app.models import BUILTIN_BACKGROUNDS, THEMES
+from app.models import BUILTIN_BACKGROUNDS, THEME_NAMES, THEMES
 from app.services import qr
 from app.services.auth import COOKIE_NAME, _presented_token, token_matches
 from app.services.display import display_settings, resolve_display
@@ -22,6 +22,7 @@ THEME_COLORS = {
     "walnut": "#1a120c",
     "arctic-white": "#d9dde2",
     "midnight": "#050a18",
+    "gsx-terminal": "#07030e",
 }
 LLMS_TXT = Path(__file__).resolve().parent.parent.parent / "llms.txt"
 _LOOPBACK = {"localhost", "127.0.0.1", "::1"}
@@ -102,6 +103,11 @@ def board(request: Request):
         "cell_radius": display["cell_radius"],
         "cell_gap": display["cell_gap"],
         "split_line": display["split_line"],
+        "frame_color": display["frame_color"],
+        "frame_width": display["frame_width"],
+        "frame_radius": display["frame_radius"],
+        "frame_finish": display["frame_finish"],
+        "frame_glow": display["frame_glow"],
         "demo": demo,
         "embed": embed,
         "preview": preview,
@@ -117,6 +123,11 @@ def board(request: Request):
             "config": config,
             "theme": theme,
             "embed": embed,
+            "video_src": (
+                f"/videos/{display['background_image'][6:]}"
+                if display["background_image"].startswith("video:")
+                else ""
+            ),
         },
     )
 
@@ -147,6 +158,7 @@ def settings_page(request: Request):
             "tz": settings.tz,
             "server_time": now.strftime("%Y-%m-%d %H:%M"),
             "themes": list(THEMES),
+            "theme_names": THEME_NAMES,
             "backgrounds": list(BUILTIN_BACKGROUNDS),
             "addresses": addresses,
             "named": bool(settings.host),
