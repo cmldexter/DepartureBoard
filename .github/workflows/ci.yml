@@ -42,6 +42,35 @@ jobs:
           version: ${{ env.UV_VERSION }}
       - run: uv lock --check
 
+  # The Kubernetes mode: the chart lints with the defaults and with every option on, renders the
+  # way the docs say, and deploy/kubernetes.yaml is that render. Helm is on the runner image.
+  helm:
+    runs-on: ubuntu-latest
+    env:
+      CHART: deploy/helm/departureboard
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Lint, with the defaults and with every option on
+        run: |
+          helm lint "$CHART"
+          helm lint "$CHART" -f "$CHART/ci/full-values.yaml"
+      - name: Template — no Ingress by default, one when enabled, the token from the Secret
+        run: |
+          helm template board "$CHART" > default.yaml
+          if grep -q '^kind: Ingress' default.yaml; then echo "an Ingress by default"; exit 1; fi
+          helm template board "$CHART" -f "$CHART/ci/full-values.yaml" > full.yaml
+          grep -q '^kind: Ingress' full.yaml
+          grep -q 'secretKeyRef' full.yaml
+          grep -q 'ingressClassName: nginx' full.yaml
+      - name: The chart's appVersion is the app's version
+        run: |
+          chart="$(sed -n 's/^appVersion: "\(.*\)"$/\1/p' "$CHART/Chart.yaml")"
+          code="$(sed -n 's/^__version__ = "\(.*\)"$/\1/p' app/__init__.py)"
+          echo "chart=$chart code=$code"
+          test "$chart" = "$code"
+      - name: deploy/kubernetes.yaml is the chart rendered with the defaults
+        run: helm template departureboard "$CHART" --namespace departureboard | diff - deploy/kubernetes.yaml
+
   docker:
     runs-on: ubuntu-latest
     steps:
@@ -88,10 +117,33 @@ jobs:
           test "$status" = healthy
           # plain http on the same port is gone
           if curl -fsS --max-time 3 http://127.0.0.1:8443/api/health; then echo "http still answers"; exit 1; fi
+      - name: "The chart runs this PR's image on a kind cluster: non-root, read-only, a PVC that outlives the pod"
+        run: |
+          kind create cluster --name ci --wait 120s
+          kind load docker-image departureboard:ci --name ci
+          helm install board deploy/helm/departureboard --namespace departureboard --create-namespace \
+            --set image.repository=departureboard --set image.tag=ci --set image.pullPolicy=Never \
+            --wait --timeout 180s
+          kubectl -n departureboard get pods,pvc
+          helm test board -n departureboard --logs
+          test "$(kubectl -n departureboard exec deploy/board-departureboard -- id -u)" = 10001
+          if kubectl -n departureboard exec deploy/board-departureboard -- touch /app/x; then echo "root fs is writable"; exit 1; fi
+          kubectl -n departureboard port-forward svc/board-departureboard 18080:80 &
+          sleep 3
+          health="$(curl -fsS http://127.0.0.1:18080/api/health)"
+          echo "$health"
+          code="$(sed -n 's/^__version__ = "\(.*\)"$/\1/p' app/__init__.py)"
+          echo "$health" | jq -e --arg v "$code" '.ok == true and .version == $v'
+          kill %1
+          token1="$(kubectl -n departureboard exec deploy/board-departureboard -- cat /data/api_token)"
+          kubectl -n departureboard delete pod -l app.kubernetes.io/instance=board --wait
+          kubectl -n departureboard rollout status deploy/board-departureboard --timeout=120s
+          token2="$(kubectl -n departureboard exec deploy/board-departureboard -- cat /data/api_token)"
+          test -n "$token1" && test "$token1" = "$token2"
 
   # The one check the branch ruleset requires.
   ci:
     runs-on: ubuntu-latest
-    needs: [lint, test, lock, docker]
+    needs: [lint, test, lock, helm, docker]
     steps:
       - run: echo "all green"

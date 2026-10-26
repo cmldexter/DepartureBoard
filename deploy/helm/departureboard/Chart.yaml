@@ -1,0 +1,23 @@
+apiVersion: v2
+name: departureboard
+description: An open-source split-flap departure board for any TV. One release, one board — the same image Compose runs, on a cluster.
+type: application
+# Both numbers track the app: the release recipe bumps them with pyproject.toml and app/__init__.py,
+# and release.yml refuses a tag that disagrees. image.tag defaults to appVersion.
+version: 0.5.0
+appVersion: "0.5.0"
+kubeVersion: ">=1.25.0-0"
+home: https://github.com/cmldexter/DepartureBoard
+icon: https://raw.githubusercontent.com/cmldexter/DepartureBoard/main/docs/media/logo.png
+sources:
+  - https://github.com/cmldexter/DepartureBoard
+keywords:
+  - departure-board
+  - split-flap
+  - tv
+  - signage
+maintainers:
+  - name: cmldexter
+    url: https://github.com/cmldexter
+annotations:
+  artifacthub.io/license: GPL-3.0-or-later

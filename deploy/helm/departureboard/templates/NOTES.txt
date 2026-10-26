@@ -1,0 +1,22 @@
+DepartureBoard {{ .Chart.AppVersion }} is starting in namespace {{ .Release.Namespace }}.
+
+{{- if .Values.ingress.enabled }}
+{{- range .Values.ingress.hosts }}
+The board:    http{{ if $.Values.ingress.tls }}s{{ end }}://{{ .host }}/
+The settings: http{{ if $.Values.ingress.tls }}s{{ end }}://{{ .host }}/settings
+{{- end }}
+{{- else }}
+No Ingress yet. To look at it from this machine:
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "departureboard.fullname" . }} 8080:{{ .Values.service.port }}
+  open http://localhost:8080/settings
+{{- end }}
+
+{{- if .Values.existingSecret }}
+The settings page asks for the token in Secret "{{ .Values.existingSecret }}" (key {{ .Values.secretKey }}).
+{{- else }}
+The settings page asks for the token the app minted on first boot:
+  kubectl -n {{ .Release.Namespace }} exec deploy/{{ include "departureboard.fullname" . }} -- cat /data/api_token
+{{- end }}
+
+Data (database, pictures, saved boards) lives on PVC {{ include "departureboard.pvcName" . }}; it survives `helm uninstall`.
+Docs: https://github.com/cmldexter/DepartureBoard/blob/main/docs/kubernetes.md

@@ -1,8 +1,9 @@
 name: release
 
 # A tag `v*` (made by `gh release create vX.Y.Z`) builds the image for amd64 and arm64, pushes
-# it to ghcr.io/cmldexter/departureboard as X.Y.Z, X.Y and latest, attests its provenance, then
-# pulls it back on a clean runner and checks the running app reports the tag's version.
+# it to ghcr.io/cmldexter/departureboard as X.Y.Z, X.Y and latest, attests its provenance, pushes
+# the Helm chart to ghcr.io/cmldexter/charts/departureboard at the same version, then pulls both
+# back on a clean runner and checks the running app reports the tag's version.
 
 on:
   push:
@@ -13,6 +14,7 @@ permissions:
 
 env:
   IMAGE: ghcr.io/cmldexter/departureboard
+  CHART_OCI: oci://ghcr.io/cmldexter/charts
 
 jobs:
   image:
@@ -32,8 +34,10 @@ jobs:
         run: |
           tag="${GITHUB_REF_NAME#v}"
           code="$(sed -n 's/^__version__ = "\(.*\)"$/\1/p' app/__init__.py)"
-          echo "tag=$tag code=$code"
+          chart="$(sed -n 's/^appVersion: "\(.*\)"$/\1/p' deploy/helm/departureboard/Chart.yaml)"
+          echo "tag=$tag code=$code chart=$chart"
           test "$tag" = "$code"
+          test "$tag" = "$chart"
 
       - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4
         with:
@@ -77,9 +81,34 @@ jobs:
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
 
-  # What a user gets: a machine that never built the image pulls it and the board comes up.
-  smoke:
+  # The Kubernetes mode ships with the image: the chart, packaged at the tag's version, pushed as OCI.
+  chart:
     needs: image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Package the chart at the release version
+        env:
+          VERSION: ${{ needs.image.outputs.version }}
+        run: |
+          helm lint deploy/helm/departureboard
+          helm package deploy/helm/departureboard --version "$VERSION" --app-version "$VERSION" --destination dist
+          ls dist
+      - name: Push it to ghcr.io
+        env:
+          VERSION: ${{ needs.image.outputs.version }}
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          printf '%s' "$TOKEN" | helm registry login ghcr.io --username "${{ github.actor }}" --password-stdin
+          helm push "dist/departureboard-$VERSION.tgz" "$CHART_OCI"
+
+  # What a user gets: a machine that never built the image pulls it and the board comes up, and
+  # the chart pulls from the registry naming that same image.
+  smoke:
+    needs: [image, chart]
     runs-on: ubuntu-latest
     permissions:
       packages: read
@@ -103,3 +132,11 @@ jobs:
           test "${ok:-0}" = 1
           echo "$health"
           echo "$health" | jq -e --arg v "$VERSION" '.ok == true and .version == $v'
+      - name: Pull the published chart and check it names this image
+        env:
+          VERSION: ${{ needs.image.outputs.version }}
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          printf '%s' "$TOKEN" | helm registry login ghcr.io --username "${{ github.actor }}" --password-stdin
+          helm pull "$CHART_OCI/departureboard" --version "$VERSION"
+          helm template board "departureboard-$VERSION.tgz" | grep -q "image: \"$IMAGE:$VERSION\""
