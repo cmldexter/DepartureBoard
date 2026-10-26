@@ -2,7 +2,7 @@
   <img src="docs/media/logo.png" alt="The DepartureBoard logo: nine flaps spelling DEP, O7:, LA with a green tick, mid-flip" width="160">
   <h1>DepartureBoard</h1>
   <p><b>An open-source split-flap departure board for any TV. One command, one board.</b></p>
-  <img src="docs/media/board-demo.gif" alt="The board on GSX Terminal, cyan mono flaps in a black chrome pill bezel over a drifting purple nebula, flipping from a departures list to a birthday message one column after another" width="800">
+  <img src="docs/media/board-hero.gif" alt="The board on GSX Terminal, cyan mono flaps in a black chrome pill bezel over a drifting purple nebula, flipping from a departures list to a birthday message one column after another" width="800">
   <p><sub>The Compact preset (6 × 22) on the GSX Terminal theme, a black chrome bezel that hides the corners, a clip playing behind it — all of it Look &amp; feel settings. The built-in demo: <code>http://&lt;host&gt;:8080/?demo</code></sub></p>
 </div>
 
@@ -139,9 +139,11 @@ message has left.
 
 **Look & feel.** On the **Board** tab: five theme swatches; click one and the TV follows on its
 next poll, nothing to save. Below them, *Behind the board*: a picture under the frame — one of
-the four that ship, or a poster snip uploaded right there — or a **video** of your own (MP4 or
-WebM up to 250 MB) playing muted in a loop, with blur and dim sliders the live card follows as
-they move. *Save* sends it to the TV; *Clear* takes it off. Then *The flaps*: four sliders —
+the four that ship, or a poster snip uploaded right there — a **video** of your own (MP4 or
+WebM up to 250 MB) playing muted in a loop — or a **living background**: colours the board draws
+and drifts like slow weather, five presets or your own, with a motion slider from still to brisk,
+kind to an OLED panel. Blur and dim sliders the live card follows as they move. *Save* sends it to
+the TV; *Clear* takes it off. Then *The flaps*: four sliders —
 corners (0–12 % of a cell), gap (0–1 vmin), the split line (0–3 px) and depth (a lit top half, a
 shadow under the lip and under each flap; each theme's own until you set it) — and a *Picture
 mode* button that tightens all four, so a banner across the board loses less to the grid;
@@ -149,7 +151,9 @@ mode* button that tightens all four, so a banner across the board loses less to 
 the backdrop shows around it), the bezel's colour, width, corners and a finish — matte, chrome or
 neon with a glow colour — each theme's own until you override it; *Black chrome* is one button.
 
-<img src="docs/media/settings-look.png" alt="Look & feel: four theme swatches, then the background picker with None, the built-in pictures, an upload, and the blur and dim sliders" width="800">
+<img src="docs/media/settings-look.png" alt="Look & feel: five theme swatches, then the background picker with None, the built-in pictures, the five living tiles with Aurora picked, the upload buttons, and the Dim and Motion sliders with the colour wells" width="800">
+
+<img src="docs/media/board-living.gif" alt="The board hugging its flaps over the aurora living background, the colour fields drifting behind it" width="800">
 
 <img src="docs/media/board-background.png" alt="The board on Classic Black over a blurred, dimmed party poster" width="800">
 
