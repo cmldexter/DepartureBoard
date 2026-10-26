@@ -265,3 +265,28 @@ def test_a_restart_keeps_the_files(client, auth, settings):
             ("party", "Party", 1, True)
         ]
         assert again.get("/api/settings", headers=h).json()["active_profile"] == "party"
+
+
+def test_a_gradient_background_is_never_gone(client, auth):
+    """Nothing on disk to lose: a profile with a living backdrop loads it back as it was."""
+    client.patch(
+        "/api/settings",
+        json={
+            "background_image": "gradient:ember",
+            "background_motion": 70,
+            "background_colors": "#aabbcc,#112233",
+        },
+        headers=auth,
+    )
+    client.post("/api/profiles/glow/save", headers=auth)
+    client.patch(
+        "/api/settings", json={"background_image": "", "background_motion": 40}, headers=auth
+    )
+    r = client.post("/api/profiles/glow/load", headers=auth)
+    assert r.status_code == 200 and r.json()["pictures_missing"] == []
+    s = _settings(client, auth)
+    assert (s["background_image"], s["background_motion"], s["background_colors"]) == (
+        "gradient:ember",
+        70,
+        "#aabbcc,#112233",
+    )

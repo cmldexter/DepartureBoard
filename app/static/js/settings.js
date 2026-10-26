@@ -670,13 +670,66 @@
     });
   });
 
-  // ---- look & feel: a picture behind the board. The frames follow the draft at once through
-  // board:settings; Save writes the four settings in one PATCH; Clear removes the picture now.
+  // ---- look & feel: a picture, a video or a living gradient behind the board. The frames follow
+  // the draft at once through board:settings; Save writes the six settings in one PATCH; Clear
+  // removes the picture now (the sliders keep their values).
   const bgForm = $("#backdrop-form");
   const bgChoices = $("#backdrop-choices");
   const bgStatus = $("#backdrop-status");
-  const BG = ["background_image", "background_blur", "background_dim", "background_fit"];
-  const bgDraft = { background_image: "", background_blur: 12, background_dim: 30, background_fit: "cover" };
+  const BG = ["background_image", "background_blur", "background_dim", "background_fit", "background_motion", "background_colors"];
+  const bgDraft = { background_image: "", background_blur: 12, background_dim: 30, background_fit: "cover", background_motion: 40, background_colors: "" };
+  const HEX6 = /^#[0-9a-f]{6}$/;
+  const bgKind = (v) => (v.startsWith("gradient:") ? "gradient" : v.startsWith("video:") ? "video" : v ? "picture" : "none");
+  // The colours a gradient draws: the draft's own (2–4) else the tile's preset.
+  function presetColors(value) {
+    const tile = bgSwatches().find((b) => b.dataset.bg === value);
+    return tile && tile.dataset.colors ? tile.dataset.colors.split(",") : [];
+  }
+  function draftColors() {
+    const own = String(bgDraft.background_colors || "").split(",").map((c) => c.trim().toLowerCase()).filter((c) => HEX6.test(c));
+    return own.length >= 2 && own.length <= 4 ? own : presetColors(bgDraft.background_image);
+  }
+  // The wells: one <input type=color> per colour, a cross past two, + colour up to four.
+  function renderWells() {
+    const wells = $("#bg-wells");
+    const colors = draftColors();
+    wells.innerHTML = "";
+    colors.forEach((c, i) => {
+      const w = document.createElement("span");
+      w.className = "well";
+      w.innerHTML = `<input type="color" aria-label="Colour ${i + 1}"><button type="button" class="remove" aria-label="Remove colour ${i + 1}" title="Remove">×</button>`;
+      $("input", w).value = c;
+      $(".remove", w).hidden = colors.length <= 2;
+      wells.appendChild(w);
+    });
+    $("#bg-color-add").hidden = colors.length >= 4;
+    $("#bg-color-reset").hidden = !bgDraft.background_colors;
+  }
+  function writeWells(colors) {
+    bgDraft.background_colors = colors.join(",");
+    renderWells();
+    showBgDraft();
+  }
+  $("#bg-wells").addEventListener("input", (e) => {
+    if (!e.target.matches('input[type="color"]')) return;
+    writeWells($$('input[type="color"]', $("#bg-wells")).map((i) => i.value.toLowerCase()));
+  });
+  $("#bg-wells").addEventListener("click", (e) => {
+    const x = e.target.closest(".remove");
+    if (!x) return;
+    const colors = draftColors();
+    colors.splice([...$$(".well", $("#bg-wells"))].indexOf(x.parentElement), 1);
+    writeWells(colors);
+  });
+  $("#bg-color-add").addEventListener("click", () => {
+    const colors = draftColors();
+    if (colors.length < 4) writeWells([...colors, colors[colors.length - 1]]);
+  });
+  $("#bg-color-reset").addEventListener("click", () => {
+    bgDraft.background_colors = "";
+    renderWells();
+    showBgDraft();
+  });
   let bgSaved = { ...bgDraft };
   const bgDirty = () => BG.some((k) => bgDraft[k] !== bgSaved[k]);
   const bgSwatches = () => $$(".swatch", bgChoices);
@@ -695,6 +748,13 @@
   function showBgDraft() {
     $("#blur-value").textContent = `${bgDraft.background_blur} px`;
     $("#dim-value").textContent = `${bgDraft.background_dim} %`;
+    $("#motion-value").textContent = bgDraft.background_motion === 0 ? "Still" : `${bgDraft.background_motion} %`;
+    // blur and fit mean nothing to a gradient; motion and the colours only to one
+    const kind = bgKind(bgDraft.background_image);
+    $("#blur-row").hidden = kind === "gradient";
+    $("#fit-row").hidden = kind === "gradient";
+    $("#motion-row").hidden = kind !== "gradient";
+    $("#colors-row").hidden = kind !== "gradient";
     const msg = { type: "board:settings", settings: { ...bgDraft } };
     post(liveFrame, msg);
     post(previewFrame, msg);
@@ -705,7 +765,9 @@
     bgForm.background_blur.value = bgDraft.background_blur;
     bgForm.background_dim.value = bgDraft.background_dim;
     bgForm.background_fit.value = bgDraft.background_fit;
+    bgForm.background_motion.value = bgDraft.background_motion;
     markBg(bgDraft.background_image);
+    renderWells();
     showBgDraft();
   }
   // The video tiles: one per upload, the clip's first frame as the thumb (the media fragment makes
@@ -744,14 +806,17 @@
     }
     markBg(bgDraft.background_image);
   }
-  const bgName = (v) => (v.startsWith("img:") ? v.slice(4) : v.startsWith("builtin:") ? v.slice(8) : v.startsWith("video:") ? `the video ${v.slice(6)}` : "none");
+  const bgName = (v) => (v.startsWith("img:") ? v.slice(4) : v.startsWith("builtin:") ? v.slice(8) : v.startsWith("video:") ? `the video ${v.slice(6)}` : v.startsWith("gradient:") ? `the ${v.slice(9)} gradient` : "none");
   function pickBg(value, focus) {
     // a moving picture under a blur filter is what a TV stick cannot afford: a video starts sharp
     if (value.startsWith("video:") && !bgDraft.background_image.startsWith("video:") && bgDraft.background_blur === bgSaved.background_blur) {
       bgDraft.background_blur = 0;
       bgForm.background_blur.value = 0;
     }
+    // a new gradient starts from its own colours
+    if (value.startsWith("gradient:") && value !== bgDraft.background_image) bgDraft.background_colors = "";
     markBg(value);
+    if (value.startsWith("gradient:")) renderWells();
     showBgDraft();
     bgStatus.textContent = value ? `${bgName(value)} on the card — Save to put it on the TV.` : "No picture — Save to take it off the TV.";
     if (focus) bgSwatches().find((b) => b.dataset.bg === value)?.focus();
@@ -798,6 +863,10 @@
     bgDraft.background_fit = bgForm.background_fit.value;
     showBgDraft();
   });
+  bgForm.background_motion.addEventListener("input", () => {
+    bgDraft.background_motion = Number(bgForm.background_motion.value);
+    showBgDraft();
+  });
   async function saveBg(body, said) {
     try {
       const saved = await api("/api/settings", { method: "PATCH", body });
@@ -814,7 +883,7 @@
     const body = { ...bgDraft };
     saveBg(body, body.background_image ? "Saved — the TV picks it up on its next poll." : "Saved with no picture.");
   });
-  $("#backdrop-clear").addEventListener("click", () => saveBg({ background_image: "" }, "Cleared — the blur and dim are kept for next time."));
+  $("#backdrop-clear").addEventListener("click", () => saveBg({ background_image: "" }, "Cleared — the blur, dim and motion are kept for next time."));
   // A video is big: XMLHttpRequest for its upload progress; the token header as api() sends it.
   function uploadVideo(file) {
     return new Promise((resolve, reject) => {

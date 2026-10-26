@@ -9,7 +9,7 @@ from fastapi import APIRouter, Form, Request, status
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse
 
 from app import __version__
-from app.models import BUILTIN_BACKGROUNDS, THEME_NAMES, THEMES
+from app.models import BUILTIN_BACKGROUNDS, GRADIENT_PRESETS, THEME_NAMES, THEMES
 from app.services import qr
 from app.services.auth import COOKIE_NAME, _presented_token, token_matches
 from app.services.display import display_settings, resolve_display
@@ -100,6 +100,8 @@ def board(request: Request):
         "background_blur": display["background_blur"],
         "background_dim": display["background_dim"],
         "background_fit": display["background_fit"],
+        "background_motion": display["background_motion"],
+        "background_colors": display["background_colors"],
         "cell_radius": display["cell_radius"],
         "cell_gap": display["cell_gap"],
         "split_line": display["split_line"],
@@ -128,6 +130,7 @@ def board(request: Request):
             "config": config,
             "theme": theme,
             "embed": embed,
+            "gradient_presets": GRADIENT_PRESETS,
             "video_src": (
                 f"/videos/{display['background_image'][6:]}"
                 if display["background_image"].startswith("video:")
@@ -165,6 +168,7 @@ def settings_page(request: Request):
             "themes": list(THEMES),
             "theme_names": THEME_NAMES,
             "backgrounds": list(BUILTIN_BACKGROUNDS),
+            "gradients": GRADIENT_PRESETS,
             "addresses": addresses,
             "named": bool(settings.host),
             "welcome": welcome,

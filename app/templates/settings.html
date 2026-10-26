@@ -77,9 +77,9 @@
 
     <form id="backdrop-form" class="backdrop sheet-block" aria-labelledby="backdrop-heading">
       <h3 id="backdrop-heading">Behind the board</h3>
-      <p class="muted">A picture or a video under the frame: a poster snip blurred into a mood for a party, one of ours
-        for a quieter look, or a clip of your own playing muted in a loop. The card above follows every choice;
-        <em>Save</em> sends it to the TV.
+      <p class="muted">A picture, a video or a living gradient under the frame: a poster snip blurred into a mood for
+        a party, one of ours for a quieter look, a clip of your own playing muted in a loop, or colours the board
+        draws and drifts like slow weather. The card above follows every choice; <em>Save</em> sends it to the TV.
         <a href="https://github.com/cmldexter/DepartureBoard/blob/main/docs/backgrounds.md" rel="noopener" target="_blank">Making your own</a>.</p>
       <fieldset>
         <legend>Picture</legend>
@@ -93,6 +93,13 @@
             <span>{{ b.title() }}</span>
           </button>
           {% endfor %}
+          {% for name, colors in gradients.items() %}
+          <button type="button" class="swatch living" role="radio" aria-checked="false" data-bg="gradient:{{ name }}" data-colors="{{ colors | join(',') }}" tabindex="-1">
+            <span class="thumb living" aria-hidden="true" style="{% for c in colors %}--c{{ loop.index }}: {{ c }}; {% endfor %}"></span>
+            <span class="play" aria-hidden="true">~ living</span>
+            <span>{{ name.title() }}</span>
+          </button>
+          {% endfor %}
         </div>
         <p class="upload"><label class="file-button">Upload a picture…<input type="file" name="file" accept="image/png,image/jpeg,image/gif,image/webp" class="sr-only"></label>
           <label class="file-button">Upload a video…<input type="file" name="video" accept="video/mp4,video/webm" class="sr-only"></label>
@@ -100,9 +107,16 @@
       </fieldset>
       <fieldset class="effects">
         <legend>Effect</legend>
-        <label>Blur <input type="range" name="background_blur" min="0" max="40" step="1" value="12"> <output id="blur-value">12 px</output></label>
+        <label id="blur-row">Blur <input type="range" name="background_blur" min="0" max="40" step="1" value="12"> <output id="blur-value">12 px</output></label>
         <label>Dim <input type="range" name="background_dim" min="0" max="90" step="5" value="30"> <output id="dim-value">30 %</output></label>
-        <label>Fit <select name="background_fit"><option value="cover">fill the screen</option><option value="contain">fit inside</option></select></label>
+        <label id="fit-row">Fit <select name="background_fit"><option value="cover">fill the screen</option><option value="contain">fit inside</option></select></label>
+        <label id="motion-row" hidden>Motion <input type="range" name="background_motion" min="0" max="100" step="5" value="40"> <output id="motion-value">40 %</output></label>
+        <div class="colors" id="colors-row" hidden>
+          <span>Colours</span>
+          <span id="bg-wells" role="group" aria-label="The gradient's colours"></span>
+          <button type="button" class="small" id="bg-color-add">+ colour</button>
+          <button type="button" class="small" id="bg-color-reset">Reset to preset</button>
+        </div>
       </fieldset>
       <div class="row"><span><button type="submit">Save background</button> <button type="button" class="small" id="backdrop-clear">Clear</button></span>
         <span class="muted" id="backdrop-status" role="status"></span></div>

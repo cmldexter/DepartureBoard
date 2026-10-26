@@ -102,6 +102,14 @@ body { background: var(--bg); color: var(--fg); font-family: var(--font); }
 .page .backdrop legend { margin: .75rem 0 .25rem; font-weight: 600; }
 .page .backdrops { grid-template-columns: repeat(5, 1fr); }
 .page .swatch .thumb { display: grid; place-items: center; width: 100%; aspect-ratio: 16 / 9; border-radius: .35rem; background: #000; color: var(--muted); font-size: 1.6rem; }
+/* a living tile: the preset's fields drawn still by CSS (--c1…--c4; the last colour is the ground) */
+.page .swatch { position: relative; }
+.page .swatch .thumb.living { background: radial-gradient(closest-side at 28% 38%, var(--c1), transparent 85%), radial-gradient(closest-side at 72% 42%, var(--c2), transparent 85%), radial-gradient(closest-side at 50% 96%, var(--c3, var(--c2)), transparent 80%), var(--c4, var(--c3, var(--c2))); }
+.page .colors { display: inline-flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.page .colors #bg-wells { display: inline-flex; gap: .35rem; }
+.page .colors .well { position: relative; display: inline-grid; }
+.page .colors input[type="color"] { width: 2.4rem; height: 2rem; margin: 0; padding: .1rem; border-radius: .35rem; }
+.page .colors .well .remove { position: absolute; right: -.4rem; top: -.4rem; width: 1.1rem; height: 1.1rem; margin: 0; padding: 0; border-radius: 50%; background: rgba(0, 0, 0, .75); color: #fff; font-size: .7rem; line-height: 1; border: 1px solid rgba(255, 255, 255, .25); }
 /* a video tile: the clip's first frame, a play mark, a delete cross */
 .page .tile { position: relative; display: grid; }
 .page .swatch.video { margin: 0; }
