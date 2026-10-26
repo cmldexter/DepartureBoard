@@ -2,7 +2,12 @@
   --bg: #111;
   --fg: #eee;
   --muted: #9a9a9a;
-  --accent: #ffcc33;
+  /* the logo's palette: its frame's blue and violet fill the buttons (white text), the same
+     blue lifted for links, outlines and marks on a dark page */
+  --accent: #3d8bff;
+  --accent-fill: #0060fc;
+  --accent-fill-2: #4400f4;
+  --accent-ink: #fff;
   --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 * { box-sizing: border-box; }
@@ -13,6 +18,8 @@ body { background: var(--bg); color: var(--fg); font-family: var(--font); }
 
 .page .narrow { max-width: 42rem; margin: 0 auto; padding: 2rem 1rem; }
 .page h1 { margin: 0 0 .5rem; }
+.page .mark { width: 1.75rem; height: 1.75rem; vertical-align: -.35rem; margin-right: .4rem; border-radius: .35rem; }
+.page h1 .mark.big { width: 3.5rem; height: 3.5rem; vertical-align: -1.05rem; margin-right: .6rem; border-radius: .7rem; }
 .page h2 { margin: 2rem 0 .5rem; font-size: 1.1rem; }
 .page a { color: var(--accent); }
 .page p { line-height: 1.5; }
@@ -20,7 +27,7 @@ body { background: var(--bg); color: var(--fg); font-family: var(--font); }
 .page pre.token { padding: .75rem; background: #000; border-radius: .4rem; overflow-x: auto; }
 .page label { display: block; margin: 1rem 0 .25rem; }
 .page input { width: 100%; padding: .6rem; border-radius: .4rem; border: 1px solid #444; background: #000; color: var(--fg); font-size: 1rem; }
-.page button { margin-top: 1rem; padding: .6rem 1rem; border-radius: .4rem; border: 0; background: var(--accent); color: #000; font-weight: 600; cursor: pointer; }
+.page button { margin-top: 1rem; padding: .6rem 1rem; border-radius: .4rem; border: 0; background: linear-gradient(135deg, var(--accent-fill), var(--accent-fill-2)); color: var(--accent-ink); font-weight: 600; cursor: pointer; }
 .page button.link { margin: 0; padding: 0; background: none; color: var(--accent); font-weight: 400; text-decoration: underline; }
 .page .inline { display: inline; }
 .page .row { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap; }
@@ -96,7 +103,7 @@ body { background: var(--bg); color: var(--fg); font-family: var(--font); }
 .page .backdrops { grid-template-columns: repeat(5, 1fr); }
 .page .swatch .thumb { display: grid; place-items: center; width: 100%; aspect-ratio: 16 / 9; border-radius: .35rem; background: #000; color: var(--muted); font-size: 1.6rem; }
 .page .backdrop .upload { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; margin: .5rem 0 0; }
-.page .file-button { display: inline-block; margin: 0; padding: .4rem .8rem; border-radius: .4rem; background: var(--accent); color: #000; font-weight: 600; font-size: .9rem; cursor: pointer; }
+.page .file-button { display: inline-block; margin: 0; padding: .4rem .8rem; border-radius: .4rem; background: var(--accent-fill); color: var(--accent-ink); font-weight: 600; font-size: .9rem; cursor: pointer; }
 .page .file-button input.sr-only { width: 1px; } /* .page input is 100 % wide; the hidden file input must not widen the page */
 .page .file-button:has(input:focus-visible) { outline: 2px solid var(--fg); outline-offset: 2px; }
 .page .effects { display: flex; gap: 1rem 1.5rem; flex-wrap: wrap; align-items: center; }
@@ -136,7 +143,7 @@ body { background: var(--bg); color: var(--fg); font-family: var(--font); }
 .page #qr-form label { flex: 1 1 18rem; }
 .page #qr-form label:nth-of-type(2) { flex: 0 1 10rem; }
 .page ul.images .chip { margin: 0; padding: .15rem .5rem; font-size: .85rem; border-radius: 1rem; background: #2a2a2a; color: var(--fg); border: 1px solid #444; cursor: pointer; }
-.page ul.images .chip[aria-pressed="true"] { background: var(--accent); color: #000; border-color: var(--accent); }
+.page ul.images .chip[aria-pressed="true"] { background: var(--accent-fill); color: var(--accent-ink); border-color: var(--accent-fill); }
 .page ul.images .applied { flex-basis: 100%; font-size: .85rem; }
 @media (max-width: 36rem) { .page ul.images .chips { flex-basis: 100%; } }
 /* show something now: the line a host types from the sofa, with chips for how long */
@@ -145,7 +152,7 @@ body { background: var(--bg); color: var(--fg); font-family: var(--font); }
 .page .chips { display: flex; gap: .4rem; flex-wrap: wrap; margin: .6rem 0 0; }
 .page .chip { position: relative; margin: 0; padding: .4rem .8rem; border-radius: 1rem; background: #2a2a2a; border: 1px solid #444; font-size: .9rem; cursor: pointer; }
 .page .chip input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
-.page .chip:has(input:checked) { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+.page .chip:has(input:checked) { background: var(--accent-fill); color: var(--accent-ink); border-color: var(--accent-fill); font-weight: 600; }
 .page .chip:has(input:focus-visible) { outline: 2px solid var(--fg); outline-offset: 2px; }
 .page .now .row { align-items: center; }
 .page .now button { margin-top: .75rem; }
@@ -347,6 +354,7 @@ body.sheet-open { overflow: hidden; }
 .page pre.code { margin: .4rem 0; padding: .75rem; background: #000; border-radius: .4rem; overflow-x: auto; font-size: .9rem; line-height: 1.5; white-space: pre; }
 .page .snippet .response { font-size: .85rem; margin: 0; }
 .page pre.code .prompt { color: var(--muted); user-select: none; }
+@media (max-width: 700px) { .page pre.code { white-space: pre-wrap; overflow-wrap: anywhere; } } /* a command wraps on a phone instead of scrolling; Copy keeps it whole */
 .page #where-token { margin-top: 2.5rem; }
 .page #where-token h2 { margin-bottom: .25rem; }
 .page #where-token .snippet { margin: .5rem 0 1rem; }
