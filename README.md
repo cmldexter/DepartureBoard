@@ -137,13 +137,15 @@ message has left.
 
 <img src="docs/media/settings-display.png" alt="The display form: preset, animation, sound, idle text, poll and rotate intervals, timer ring" width="800">
 
-**Look & feel.** On the **Board** tab: four theme swatches; click one and the TV follows on its
+**Look & feel.** On the **Board** tab: five theme swatches; click one and the TV follows on its
 next poll, nothing to save. Below them, *Behind the board*: a picture under the frame — one of
-the four that ship, or a poster snip uploaded right there — with blur and dim sliders the live
-card follows as they move. *Save* sends it to the TV; *Clear* takes it off. Then *The flaps*:
-three sliders — corners (0–12 % of a cell), gap (0–1 vmin) and the split line (0–3 px) — and a
-*Picture mode* button that tightens all three, so a banner across the board loses less to the
-grid; *Classic* puts them back.
+the four that ship, or a poster snip uploaded right there — or a **video** of your own (MP4 or
+WebM up to 250 MB) playing muted in a loop, with blur and dim sliders the live card follows as
+they move. *Save* sends it to the TV; *Clear* takes it off. Then *The flaps*: three sliders —
+corners (0–12 % of a cell), gap (0–1 vmin) and the split line (0–3 px) — and a *Picture mode*
+button that tightens all three, so a banner across the board loses less to the grid; *Classic*
+puts them back. Then *The frame*: the bezel's colour, width, corners and a finish — matte, chrome
+or neon with a glow colour — each theme's own until you override it; *Black chrome* is one button.
 
 <img src="docs/media/settings-look.png" alt="Look & feel: four theme swatches, then the background picker with None, the built-in pictures, an upload, and the blur and dim sliders" width="800">
 
@@ -217,13 +219,15 @@ agent, open `/integrate` (pictured below).
 |---|---|
 | **Classic black** ![Classic black](docs/media/theme-classic-black.png) | **Walnut** ![Walnut](docs/media/theme-walnut.png) |
 | **Arctic white** ![Arctic white](docs/media/theme-arctic-white.png) | **Midnight** ![Midnight](docs/media/theme-midnight.png) |
+| **GSX Terminal** ![GSX Terminal](docs/media/theme-gsx-terminal.png) — neon cyan on the void, mono flaps, a black chrome bezel | |
 
 Each theme is one stylesheet under `app/static/themes/` with its font bundled, so the board
 works on a LAN with no internet. A new theme is a welcome pull request.
 
 Behind any theme can sit a picture: four ship with the app (*terminal*, *wood*, *gala*, *paper*)
-and your own uploads work too, blurred and dimmed to taste. [docs/backgrounds.md](docs/backgrounds.md)
-has the four-click recipe, the safe area and a 1920 × 1080 template.
+and your own uploads work too, blurred and dimmed to taste — or a video, muted in a loop.
+[docs/backgrounds.md](docs/backgrounds.md) has the four-click recipe, the safe area, a 1920 × 1080
+template, the one-line ffmpeg recipe for a TV-friendly clip, and the frame's five settings.
 
 ## Bring your own integration
 

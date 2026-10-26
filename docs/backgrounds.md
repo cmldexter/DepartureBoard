@@ -1,8 +1,10 @@
-# A picture behind the board
+# Behind the board, and the frame around it
 
 The board can sit on a picture: a poster from your phone, blurred into a mood for a party, or
-one of the four that ship with the app for a quieter look. The flaps keep their theme; the frame
-turns translucent over the picture; the board stays readable.
+one of the four that ship with the app for a quieter look. It can sit on a **video** of your own,
+playing muted in a loop. The flaps keep their theme; a matte frame turns translucent over the
+picture; the board stays readable. And the **frame** itself — the bezel around the board — has
+its colour, width, corners and finish in your hands.
 
 ## The four-click version
 
@@ -54,6 +56,64 @@ They are drawn by the project, 1920 × 1080, 20–110 KB each, under `app/static
 
 `docs/background-template.png` is that template at full size — open it in any editor, put your
 picture on a layer beneath, and keep the subject outside the dashed boxes.
+
+## A video behind the board
+
+**Settings → Look & feel → Behind the board → Upload a video…** takes an MP4 or WebM up to
+250 MB. It appears as a tile with its first frame and is selected; the live card plays it; **Save
+background** sends it to the TV, where it plays muted, in a loop, under the frame. **Dim** works
+over it as over a picture; **Fit** is *fill the screen* or *fit inside*; the × on the tile deletes
+the file (a video that is on the TV comes off it as it goes).
+
+- **Blur starts at 0 for a video.** Picking a video sets the Blur slider to 0; you can raise it,
+  but a blur filter over a moving 1080p picture is the one thing a TV stick cannot afford. Keep it
+  at 0 on a Fire TV Stick or a Chromecast; a Raspberry Pi 4 or a laptop manages some.
+- **The file is stored as it is** — the server never re-encodes. What plays on the weakest TV
+  browser is **1080p h264, no sound, fast start**. From any clip, one line:
+
+  ```sh
+  ffmpeg -i in.mp4 -vf scale=1920:-2 -an -c:v libx264 -crf 23 -movflags +faststart out.mp4
+  ```
+
+  A three-minute 1440p phone clip of 150 MB comes out around 60 MB at 1080p; `-crf 28` halves
+  that again at a small cost in detail. `-an` drops the sound the TV never plays; `+faststart`
+  puts the index first so the TV starts before the whole file is down.
+- **The loop seam.** A clip that ends where it starts (a slow pan that returns, a loop made for
+  it) loops without a cut; anything else jumps once per lap. The length does not matter.
+- **Reduced motion.** A TV or browser set to reduce motion shows the video's first frame and
+  nothing moves — a still, like a picture.
+- **The cost.** The TV decodes the video for as long as the board is up. Every TV browser decodes
+  1080p h264 in hardware; 4K or VP9 depends on the device. Pictures stay the cheaper choice for a
+  board that is up all day on a stick.
+- **On the API:** `POST /api/videos` (multipart `file`, optional `slug`), `GET /api/videos`,
+  `DELETE /api/videos/{slug}`; the TV plays `GET /videos/{slug}`, which answers Range requests.
+  `PATCH /api/settings` with `{"background_image": "video:<slug>", "background_blur": 0}` puts
+  it behind the board.
+
+## The frame
+
+The bezel around the board is each theme's own: Classic Black's dark grey, Walnut's wood, GSX
+Terminal's black chrome with a cyan edge. **Settings → Look & feel → The frame** overrides it, one
+setting at a time, and *As the theme* gives any of them back:
+
+| Setting | On the API | What it does |
+|---|---|---|
+| **Colour** | `frame_color` `"#rrggbb"` or `""` | The bezel's colour |
+| **Width** | `frame_width` 0–10 or `""` | In vmin (hundredths of the screen's shorter side); the themes use 3, Walnut 4 |
+| **Corners** | `frame_radius` 0–30 or `""` | The outer corner radius in vmin; the page or the backdrop shows in the rounded corners |
+| **Finish** | `frame_finish` `theme` · `matte` · `chrome` · `neon` | *Matte* is the flat colour; *chrome* a metallic bezel with a lip around the board; *neon* a glowing edge |
+| **Glow** | `frame_glow` `"#rrggbb"` or `""` | The neon edge's colour (shown for neon) |
+
+**A rounder corner needs a wider frame.** The corners never cut into a flap: the radius is
+capped at about 3.4 × the width, so at the default 3 vmin the roundest corner is 10 vmin; for a
+pill-shaped board put the width at 8 or 10 first. The slider's readout says *capped by the width*
+when it is.
+
+**Over a picture or video**, a matte frame (and the four classic themes' own) is 35 % see-through
+as before; a **chrome or neon** frame stays solid — the bezel reads as an object sitting over the
+moving picture. *Black chrome* is one button: `#050308`, width 4, corners 8, chrome.
+
+The five settings travel with a saved board (a profile) like the rest of the look.
 
 ## Where the pictures live
 
