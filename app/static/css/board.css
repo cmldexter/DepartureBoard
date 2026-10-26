@@ -166,8 +166,14 @@ html.has-backdrop .frame {
   gap: var(--gap);
   padding: calc(var(--gap) + var(--margin, 0px));
   background: var(--board-bg);
-  /* The inner edge follows the frame's outer curve. */
-  border-radius: max(0.6vmin, calc((var(--frame-r) - var(--frame-n, 3)) * 1vmin));
+  /* The inner edge follows the frame's outer curve as far as the margin allows: its corner cut
+     (0.3 × the radius) never exceeds the margin + gap, so the corner flaps sit on the board's
+     colour and the recess shadow stays in the margin band — the bezel thickens at the corners
+     instead, as a screen's bezel does. */
+  border-radius: max(
+    0.6vmin,
+    min(calc((var(--frame-r) - var(--frame-n, 3)) * 1vmin), calc((var(--margin, 0px) + var(--gap)) * 3.4))
+  );
   box-shadow: var(--board-lip, none);
 }
 /* The recess: the bezel's shadow over the panel's edge, flaps included, so the board reads as

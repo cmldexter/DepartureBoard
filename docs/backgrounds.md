@@ -110,7 +110,9 @@ setting at a time, and *As the theme* gives any of them back:
 **A rounder corner needs a wider bezel or a margin.** The corners never cut into a flap: the
 radius is capped at about 3.4 × (width + margin), so a thin 2 vmin chrome bezel with a 2 vmin
 margin still takes a 13 vmin corner; for a pill-shaped board raise the margin first — it is the
-board's own colour, not chrome. The slider's readout says *capped by the width + margin* when it is.
+board's own colour, not chrome, and the board's own inner corner only rounds as far as the margin
+allows (the bezel thickens at the corners, as a screen's does). The slider's readout says *capped
+by the width + margin* when it is.
 
 **Chrome** is drawn as a bezel with a rounded profile lit from above: a bright rim on the outer
 edge, light on top of the curve, shadow under it, and a shadow onto the page. The board **hides
