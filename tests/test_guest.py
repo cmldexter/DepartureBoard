@@ -34,6 +34,7 @@ def test_guests_are_off_until_a_token_is_minted(client, auth):
     assert client.get("/api/settings", headers=auth).json()["guest_token"] == link["token"]
     r = client.get(link["url"].split("/guest/")[0] and f"/guest/{link['token']}")
     assert r.status_code == 200 and "Your line" in r.text and 'maxlength="120"' in r.text
+    assert 'class="mark" src="/static/icons/icon-192.png"' in r.text
     assert "api_token" not in r.text and "settings" not in r.text.lower().replace(
         "the host approves", ""
     )

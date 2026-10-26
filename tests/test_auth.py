@@ -53,6 +53,7 @@ def test_settings_page_panels(client, token):
         'name="show_seconds"',
         'name="timer_ring"',
         'id="welcome-again"',
+        'class="mark" src="/static/icons/icon-192.png"',
         'id="boards-empty"',
         'id="guest-off" class="empty"',
         "at the size set there",
@@ -226,6 +227,7 @@ def test_login_page_says_where_the_token_is(client):
     that is not part of the copied text."""
     html = client.get("/settings").text
     assert 'id="where-token"' in html and "/static/js/login.js" in html
+    assert 'class="mark big" src="/static/icons/icon-192.png"' in html
     for cmd in (
         "docker compose exec departureboard cat /data/api_token",
         "cat data/api_token",

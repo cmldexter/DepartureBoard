@@ -3,7 +3,7 @@
 {% block body_class %}page guest{% endblock %}
 {% block body %}
 <main class="narrow">
-  <h1>{{ name }}</h1>
+  <h1><img class="mark" src="/static/icons/icon-192.png" alt="" width="28" height="28">{{ name }}</h1>
   {% if done %}
   <section class="thanks" aria-live="polite">
     <p class="big">Thanks{% if nick %}, {{ nick }}{% endif %}!</p>

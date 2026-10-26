@@ -7,7 +7,9 @@ and a container image `ghcr.io/cmldexter/departureboard:X.Y.Z`.
 
 ## [Unreleased]
 
-_Nothing yet._
+### Changed
+
+- **The logo in the app, and its colours on the buttons** (#159). The mark sits before the title on the settings page, above the sign-in form, in the walkthrough's header and beside the board's name on the guest page. The settings pages take the logo's palette: buttons fill with its frame's blue-to-violet and white text, links, outlines and the selected swatch use the same blue; the board's themes are untouched.
 
 ## [0.5.0] — 2026-10-25
 
