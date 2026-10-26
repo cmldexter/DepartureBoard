@@ -819,3 +819,42 @@ def test_display_resolves_frame_garbage_to_the_theme():
     assert resolve_display({"frame_width": "0"})["frame_width"] == 0
     d = resolve_display({"frame_fit": "Board", "board_scale": "7", "board_margin": "x"})
     assert (d["frame_fit"], d["board_scale"], d["board_margin"]) == ("board", 25, 0)
+
+
+def test_living_background_settings(client, auth):
+    """A gradient the board draws: a preset name, a drift speed, the host's own colours; the TV
+    sees all three and its stamp moves with each."""
+    s = client.get("/api/settings", headers=auth).json()
+    assert (s["background_motion"], s["background_colors"]) == (40, "")
+    before = client.get("/api/board/current")
+    r = client.patch("/api/settings", json={"background_image": "gradient:aurora"}, headers=auth)
+    assert r.status_code == 200 and r.json()["background_image"] == "gradient:aurora"
+    after = client.get("/api/board/current", headers={"If-None-Match": before.headers["ETag"]})
+    assert (
+        after.status_code == 200
+        and after.json()["settings"]["background_image"] == "gradient:aurora"
+    )
+    assert after.json()["settings"]["background_motion"] == 40
+    r = client.patch(
+        "/api/settings",
+        json={"background_motion": 0, "background_colors": "#AABBCC,#112233"},
+        headers=auth,
+    )
+    assert (r.json()["background_motion"], r.json()["background_colors"]) == (0, "#aabbcc,#112233")
+    moved = client.get("/api/board/current", headers={"If-None-Match": after.headers["ETag"]})
+    assert moved.status_code == 200, "a new speed or colour changes the stamp"
+    assert moved.json()["settings"]["background_colors"] == "#aabbcc,#112233"
+    for bad in (
+        {"background_image": "gradient:nope"},
+        {"background_image": "gradient:Aurora"},
+        {"background_motion": 101},
+        {"background_motion": -1},
+        {"background_colors": "#aabbcc"},
+        {"background_colors": "#aabbcc,#112233,#334455,#556677,#778899"},
+        {"background_colors": "red,blue"},
+    ):
+        assert client.patch("/api/settings", json=bad, headers=auth).status_code == 422, bad
+    r = client.patch("/api/settings", json={"background_colors": ""}, headers=auth)
+    assert r.json()["background_colors"] == "", "empty = the preset's own"
+    html = client.get("/").text
+    assert "gradient:aurora" in html, "the first paint knows the gradient"

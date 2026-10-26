@@ -38,7 +38,7 @@
   const STAGGER_RATIO = 0.7;
 
   const settings = { rows: 0, cols: 0, animation: 60, theme: "classic-black", timer_ring: "off", cell_radius: 6, cell_gap: 35, split_line: 1, cell_depth: "", frame_color: "", frame_width: "", frame_radius: "", frame_finish: "theme", frame_glow: "", frame_fit: "screen", frame_corners: "whole", board_scale: 100, board_margin: 0 };
-  const BG_KEYS = ["background_image", "background_blur", "background_dim", "background_fit"];
+  const BG_KEYS = ["background_image", "background_blur", "background_dim", "background_fit", "background_motion", "background_colors"];
   // The shape of a flap: unitless numbers board.css turns into lengths (see .frame).
   const FLAP_KEYS = ["cell_radius", "cell_gap", "split_line", "cell_depth"];
   const FLAP_BOUNDS = { cell_radius: [0, 12], cell_gap: [0, 100], split_line: [0, 3], cell_depth: [0, 100] };
@@ -253,10 +253,44 @@
   });
 
   // Behind the board: "img:<slug>" is an upload, "builtin:<name>" ships with the app, "video:<slug>"
-  // is an uploaded clip the <video> child plays muted in a loop. The backdrop layer takes the url,
-  // blur, dim and fit as CSS variables; <html> gets a class (two for a video).
+  // is an uploaded clip the <video> child plays muted in a loop, "gradient:<preset>" is a living
+  // backdrop drawn here — one .field child per colour, drifting at background_motion. The backdrop
+  // layer takes the url, blur, dim and fit as CSS variables; <html> gets a class (two for a video
+  // or a gradient).
   const backdrop = document.getElementById("backdrop");
   const backdropVideo = document.getElementById("backdrop-video");
+  let presets = {};
+  try {
+    presets = JSON.parse((backdrop && backdrop.dataset.presets) || "{}");
+  } catch (e) {
+    presets = {};
+  }
+  const HEX6 = /^#[0-9a-f]{6}$/;
+  // The colours a gradient draws: the host's own (2–4 valid ones) else the preset's; null = no gradient.
+  function gradientColors(image, own) {
+    const m = /^gradient:([a-z0-9][a-z0-9-]{0,39})$/.exec(String(image || ""));
+    if (!m || !presets[m[1]]) return null;
+    const mine = String(own || "").split(",").map((c) => c.trim().toLowerCase()).filter((c) => HEX6.test(c));
+    return mine.length >= 2 && mine.length <= 4 ? mine : presets[m[1]];
+  }
+  // The fields are rebuilt only when the colours change — a poll must not restart their drift.
+  function applyFields(colors) {
+    const sig = colors ? colors.join(",") : "";
+    if (backdrop.dataset.fields === sig) return;
+    backdrop.dataset.fields = sig;
+    backdrop.querySelectorAll(".field").forEach((f) => f.remove());
+    if (!colors) {
+      backdrop.style.removeProperty("--bg-ground");
+      return;
+    }
+    backdrop.style.setProperty("--bg-ground", colors[colors.length - 1]);
+    colors.forEach((c) => {
+      const f = document.createElement("div");
+      f.className = "field";
+      f.style.setProperty("--c", c);
+      backdrop.insertBefore(f, backdropVideo);
+    });
+  }
   function backdropUrl(image) {
     const v = String(image || "");
     if (/^img:[a-z0-9][a-z0-9-]{0,39}$/.test(v)) return `/images/${v.slice(4)}`;
@@ -264,9 +298,9 @@
     if (/^video:[a-z0-9][a-z0-9-]{0,39}$/.test(v)) return `/videos/${v.slice(6)}`;
     return "";
   }
-  // The clip: src set only when it changes (a poll must not restart it); under reduced motion
-  // it rests on its first frame, a still.
-  function applyVideo(url) {
+  // The clip: src set only when it changes (a poll must not restart it); under reduced motion, or
+  // at background_motion 0, it rests on its first frame, a still.
+  function applyVideo(url, still) {
     if (!backdropVideo) return;
     if (!url) {
       if (backdropVideo.getAttribute("src")) {
@@ -280,7 +314,7 @@
       backdropVideo.setAttribute("src", url);
       backdropVideo.load();
     }
-    if (reducedMotion) {
+    if (reducedMotion || still) {
       backdropVideo.pause();
       backdropVideo.currentTime = 0;
     } else {
@@ -295,15 +329,22 @@
     });
     const url = backdropUrl(settings.background_image);
     const isVideo = String(settings.background_image || "").startsWith("video:");
-    const blur = Math.max(0, Math.min(40, Number(settings.background_blur) || 0));
+    const colors = gradientColors(settings.background_image, settings.background_colors);
+    const blur = colors ? 0 : Math.max(0, Math.min(40, Number(settings.background_blur) || 0));
     const dim = Math.max(0, Math.min(90, Number(settings.background_dim) || 0));
+    const motion = Math.max(0, Math.min(100, Number(settings.background_motion) || 0));
     backdrop.style.setProperty("--bg-image", url && !isVideo ? `url("${url}")` : "none");
     backdrop.style.setProperty("--bg-blur", `${blur}px`);
     backdrop.style.setProperty("--bg-dim", String(dim / 100));
     backdrop.style.setProperty("--bg-fit", settings.background_fit === "contain" ? "contain" : "cover");
-    document.documentElement.classList.toggle("has-backdrop", !!url);
+    // one way across in 15 s at motion 100, 90 s at 0 — which pauses instead
+    backdrop.style.setProperty("--bg-cycle", `${Math.round(15 + (100 - motion) * 0.75)}s`);
+    backdrop.style.setProperty("--bg-play", motion === 0 ? "paused" : "running");
+    document.documentElement.classList.toggle("has-backdrop", !!url || !!colors);
     document.documentElement.classList.toggle("has-video", isVideo && !!url);
-    applyVideo(isVideo ? url : "");
+    document.documentElement.classList.toggle("has-gradient", !!colors);
+    applyFields(colors);
+    applyVideo(isVideo ? url : "", motion === 0);
   }
 
   // The frame (display settings frame_*): inline vars on .frame only for the keys that are set —

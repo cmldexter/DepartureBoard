@@ -6,7 +6,7 @@ from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from app.models import BUILTIN_BACKGROUNDS, THEMES, TIMER_RINGS
+from app.models import BUILTIN_BACKGROUNDS, GRADIENT_PRESETS, THEMES, TIMER_RINGS
 
 Repeat = Literal["none", "daily", "weekly"]
 TimerRing = Literal["off", "own", "all"]
@@ -14,7 +14,8 @@ BackgroundFit = Literal["cover", "contain"]
 FrameFinish = Literal["theme", "matte", "chrome", "neon"]
 FrameFit = Literal["screen", "board"]
 FrameCorners = Literal["whole", "hide"]
-_BG_IMAGE = re.compile(r"^(img|builtin|video):[a-z0-9][a-z0-9-]{0,39}$")
+_BG_IMAGE = re.compile(r"^(img|builtin|video|gradient):[a-z0-9][a-z0-9-]{0,39}$")
+_COLORS = r"^(#[0-9a-fA-F]{6}(,#[0-9a-fA-F]{6}){1,3})?$"  # two to four, or "" = the preset's
 _HEX_COLOR = r"^(#[0-9a-fA-F]{6})?$"  # or "" = as the theme
 _GUEST_TOKEN = re.compile(r"^[A-Za-z0-9_-]{20,64}$")
 State = Literal["live", "scheduled", "expired", "disabled"]
@@ -177,6 +178,8 @@ class SettingsOut(BaseModel):
     background_blur: int
     background_dim: int
     background_fit: BackgroundFit
+    background_motion: int
+    background_colors: str
     cell_radius: int
     cell_gap: int
     split_line: int
@@ -222,6 +225,8 @@ class SettingsPatch(BaseModel):
                 {"theme": "walnut", "idle_text": "WELCOME HOME"},
                 {"background_image": "img:poster", "background_blur": 20, "background_dim": 40},
                 {"background_image": "video:rain", "background_blur": 0},
+                {"background_image": "gradient:aurora", "background_motion": 40},
+                {"background_colors": "#0e7c7b,#5b2a86,#0a1a3f"},
                 {"cell_radius": 0, "cell_gap": 10, "split_line": 0, "cell_depth": 0},
                 {
                     "frame_color": "#050308",
@@ -252,12 +257,22 @@ class SettingsPatch(BaseModel):
         None,
         description=(
             'Behind the board: "" for none, "img:<slug>" for an uploaded picture, '
-            '"builtin:<name>" for a shipped one, "video:<slug>" for an uploaded clip'
+            '"builtin:<name>" for a shipped one, "video:<slug>" for an uploaded clip, '
+            '"gradient:<preset>" for a living backdrop the board draws '
+            f"({', '.join(GRADIENT_PRESETS)})"
         ),
     )
     background_blur: int | None = Field(None, ge=0, le=40, description="Blur, px")
     background_dim: int | None = Field(None, ge=0, le=90, description="Dim, %")
     background_fit: BackgroundFit | None = None
+    background_motion: int | None = Field(
+        None, ge=0, le=100, description="How fast a gradient drifts; 0 = still (a video too)"
+    )
+    background_colors: str | None = Field(
+        None,
+        pattern=_COLORS,
+        description='A gradient\'s own colours, 2–4 "#rrggbb" comma-separated; "" = the preset\'s',
+    )
     cell_radius: int | None = Field(
         None, ge=0, le=12, description="Corner radius of a flap, % of the cell's width"
     )
@@ -370,6 +385,11 @@ class SettingsPatch(BaseModel):
             raise ValueError('guest_token: 20–64 letters, digits, dashes or underscores, or ""')
         return v
 
+    @field_validator("background_colors")
+    @classmethod
+    def _colors(cls, v: str | None) -> str | None:
+        return v if v is None else v.strip().lower()
+
     @field_validator("background_image")
     @classmethod
     def _background(cls, v: str | None) -> str | None:
@@ -378,11 +398,14 @@ class SettingsPatch(BaseModel):
         v = v.strip()
         if not _BG_IMAGE.match(v):
             raise ValueError(
-                'background_image must be "", "img:<slug>", "builtin:<name>" or "video:<slug>"'
+                'background_image must be "", "img:<slug>", "builtin:<name>", "video:<slug>" '
+                'or "gradient:<preset>"'
             )
         if v.startswith("builtin:") and v[8:] not in BUILTIN_BACKGROUNDS:
             known = ", ".join(BUILTIN_BACKGROUNDS) or "none shipped yet"
             raise ValueError(f"no built-in background {v[8:]!r} ({known})")
+        if v.startswith("gradient:") and v[9:] not in GRADIENT_PRESETS:
+            raise ValueError(f"no gradient {v[9:]!r} ({', '.join(GRADIENT_PRESETS)})")
         return v
 
     @field_validator("theme")
@@ -406,6 +429,8 @@ class BoardSettings(BaseModel):
     background_blur: int
     background_dim: int
     background_fit: BackgroundFit
+    background_motion: int
+    background_colors: str
     cell_radius: int
     cell_gap: int
     split_line: int

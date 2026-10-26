@@ -109,12 +109,16 @@ DEFAULT_SETTINGS = {
     "idle_text": "",
     "timer_ring": "off",
     # Behind the board: "" (none), "img:<slug>" (an uploaded picture), "builtin:<name>" (a shipped
-    # one) or "video:<slug>" (an uploaded clip, muted in a loop); blurred by background_blur px,
-    # dimmed by background_dim %, cover or contain.
+    # one), "video:<slug>" (an uploaded clip, muted in a loop) or "gradient:<preset>" (a living
+    # backdrop the board draws, GRADIENT_PRESETS); blurred by background_blur px, dimmed by
+    # background_dim %, cover or contain. A gradient drifts at background_motion (0 = still, which
+    # also stills a video) in background_colors (2–4 "#rrggbb" comma-separated; "" = the preset's).
     "background_image": "",
     "background_blur": "12",
     "background_dim": "30",
     "background_fit": "cover",
+    "background_motion": "40",
+    "background_colors": "",
     # The shape of a flap (FLAP_BOUNDS): 6 % corners, a 0.35 vmin gap, a 1 px split line.
     "cell_radius": "6",
     "cell_gap": "35",
@@ -157,6 +161,17 @@ POST_STATUSES = ("pending", "approved", "rejected")
 # Shipped backgrounds: app/static/backgrounds/<name>.jpg, 1920×1080, drawn by the project (no
 # third-party pictures), with a 320×180 thumbnail under thumbs/. Chosen as "builtin:<name>".
 BUILTIN_BACKGROUNDS: tuple[str, ...] = ("terminal", "wood", "gala", "paper")
+
+# Living backgrounds: colour fields the board draws and drifts (background_image
+# "gradient:<preset>"). The last colour is the ground the fields float over.
+GRADIENT_PRESETS: dict[str, tuple[str, ...]] = {
+    "aurora": ("#0e7c7b", "#5b2a86", "#0a1a3f"),  # teal, violet, deep blue
+    "ember": ("#d97706", "#9f1239", "#3b0a3f"),  # amber, rose, plum
+    "ocean": ("#0891b2", "#0b1f4b", "#05070f"),  # cyan, navy, ink
+    "dusk": ("#e07a5f", "#8e6c9e", "#3d405b"),  # coral, mauve, slate
+    "mono": ("#4b5563", "#1f2937", "#0b0f19"),  # one hue, three depths
+}
+MOTION_BOUNDS = (0, 100)
 
 # The countdown ring in the board's corner: never, for messages with their own show_seconds, or
 # for every rotating message.

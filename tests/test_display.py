@@ -5,7 +5,7 @@ import re
 
 import pytest
 
-from app.models import Setting
+from app.models import GRADIENT_PRESETS, Setting
 from app.services.display import display_settings, resolve_display
 
 GRID_KEYS = ("rows", "cols", "animation", "demo")
@@ -88,6 +88,66 @@ def test_animation_bounds(raw, expected):
 def test_flap_shape_bounds(key, raw, expected):
     """Corners in % of a cell, gap in hundredths of a vmin, split line in px — clamped, defaulted."""
     assert resolve_display({key: raw})[key] == expected
+
+
+@pytest.mark.parametrize(
+    ("key", "raw", "expected"),
+    [
+        ("background_motion", "40", 40),
+        ("background_motion", "101", 100),
+        ("background_motion", "-1", 0),
+        ("background_motion", "fast", 40),
+        ("background_colors", "", ""),
+        ("background_colors", "#AABBCC, #112233", "#aabbcc,#112233"),
+        ("background_colors", "#aabbcc,#112233,#334455,#556677", "#aabbcc,#112233,#334455,#556677"),
+        ("background_colors", "#aabbcc", ""),
+        ("background_colors", "#aabbcc,#112233,#334455,#556677,#778899", ""),
+        ("background_colors", "red,blue", ""),
+        ("background_image", "gradient:aurora", "gradient:aurora"),
+        ("background_image", "gradient:nope", ""),
+    ],
+)
+def test_living_background_bounds(key, raw, expected):
+    """Motion clamped and defaulted; colours are 2–4 "#rrggbb" or the preset's; a gradient names a preset."""
+    assert resolve_display({key: raw})[key] == expected
+
+
+def test_gradient_presets_are_five_dark_palettes():
+    assert list(GRADIENT_PRESETS) == ["aurora", "ember", "ocean", "dusk", "mono"]
+    for name, colors in GRADIENT_PRESETS.items():
+        assert 2 <= len(colors) <= 4, name
+        assert all(re.fullmatch(r"#[0-9a-f]{6}", c) for c in colors), name
+
+
+def test_the_living_backdrop_moves_by_transform_only():
+    """The fields are pre-blurred gradients the compositor moves; no filter on a moving layer; a
+    path of its own length per field; reduced motion and motion 0 pause them."""
+    from pathlib import Path
+
+    static = Path(__file__).resolve().parents[1] / "app" / "static"
+    css = (static / "css" / "board.css").read_text()
+    block = css.split("#backdrop .field {", 1)[1].split("}", 1)[0]
+    assert "will-change: transform" in block and "filter" not in block
+    assert "animation-play-state: var(--bg-play, running)" in block
+    assert "html.has-gradient #backdrop {" in css and "filter: none" in css
+    for k in ("drift-a", "drift-b", "drift-c", "drift-d"):
+        assert f"@keyframes {k} " in css
+    assert (
+        "#backdrop .field:nth-child(4) { animation-name: drift-d; animation-duration: calc(var(--bg-cycle, 60s) * 2.1); }"
+        in css
+    )
+    assert (
+        "@media (prefers-reduced-motion: reduce) { #backdrop .field { animation-play-state: paused; } }"
+        in css
+    )
+    js = (static / "js" / "board.js").read_text()
+    assert '"background_motion", "background_colors"' in js
+    assert 'applyVideo(isVideo ? url : "", motion === 0)' in js, "motion 0 stills a video too"
+
+
+def test_the_board_page_carries_the_presets(client):
+    html = client.get("/").text
+    assert "data-presets='" in html and '"aurora": ["#0e7c7b"' in html
 
 
 def test_flap_shape_defaults_are_the_classic_look():
@@ -201,6 +261,8 @@ CONFIG_KEYS = {
     "background_blur",
     "background_dim",
     "background_fit",
+    "background_motion",
+    "background_colors",
     "cell_radius",
     "cell_gap",
     "split_line",

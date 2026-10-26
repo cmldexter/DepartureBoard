@@ -21,7 +21,9 @@ from app.models import (
     FRAME_CORNERS,
     FRAME_FINISHES,
     FRAME_FITS,
+    GRADIENT_PRESETS,
     GUEST_BOUNDS,
+    MOTION_BOUNDS,
     PRESETS,
     ROWS_BOUNDS,
     TIMER_RINGS,
@@ -55,12 +57,30 @@ def _as_bool(value: Any) -> bool:
 
 
 _HEX = re.compile(r"^#[0-9a-f]{6}$")
+_COLORS_COUNT = (2, 4)
 
 
 def _as_color(value: Any) -> str:
     """A "#rrggbb" colour lowercased, else "" (as the theme)."""
     v = str(value or "").strip().lower()
     return v if _HEX.match(v) else ""
+
+
+def _as_colors(value: Any) -> str:
+    """Two to four "#rrggbb" colours, comma-separated and lowercased, else "" (the preset's)."""
+    parts = [p.strip().lower() for p in str(value or "").split(",") if p.strip()]
+    low, high = _COLORS_COUNT
+    if not (low <= len(parts) <= high) or not all(_HEX.match(p) for p in parts):
+        return ""
+    return ",".join(parts)
+
+
+def _as_background(value: Any) -> str:
+    """The background_image value; a gradient must name a preset (an unknown one is none)."""
+    v = str(value or "").strip()
+    if v.startswith("gradient:") and v[9:] not in GRADIENT_PRESETS:
+        return ""
+    return v
 
 
 def _opt_int(value: Any, bounds: tuple[int, int]) -> int | str:
@@ -107,12 +127,14 @@ def resolve_display(raw: Mapping[str, Any]) -> dict[str, Any]:
             if str(merged["timer_ring"]).strip().lower() in TIMER_RINGS
             else DEFAULT_SETTINGS["timer_ring"]
         ),
-        "background_image": str(merged["background_image"] or "").strip(),
+        "background_image": _as_background(merged["background_image"]),
         "background_blur": _clamp(_as_int(merged["background_blur"], 12), (0, 40)),
         "background_dim": _clamp(_as_int(merged["background_dim"], 30), (0, 90)),
         "background_fit": (
             "contain" if str(merged["background_fit"]).strip().lower() == "contain" else "cover"
         ),
+        "background_motion": _clamp(_as_int(merged["background_motion"], 40), MOTION_BOUNDS),
+        "background_colors": _as_colors(merged["background_colors"]),
         **{
             key: _clamp(_as_int(merged[key], int(DEFAULT_SETTINGS[key])), bounds)
             for key, bounds in FLAP_BOUNDS.items()

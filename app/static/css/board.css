@@ -8,8 +8,9 @@ html.board-page, .board-page { overflow: hidden; }
 body.board-page { display: grid; place-items: center; height: 100vh; }
 
 /* ---- behind the board (display settings background_*): a fixed layer under the frame — a
-   picture (background-image) or a video (the <video> child, muted in a loop) — blurred and
-   dimmed; a matte frame turns translucent over it, the board keeps its own colour. */
+   picture (background-image), a video (the <video> child, muted in a loop) or a living gradient
+   (the .field children, below) — blurred and dimmed; a matte frame turns translucent over it,
+   the board keeps its own colour. */
 #backdrop {
   display: none;
   position: fixed;
@@ -42,6 +43,37 @@ html.has-video #backdrop video { display: block; }
   inset: 0;
   background: rgba(0, 0, 0, var(--bg-dim, 0));
 }
+/* ---- a living backdrop (background_image gradient:<preset>): two to four colour fields the board
+   draws — oversized, pre-blurred radial gradients the compositor moves with transform only. No
+   filter on a moving layer: a TV stick cannot afford one. The cycle comes from background_motion
+   (--bg-cycle; 0 pauses them, as does reduced motion); each field runs a path of its own length so
+   the picture does not visibly repeat. The last colour is the ground they float over. */
+html.has-gradient #backdrop {
+  inset: 0;
+  filter: none;
+  background: var(--bg-ground, var(--bg));
+}
+#backdrop .field {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 110vmax;
+  height: 110vmax;
+  margin: -55vmax 0 0 -55vmax;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, var(--c) 0%, color-mix(in srgb, var(--c) 55%, transparent) 38%, transparent 72%);
+  will-change: transform;
+  animation: drift-a var(--bg-cycle, 60s) ease-in-out infinite alternate;
+  animation-play-state: var(--bg-play, running);
+}
+#backdrop .field:nth-child(2) { animation-name: drift-b; animation-duration: calc(var(--bg-cycle, 60s) * 1.3); }
+#backdrop .field:nth-child(3) { animation-name: drift-c; animation-duration: calc(var(--bg-cycle, 60s) * 1.7); }
+#backdrop .field:nth-child(4) { animation-name: drift-d; animation-duration: calc(var(--bg-cycle, 60s) * 2.1); }
+@keyframes drift-a { from { transform: translate(-28vmax, -18vmax); } to { transform: translate(22vmax, 14vmax); } }
+@keyframes drift-b { from { transform: translate(26vmax, -14vmax); } to { transform: translate(-20vmax, 20vmax); } }
+@keyframes drift-c { from { transform: translate(-6vmax, 26vmax); } to { transform: translate(10vmax, -24vmax); } }
+@keyframes drift-d { from { transform: translate(24vmax, 22vmax); } to { transform: translate(-26vmax, -10vmax); } }
+@media (prefers-reduced-motion: reduce) { #backdrop .field { animation-play-state: paused; } }
 /* A matte bezel lets the picture through (--frame-alpha, read by the default surface below);
    chrome and neon surfaces are opaque by construction, so they stay solid objects over it. */
 html.has-backdrop .frame {
