@@ -7,7 +7,7 @@ metadata:
     {{- include "departureboard.labels" . | nindent 4 }}
   annotations:
     helm.sh/hook: test
-    helm.sh/hook-delete-policy: hook-succeeded
+    # No delete policy: `helm test --logs` reads the pod afterwards; `helm uninstall` removes it.
 spec:
   restartPolicy: Never
   securityContext:

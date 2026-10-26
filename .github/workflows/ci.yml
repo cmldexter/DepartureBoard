@@ -69,7 +69,8 @@ jobs:
           echo "chart=$chart code=$code"
           test "$chart" = "$code"
       - name: deploy/kubernetes.yaml is the chart rendered with the defaults
-        run: helm template departureboard "$CHART" --namespace departureboard | diff - deploy/kubernetes.yaml
+        # -B: Helm 3 and Helm 4 differ only in the blank lines between documents.
+        run: helm template departureboard "$CHART" --namespace departureboard --skip-tests | diff -B - deploy/kubernetes.yaml
 
   docker:
     runs-on: ubuntu-latest

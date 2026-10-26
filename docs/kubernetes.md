@@ -136,7 +136,7 @@ kubectl create namespace departureboard
 kubectl apply -f https://raw.githubusercontent.com/cmldexter/DepartureBoard/v0.5.0/deploy/kubernetes.yaml
 ```
 
-Edit it for an Ingress or a name, or render your own: `helm template board deploy/helm/departureboard -f board.yaml`.
+Edit it for an Ingress or a name, or render your own: `helm template board deploy/helm/departureboard -f board.yaml --skip-tests`.
 
 ## What is the same as Compose, and what is not
 

@@ -67,9 +67,9 @@ walk-through (hostname, TLS, the token, upgrades, backups) is
 ```bash
 helm lint deploy/helm/departureboard
 helm lint deploy/helm/departureboard -f deploy/helm/departureboard/ci/full-values.yaml
-helm template departureboard deploy/helm/departureboard --namespace departureboard > deploy/kubernetes.yaml
+helm template departureboard deploy/helm/departureboard --namespace departureboard --skip-tests > deploy/kubernetes.yaml
 ```
 
-CI lints both, checks the rendered file is current, and installs the chart on a kind cluster with the
+CI lints both, checks the rendered file is current (`diff -B`: Helm 3 and 4 differ in blank lines), and installs the chart on a kind cluster with the
 PR's image (`.github/workflows/ci.yml`). `release.yml` pushes the chart to `oci://ghcr.io/cmldexter/charts`
 with the release tag.
