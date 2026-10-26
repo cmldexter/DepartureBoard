@@ -18,6 +18,7 @@ from app.models import (
     DEFAULT_SETTINGS,
     FLAP_BOUNDS,
     FRAME_BOUNDS,
+    FRAME_CORNERS,
     FRAME_FINISHES,
     FRAME_FITS,
     GUEST_BOUNDS,
@@ -130,6 +131,11 @@ def resolve_display(raw: Mapping[str, Any]) -> dict[str, Any]:
             str(merged["frame_fit"]).strip().lower()
             if str(merged["frame_fit"]).strip().lower() in FRAME_FITS
             else DEFAULT_SETTINGS["frame_fit"]
+        ),
+        "frame_corners": (
+            str(merged["frame_corners"]).strip().lower()
+            if str(merged["frame_corners"]).strip().lower() in FRAME_CORNERS
+            else DEFAULT_SETTINGS["frame_corners"]
         ),
         **{
             key: _clamp(_as_int(merged[key], int(DEFAULT_SETTINGS[key])), bounds)

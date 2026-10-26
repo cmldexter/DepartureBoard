@@ -90,6 +90,10 @@ FRAME_FINISHES = ("theme", "matte", "chrome", "neon")
 # or the backdrop shows around it; the board's size as % of the screen; the board's own colour
 # between the bezel and the flaps, in vmin (it also absorbs a round corner).
 FRAME_FITS = ("screen", "board")
+# The corner flaps: "whole" = the board's inner corner rounds only as far as the margin allows
+# (the bezel thickens at the corners); "hide" = the bezel's inner curve follows its outer one and
+# hides whatever of the corner flaps it covers — and the corner cap is lifted.
+FRAME_CORNERS = ("whole", "hide")
 BOARD_BOUNDS = {"board_scale": (25, 100), "board_margin": (0, 10)}
 
 DEFAULT_SETTINGS = {
@@ -124,6 +128,7 @@ DEFAULT_SETTINGS = {
     "frame_finish": "theme",
     "frame_glow": "",
     "frame_fit": "screen",
+    "frame_corners": "whole",
     "board_scale": "100",
     "board_margin": "0",
     # The first-run walkthrough: "" shows it when the settings page opens, "1" once Done or

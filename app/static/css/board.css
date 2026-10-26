@@ -62,6 +62,14 @@ html.has-backdrop .frame {
   --margin: calc(var(--board-margin, 0) * 1vmin);
   --frame-r: min(var(--frame-radius, 0), calc((var(--frame-n, 3) + var(--board-margin, 0)) * 3.4));
   border-radius: calc(var(--frame-r) * 1vmin);
+  /* The board's inner corner (frame_corners "whole"): it follows the frame's outer curve as far
+     as the margin allows — its cut (0.3 × the radius) never exceeds the margin + gap, so the corner
+     flaps sit on the board's colour and the recess shadow stays in the margin band; the bezel
+     thickens at the corners instead, as a screen's does. */
+  --board-r: max(
+    0.6vmin,
+    min(calc((var(--frame-r) - var(--frame-n, 3)) * 1vmin), calc((var(--margin, 0px) + var(--gap)) * 3.4))
+  );
   /* The finish: a surface, a shadow and a lip around the board, as tokens. The default is matte
      (the colour, see-through over a backdrop); a theme may carry its own tokens on :root;
      frame_finish (data-finish on this element) overrides both. */
@@ -86,6 +94,15 @@ html.has-backdrop .frame {
   overflow: hidden;
   box-sizing: border-box;
 }
+/* frame_corners "hide": the bezel's inner curve follows its outer one, the cap is lifted, and the
+   board clips whatever of the corner flaps the bezel rounds over — a screen's bezel hiding the
+   panel's corners. */
+.frame[data-corners="hide"] {
+  --frame-r: var(--frame-radius, 0);
+  --board-r: max(0.6vmin, calc((var(--frame-r) - var(--frame-n, 3)) * 1vmin));
+}
+.frame[data-corners="hide"] .board,
+.frame[data-corners="hide"] #overlays { overflow: hidden; }
 .frame[data-fit="board"] {
   width: max-content;
   height: max-content;
@@ -142,6 +159,7 @@ html.has-backdrop .frame {
 #overlays {
   position: absolute;
   inset: 0;
+  border-radius: var(--board-r); /* clipped with the flaps under a hiding bezel */
   overflow: hidden; /* a block cut at the board's bottom edge stays cut */
   pointer-events: none;
   z-index: 3;
@@ -166,14 +184,7 @@ html.has-backdrop .frame {
   gap: var(--gap);
   padding: calc(var(--gap) + var(--margin, 0px));
   background: var(--board-bg);
-  /* The inner edge follows the frame's outer curve as far as the margin allows: its corner cut
-     (0.3 × the radius) never exceeds the margin + gap, so the corner flaps sit on the board's
-     colour and the recess shadow stays in the margin band — the bezel thickens at the corners
-     instead, as a screen's bezel does. */
-  border-radius: max(
-    0.6vmin,
-    min(calc((var(--frame-r) - var(--frame-n, 3)) * 1vmin), calc((var(--margin, 0px) + var(--gap)) * 3.4))
-  );
+  border-radius: var(--board-r); /* set on .frame, by frame_corners */
   box-shadow: var(--board-lip, none);
 }
 /* The recess: the bezel's shadow over the panel's edge, flaps included, so the board reads as

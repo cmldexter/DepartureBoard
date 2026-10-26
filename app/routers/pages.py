@@ -110,6 +110,7 @@ def board(request: Request):
         "frame_finish": display["frame_finish"],
         "frame_glow": display["frame_glow"],
         "frame_fit": display["frame_fit"],
+        "frame_corners": display["frame_corners"],
         "board_scale": display["board_scale"],
         "board_margin": display["board_margin"],
         "demo": demo,

@@ -129,7 +129,7 @@
       <h3 id="frame-heading">The frame</h3>
       <p class="muted">The bezel around the board: where it sits, its colour, how wide, how round, and a finish. Every
         theme has its own; what you set here overrides it, and <em>As the theme</em> gives it back. A rounder corner
-        needs a wider bezel or margin — the corners never cut into a flap. The card above follows every move;
+        needs a wider bezel or margin while the flaps stay whole; <em>Bezel hides the corners</em> lets the bezel cover what it rounds over, at any radius. The card above follows every move;
         <em>Save</em> sends it to the TV.</p>
       <fieldset class="effects">
         <legend>Where it sits</legend>
@@ -145,6 +145,10 @@
         <label>Colour <input type="color" name="frame_color" value="#1c1c1c"> <label class="inline"><input type="checkbox" name="frame_color_theme" checked> as the theme</label></label>
         <label>Width <input type="range" name="frame_width" min="0" max="10" step="1" value="3"> <output id="frame-width-value">as the theme</output></label>
         <label>Corners <input type="range" name="frame_radius" min="0" max="30" step="1" value="0"> <output id="frame-radius-value">as the theme</output></label>
+        <div class="chips" role="radiogroup" aria-label="Corner flaps">
+          <label class="chip"><input type="radio" name="frame_corners" value="whole" checked> Flaps stay whole</label>
+          <label class="chip"><input type="radio" name="frame_corners" value="hide"> Bezel hides the corners</label>
+        </div>
       </fieldset>
       <fieldset class="effects">
         <legend>Finish</legend>

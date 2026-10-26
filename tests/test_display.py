@@ -211,6 +211,7 @@ CONFIG_KEYS = {
     "frame_finish",
     "frame_glow",
     "frame_fit",
+    "frame_corners",
     "board_scale",
     "board_margin",
     "demo",
@@ -333,6 +334,7 @@ def test_flap_shape_is_variables_not_constants():
     assert "height: var(--split)" in css
     assert "--gap: calc(var(--cell-gap, 35) * 0.01vmin)" in css
     assert "--depth: calc(var(--cell-depth, var(--flap-depth, 0)) / 100)" in css
+    assert '.frame[data-corners="hide"] .board' in css and "--board-r" in css
     assert "--flap-depth: 45" in (static / "themes" / "gsx-terminal.css").read_text()
     js = (static / "js" / "board.js").read_text()
     assert "applyFlapShape" in js and "repaintPictures()" in js

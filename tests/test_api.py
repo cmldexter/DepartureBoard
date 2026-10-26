@@ -723,6 +723,7 @@ FRAME_DEFAULTS = {
     "frame_finish": "theme",
     "frame_glow": "",
     "frame_fit": "screen",
+    "frame_corners": "whole",
     "board_scale": 100,
     "board_margin": 0,
 }
@@ -740,6 +741,7 @@ def test_frame_settings(client, auth):
         "frame_finish": "chrome",
         "frame_glow": "#01FDFE",
         "frame_fit": "board",
+        "frame_corners": "hide",
         "board_scale": 80,
         "board_margin": 2,
     }
@@ -752,6 +754,7 @@ def test_frame_settings(client, auth):
     assert after.json()["settings"]["frame_finish"] == "chrome"
     html = client.get("/").text
     assert 'data-finish="chrome"' in html and 'data-fit="board"' in html
+    assert 'data-corners="hide"' in html
     assert "--board-scale: 80;" in html and "--board-margin: 2;" in html
     assert "--frame-color: #050308;" in html and "--frame-n: 4;" in html
     assert "--frame-radius: 8;" in html and "--frame-glow: #01fdfe;" in html
@@ -782,6 +785,7 @@ def test_frame_settings(client, auth):
         {"frame_color": "#fff"},
         {"frame_glow": "01fdfe"},
         {"frame_fit": "window"},
+        {"frame_corners": "clip"},
         {"board_scale": 24},
         {"board_scale": 101},
         {"board_margin": 11},

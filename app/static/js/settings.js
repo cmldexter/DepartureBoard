@@ -935,9 +935,9 @@
   // writes the five in one PATCH; two presets set the draft.
   const frameForm = $("#frame-form");
   const frameStatus = $("#frame-status");
-  const FRAME = ["frame_color", "frame_width", "frame_radius", "frame_finish", "frame_glow", "frame_fit", "board_scale", "board_margin"];
-  const FRAME_THEME = { frame_color: "", frame_width: "", frame_radius: "", frame_finish: "theme", frame_glow: "", frame_fit: "screen", board_scale: 100, board_margin: 0 };
-  const FRAME_BLACK_CHROME = { frame_color: "#050308", frame_width: 2, frame_radius: 6, frame_finish: "chrome", frame_glow: "", frame_fit: "board", board_scale: 85, board_margin: 2 };
+  const FRAME = ["frame_color", "frame_width", "frame_radius", "frame_finish", "frame_glow", "frame_fit", "frame_corners", "board_scale", "board_margin"];
+  const FRAME_THEME = { frame_color: "", frame_width: "", frame_radius: "", frame_finish: "theme", frame_glow: "", frame_fit: "screen", frame_corners: "whole", board_scale: 100, board_margin: 0 };
+  const FRAME_BLACK_CHROME = { frame_color: "#050308", frame_width: 2, frame_radius: 6, frame_finish: "chrome", frame_glow: "", frame_fit: "board", frame_corners: "whole", board_scale: 85, board_margin: 2 };
   const frameDraft = { ...FRAME_THEME };
   let frameSaved = { ...frameDraft };
   const frameDirty = () => FRAME.some((k) => frameDraft[k] !== frameSaved[k]);
@@ -953,10 +953,11 @@
     if (d.frame_radius !== "") frameForm.frame_radius.value = d.frame_radius;
     $("#frame-width-value").textContent = d.frame_width === "" ? "as the theme" : `${d.frame_width} vmin`;
     const w = (d.frame_width === "" ? 3 : Number(d.frame_width)) + Number(d.board_margin);
-    const capped = d.frame_radius !== "" && Number(d.frame_radius) > w * 3.4;
+    const capped = d.frame_corners !== "hide" && d.frame_radius !== "" && Number(d.frame_radius) > w * 3.4;
     $("#frame-radius-value").textContent = d.frame_radius === "" ? "as the theme" : `${d.frame_radius} vmin${capped ? " · capped by the width + margin" : ""}`;
     frameForm.frame_finish.value = d.frame_finish;
     frameForm.frame_fit.value = d.frame_fit;
+    frameForm.frame_corners.value = d.frame_corners;
     frameForm.board_scale.value = d.board_scale;
     frameForm.board_margin.value = d.board_margin;
     $("#board-scale-value").textContent = `${d.board_scale} %`;
@@ -993,7 +994,7 @@
       showFrameDraft();
     }),
   );
-  $$('input[name="frame_finish"], input[name="frame_fit"]', frameForm).forEach((r) =>
+  $$('input[name="frame_finish"], input[name="frame_fit"], input[name="frame_corners"]', frameForm).forEach((r) =>
     r.addEventListener("change", () => {
       frameDraft[r.name] = r.value;
       showFrameDraft();

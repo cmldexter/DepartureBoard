@@ -13,6 +13,7 @@ TimerRing = Literal["off", "own", "all"]
 BackgroundFit = Literal["cover", "contain"]
 FrameFinish = Literal["theme", "matte", "chrome", "neon"]
 FrameFit = Literal["screen", "board"]
+FrameCorners = Literal["whole", "hide"]
 _BG_IMAGE = re.compile(r"^(img|builtin|video):[a-z0-9][a-z0-9-]{0,39}$")
 _HEX_COLOR = r"^(#[0-9a-fA-F]{6})?$"  # or "" = as the theme
 _GUEST_TOKEN = re.compile(r"^[A-Za-z0-9_-]{20,64}$")
@@ -192,6 +193,9 @@ class SettingsOut(BaseModel):
     frame_finish: FrameFinish = Field(description="theme (its own), matte, chrome or neon")
     frame_glow: str = Field(description='The neon edge\'s colour, "#rrggbb"; "" = as the theme')
     frame_fit: FrameFit = Field(description="screen fills the screen; board hugs the flaps")
+    frame_corners: FrameCorners = Field(
+        description="whole = the corner flaps stay whole; hide = the bezel hides what it covers"
+    )
     board_scale: int = Field(description="The board's size, % of the screen (25–100)")
     board_margin: int = Field(description="The board's colour between bezel and flaps, vmin")
     guest_token: str = Field(description='The guest link\'s token; "" when guests are off')
@@ -294,6 +298,15 @@ class SettingsPatch(BaseModel):
         description=(
             "screen = the frame fills the screen (the classic slab); board = it hugs the flaps and "
             "the page or the backdrop shows around it"
+        ),
+    )
+    frame_corners: FrameCorners | None = Field(
+        None,
+        description=(
+            "whole = the board's inner corner rounds only as far as the margin allows, so every "
+            "flap stays whole (the bezel thickens at the corners); hide = the bezel's inner curve "
+            "follows its outer one and hides whatever of the corner flaps it covers — and "
+            "frame_radius is no longer capped"
         ),
     )
     board_scale: int | None = Field(
@@ -403,6 +416,7 @@ class BoardSettings(BaseModel):
     frame_finish: FrameFinish
     frame_glow: str
     frame_fit: FrameFit
+    frame_corners: FrameCorners
     board_scale: int
     board_margin: int
 

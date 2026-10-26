@@ -104,6 +104,7 @@ setting at a time, and *As the theme* gives any of them back:
 | **Colour** | `frame_color` `"#rrggbb"` or `""` | The bezel's colour |
 | **Width** | `frame_width` 0–10 or `""` | In vmin (hundredths of the screen's shorter side); the themes use 3, Walnut 4 |
 | **Corners** | `frame_radius` 0–30 or `""` | The outer corner radius in vmin; the page or the backdrop shows in the rounded corners |
+| **Corner flaps** | `frame_corners` `whole` · `hide` | *Flaps stay whole*: the board's inner corner rounds only as far as the margin allows and the bezel thickens at the corners; *Bezel hides the corners*: the inner curve follows the outer one and the bezel covers what it rounds over, at any radius |
 | **Finish** | `frame_finish` `theme` · `matte` · `chrome` · `neon` | *Matte* is the flat colour; *chrome* a metallic bezel the board tucks under; *neon* a glowing edge |
 | **Glow** | `frame_glow` `"#rrggbb"` or `""` | The neon edge's colour (shown for neon) |
 
@@ -112,7 +113,9 @@ radius is capped at about 3.4 × (width + margin), so a thin 2 vmin chrome bezel
 margin still takes a 13 vmin corner; for a pill-shaped board raise the margin first — it is the
 board's own colour, not chrome, and the board's own inner corner only rounds as far as the margin
 allows (the bezel thickens at the corners, as a screen's does). The slider's readout says *capped
-by the width + margin* when it is.
+by the width + margin* when it is. **Bezel hides the corners** is the other look: the cap is
+lifted, the inner curve stays concentric with the outer one, and the corner flaps — and a picture
+across them — are clipped under the bezel, as a screen's bezel hides the panel's corners.
 
 **Chrome** is drawn as a bezel with a rounded profile lit from above: a bright rim on the outer
 edge, light on top of the curve, shadow under it, and a shadow onto the page. The board **hides
