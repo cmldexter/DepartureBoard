@@ -5,6 +5,8 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
+from app.models import GRADIENT_PRESETS
+
 PNG = bytes.fromhex(
     "89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000d4944415478"
     "9c6360000000020001e221bc330000000049454e44ae426082"
@@ -858,3 +860,16 @@ def test_living_background_settings(client, auth):
     assert r.json()["background_colors"] == "", "empty = the preset's own"
     html = client.get("/").text
     assert "gradient:aurora" in html, "the first paint knows the gradient"
+
+
+def test_the_picker_has_a_living_row(client, auth):
+    """Five gradient tiles drawn from the presets' colours, a Motion slider and a colour row that
+    show for a gradient, Blur and Fit rows that hide for one."""
+    html = client.get("/settings", headers=auth).text
+    for name, colors in GRADIENT_PRESETS.items():
+        assert f'data-bg="gradient:{name}" data-colors="{",".join(colors)}"' in html, name
+        assert f"--c1: {colors[0]};" in html, name
+    assert html.count('class="swatch living"') == 5
+    assert 'name="background_motion" min="0" max="100"' in html
+    assert 'id="motion-row" hidden' in html and 'id="colors-row" hidden' in html
+    assert 'id="blur-row"' in html and 'id="fit-row"' in html and 'id="bg-color-reset"' in html

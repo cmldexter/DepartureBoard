@@ -168,6 +168,7 @@ def settings_page(request: Request):
             "themes": list(THEMES),
             "theme_names": THEME_NAMES,
             "backgrounds": list(BUILTIN_BACKGROUNDS),
+            "gradients": GRADIENT_PRESETS,
             "addresses": addresses,
             "named": bool(settings.host),
             "welcome": welcome,
