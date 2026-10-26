@@ -4,6 +4,8 @@
 > page and a settings page; a small JSON API does everything the settings page does, so your own
 > script, automation or agent can put messages on the board and schedule them.
 
+Runs with `docker compose up` or on Kubernetes from the Helm chart `oci://ghcr.io/cmldexter/charts/departureboard` (docs/kubernetes.md); the API is the same in both.
+
 Base URL: the board's own host, e.g. `http://192.168.1.20:8080`. Auth: `Authorization: Bearer <token>`
 on every call except `GET /api/board/current` and `GET /images/{slug}`. The token is printed in the
 server log on first boot and shown on `/settings`.
