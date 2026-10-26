@@ -84,6 +84,11 @@ THEME_NAMES = {"gsx-terminal": "GSX Terminal"}
 
 FRAME_BOUNDS = {"frame_width": (0, 10), "frame_radius": (0, 30)}
 FRAME_FINISHES = ("theme", "matte", "chrome", "neon")
+# Where the frame sits: filling the screen (the classic slab) or hugging the flaps so the page
+# or the backdrop shows around it; the board's size as % of the screen; the board's own colour
+# between the bezel and the flaps, in vmin (it also absorbs a round corner).
+FRAME_FITS = ("screen", "board")
+BOARD_BOUNDS = {"board_scale": (25, 100), "board_margin": (0, 10)}
 
 DEFAULT_SETTINGS = {
     "grid_preset": "compact",
@@ -115,6 +120,9 @@ DEFAULT_SETTINGS = {
     "frame_radius": "",
     "frame_finish": "theme",
     "frame_glow": "",
+    "frame_fit": "screen",
+    "board_scale": "100",
+    "board_margin": "0",
     # The first-run walkthrough: "" shows it when the settings page opens, "1" once Done or
     # skipped. DELETE /api/settings/setup_done brings it back. Never sent to the TV.
     "setup_done": "",

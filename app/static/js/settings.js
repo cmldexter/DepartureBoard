@@ -926,9 +926,9 @@
   // writes the five in one PATCH; two presets set the draft.
   const frameForm = $("#frame-form");
   const frameStatus = $("#frame-status");
-  const FRAME = ["frame_color", "frame_width", "frame_radius", "frame_finish", "frame_glow"];
-  const FRAME_THEME = { frame_color: "", frame_width: "", frame_radius: "", frame_finish: "theme", frame_glow: "" };
-  const FRAME_BLACK_CHROME = { frame_color: "#050308", frame_width: 4, frame_radius: 8, frame_finish: "chrome", frame_glow: "" };
+  const FRAME = ["frame_color", "frame_width", "frame_radius", "frame_finish", "frame_glow", "frame_fit", "board_scale", "board_margin"];
+  const FRAME_THEME = { frame_color: "", frame_width: "", frame_radius: "", frame_finish: "theme", frame_glow: "", frame_fit: "screen", board_scale: 100, board_margin: 0 };
+  const FRAME_BLACK_CHROME = { frame_color: "#050308", frame_width: 2, frame_radius: 6, frame_finish: "chrome", frame_glow: "", frame_fit: "board", board_scale: 85, board_margin: 2 };
   const frameDraft = { ...FRAME_THEME };
   let frameSaved = { ...frameDraft };
   const frameDirty = () => FRAME.some((k) => frameDraft[k] !== frameSaved[k]);
@@ -943,10 +943,15 @@
     if (d.frame_width !== "") frameForm.frame_width.value = d.frame_width;
     if (d.frame_radius !== "") frameForm.frame_radius.value = d.frame_radius;
     $("#frame-width-value").textContent = d.frame_width === "" ? "as the theme" : `${d.frame_width} vmin`;
-    const w = d.frame_width === "" ? 3 : Number(d.frame_width);
+    const w = (d.frame_width === "" ? 3 : Number(d.frame_width)) + Number(d.board_margin);
     const capped = d.frame_radius !== "" && Number(d.frame_radius) > w * 3.4;
-    $("#frame-radius-value").textContent = d.frame_radius === "" ? "as the theme" : `${d.frame_radius} vmin${capped ? " · capped by the width" : ""}`;
+    $("#frame-radius-value").textContent = d.frame_radius === "" ? "as the theme" : `${d.frame_radius} vmin${capped ? " · capped by the width + margin" : ""}`;
     frameForm.frame_finish.value = d.frame_finish;
+    frameForm.frame_fit.value = d.frame_fit;
+    frameForm.board_scale.value = d.board_scale;
+    frameForm.board_margin.value = d.board_margin;
+    $("#board-scale-value").textContent = `${d.board_scale} %`;
+    $("#board-margin-value").textContent = `${d.board_margin} vmin`;
     $("#frame-glow-row").hidden = d.frame_finish !== "neon";
     const msg = { type: "board:settings", settings: { ...d } };
     post(liveFrame, msg);
@@ -973,15 +978,15 @@
     frameDraft.frame_glow = frameForm.frame_glow_theme.checked ? "" : frameForm.frame_glow.value;
     showFrameDraft();
   });
-  ["frame_width", "frame_radius"].forEach((k) =>
+  ["frame_width", "frame_radius", "board_scale", "board_margin"].forEach((k) =>
     frameForm[k].addEventListener("input", () => {
       frameDraft[k] = Number(frameForm[k].value);
       showFrameDraft();
     }),
   );
-  $$('input[name="frame_finish"]', frameForm).forEach((r) =>
+  $$('input[name="frame_finish"], input[name="frame_fit"]', frameForm).forEach((r) =>
     r.addEventListener("change", () => {
-      frameDraft.frame_finish = r.value;
+      frameDraft[r.name] = r.value;
       showFrameDraft();
     }),
   );

@@ -37,15 +37,16 @@
   const STEP_MS_MAX = 50;
   const STAGGER_RATIO = 0.7;
 
-  const settings = { rows: 0, cols: 0, animation: 60, theme: "classic-black", timer_ring: "off", cell_radius: 6, cell_gap: 35, split_line: 1, frame_color: "", frame_width: "", frame_radius: "", frame_finish: "theme", frame_glow: "" };
+  const settings = { rows: 0, cols: 0, animation: 60, theme: "classic-black", timer_ring: "off", cell_radius: 6, cell_gap: 35, split_line: 1, frame_color: "", frame_width: "", frame_radius: "", frame_finish: "theme", frame_glow: "", frame_fit: "screen", board_scale: 100, board_margin: 0 };
   const BG_KEYS = ["background_image", "background_blur", "background_dim", "background_fit"];
   // The shape of a flap: unitless numbers board.css turns into lengths (see .frame).
   const FLAP_KEYS = ["cell_radius", "cell_gap", "split_line"];
   const FLAP_BOUNDS = { cell_radius: [0, 12], cell_gap: [0, 100], split_line: [0, 3] };
   // The frame: "" on any key = as the theme (no inline var); finish is an attribute on .frame.
-  const FRAME_KEYS = ["frame_color", "frame_width", "frame_radius", "frame_finish", "frame_glow"];
-  const FRAME_BOUNDS = { frame_width: [0, 10], frame_radius: [0, 30] };
+  const FRAME_KEYS = ["frame_color", "frame_width", "frame_radius", "frame_finish", "frame_glow", "frame_fit", "board_scale", "board_margin"];
+  const FRAME_BOUNDS = { frame_width: [0, 10], frame_radius: [0, 30], board_scale: [25, 100], board_margin: [0, 10] };
   const FRAME_FINISHES = ["theme", "matte", "chrome", "neon"];
+  const FRAME_FITS = ["screen", "board"];
   const HEX = /^#[0-9a-f]{6}$/i;
   let cells = []; // row-major cell records
   let target = []; // row-major sequence indices the board is heading to
@@ -311,8 +312,9 @@
       if (s[k] === undefined) return;
       const v = s[k] === null ? "" : String(s[k]).trim();
       if (k === "frame_finish") settings[k] = FRAME_FINISHES.includes(v) ? v : "theme";
+      else if (k === "frame_fit") settings[k] = FRAME_FITS.includes(v) ? v : "screen";
       else if (k === "frame_color" || k === "frame_glow") settings[k] = HEX.test(v) ? v.toLowerCase() : "";
-      else if (v === "") settings[k] = "";
+      else if (v === "" && k !== "board_scale" && k !== "board_margin") settings[k] = "";
       else {
         const [lo, hi] = FRAME_BOUNDS[k];
         settings[k] = Math.max(lo, Math.min(hi, Number(v) || 0));
@@ -323,7 +325,10 @@
     set("--frame-glow", settings.frame_glow);
     set("--frame-n", settings.frame_width === "" ? "" : String(settings.frame_width));
     set("--frame-radius", settings.frame_radius === "" ? "" : String(settings.frame_radius));
+    set("--board-scale", String(settings.board_scale));
+    set("--board-margin", String(settings.board_margin));
     frameEl.dataset.finish = settings.frame_finish;
+    frameEl.dataset.fit = settings.frame_fit;
   }
 
   // Corners, gap and split line go on the frame, where the server rendered them inline for the first

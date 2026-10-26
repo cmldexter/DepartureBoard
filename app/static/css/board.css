@@ -4,6 +4,8 @@
 
 html.board-page, .board-page { overflow: hidden; }
 .board-page { background: var(--bg); text-size-adjust: none; -webkit-text-size-adjust: none; }
+/* The frame is centred on the page: filling it (frame_fit screen) or hugging the flaps (board). */
+body.board-page { display: grid; place-items: center; height: 100vh; }
 
 /* ---- behind the board (display settings background_*): a fixed layer under the frame — a
    picture (background-image) or a video (the <video> child, muted in a loop) — blurred and
@@ -53,7 +55,12 @@ html.has-backdrop .frame {
      as a number; the outer corner radius is capped at 3.4 × the width — a rounder corner would clip
      the corner flaps. The page (or the backdrop) shows in the rounded corners. */
   --frame: calc(var(--frame-n, 3) * 1vmin);
-  --frame-r: min(var(--frame-radius, 0), calc(var(--frame-n, 3) * 3.4));
+  /* Where it sits (display settings frame_fit / board_scale / board_margin): the board's size as a
+     share of the screen, and the board's own colour between the bezel and the flaps — which also
+     absorbs a round corner, so the cap counts it. */
+  --s: calc(var(--board-scale, 100) / 100);
+  --margin: calc(var(--board-margin, 0) * 1vmin);
+  --frame-r: min(var(--frame-radius, 0), calc((var(--frame-n, 3) + var(--board-margin, 0)) * 3.4));
   border-radius: calc(var(--frame-r) * 1vmin);
   /* The finish: a surface, a shadow and a lip around the board, as tokens. The default is matte
      (the colour, see-through over a backdrop); a theme may carry its own tokens on :root;
@@ -67,37 +74,53 @@ html.has-backdrop .frame {
   --r: calc(var(--cell-w) * var(--cell-radius, 6) / 100); /* 6 % of a cell ≈ the old 0.5vmin at 1080p */
   --split: calc(var(--split-line, 1) * 1px);
   --cell-w: min(
-    calc((100vw - 2 * var(--frame) - 2 * var(--gap) - (var(--cols) - 1) * var(--gap)) / var(--cols)),
-    calc((100vh - 2 * var(--frame) - 2 * var(--gap) - (var(--rows) - 1) * var(--gap)) / var(--rows) / 1.45)
+    calc((100vw * var(--s) - 2 * var(--frame) - 2 * var(--margin) - 2 * var(--gap) - (var(--cols) - 1) * var(--gap)) / var(--cols)),
+    calc((100vh * var(--s) - 2 * var(--frame) - 2 * var(--margin) - 2 * var(--gap) - (var(--rows) - 1) * var(--gap)) / var(--rows) / 1.45)
   );
   --cell-h: calc(var(--cell-w) * 1.45);
-  height: 100vh;
-  width: 100vw;
+  height: calc(100vh * var(--s));
+  width: calc(100vw * var(--s));
   display: grid;
   place-items: center;
   padding: var(--frame);
   overflow: hidden;
+  box-sizing: border-box;
+}
+.frame[data-fit="board"] {
+  width: max-content;
+  height: max-content;
+  width: fit-content;
+  height: fit-content;
 }
 .frame[data-finish="matte"] {
   --frame-surface: initial;
   --frame-shadow: initial;
   --board-lip: initial;
 }
+/* Chrome: a bezel with a rounded profile, lit from above — a bright rim on the outer edge, light
+   on the top of the curve, dark under it, a second bright ring where the inner edge turns down to
+   the board, and a shadow onto the page. Everything scales with the bezel's width. */
 .frame[data-finish="chrome"] {
   --frame-surface: linear-gradient(
     160deg,
-    color-mix(in srgb, var(--frame-color) 62%, white) 0%,
-    color-mix(in srgb, var(--frame-color) 90%, white) 22%,
-    var(--frame-color) 42%,
-    color-mix(in srgb, var(--frame-color) 80%, black) 64%,
-    color-mix(in srgb, var(--frame-color) 88%, white) 86%,
-    color-mix(in srgb, var(--frame-color) 70%, white) 100%
+    color-mix(in srgb, var(--frame-color) 55%, white) 0%,
+    color-mix(in srgb, var(--frame-color) 88%, white) 20%,
+    var(--frame-color) 40%,
+    color-mix(in srgb, var(--frame-color) 78%, black) 62%,
+    color-mix(in srgb, var(--frame-color) 86%, white) 84%,
+    color-mix(in srgb, var(--frame-color) 65%, white) 100%
   );
   --frame-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.22),
-    inset 0 0.25vmin 1vmin rgba(255, 255, 255, 0.16),
-    inset 0 -0.4vmin 1.4vmin rgba(0, 0, 0, 0.65);
-  --board-lip: 0 0 0 1px rgba(0, 0, 0, 0.8), 0 0 1.2vmin rgba(0, 0, 0, 0.6);
+    inset 0 0 0 max(1px, calc(var(--frame) * 0.07)) rgba(255, 255, 255, 0.5),
+    inset 0 calc(var(--frame) * 0.3) calc(var(--frame) * 0.55) rgba(255, 255, 255, 0.28),
+    inset 0 calc(var(--frame) * -0.3) calc(var(--frame) * 0.55) rgba(0, 0, 0, 0.75),
+    inset 0 0 calc(var(--frame) * 0.2) rgba(0, 0, 0, 0.35),
+    0 calc(var(--frame) * 0.35) calc(var(--frame) * 1.4) rgba(0, 0, 0, 0.6);
+  --board-lip:
+    0 0 0 1px rgba(0, 0, 0, 0.95),
+    0 0 0 max(2px, calc(var(--frame) * 0.12)) rgba(255, 255, 255, 0.22),
+    0 0 0 max(3px, calc(var(--frame) * 0.16)) rgba(0, 0, 0, 0.5),
+    inset 0 0 calc(var(--frame) * 0.6) rgba(0, 0, 0, 0.85);
 }
 .frame[data-finish="neon"] {
   --frame-surface: var(--frame-color);
@@ -135,7 +158,7 @@ html.has-backdrop .frame {
   grid-template-columns: repeat(var(--cols), var(--cell-w));
   grid-auto-rows: var(--cell-h);
   gap: var(--gap);
-  padding: var(--gap);
+  padding: calc(var(--gap) + var(--margin, 0px));
   background: var(--board-bg);
   /* The inner edge follows the frame's outer curve. */
   border-radius: max(0.6vmin, calc((var(--frame-r) - var(--frame-n, 3)) * 1vmin));

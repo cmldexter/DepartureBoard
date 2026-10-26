@@ -144,8 +144,9 @@ WebM up to 250 MB) playing muted in a loop, with blur and dim sliders the live c
 they move. *Save* sends it to the TV; *Clear* takes it off. Then *The flaps*: three sliders —
 corners (0–12 % of a cell), gap (0–1 vmin) and the split line (0–3 px) — and a *Picture mode*
 button that tightens all three, so a banner across the board loses less to the grid; *Classic*
-puts them back. Then *The frame*: the bezel's colour, width, corners and a finish — matte, chrome
-or neon with a glow colour — each theme's own until you override it; *Black chrome* is one button.
+puts them back. Then *The frame*: where the board sits (filling the screen, or hugging the flaps at any size so
+the backdrop shows around it), the bezel's colour, width, corners and a finish — matte, chrome or
+neon with a glow colour — each theme's own until you override it; *Black chrome* is one button.
 
 <img src="docs/media/settings-look.png" alt="Look & feel: four theme swatches, then the background picker with None, the built-in pictures, an upload, and the blur and dim sliders" width="800">
 

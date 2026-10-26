@@ -98,20 +98,29 @@ setting at a time, and *As the theme* gives any of them back:
 
 | Setting | On the API | What it does |
 |---|---|---|
+| **Fit** | `frame_fit` `screen` · `board` | *Fills the screen* is the classic slab; *Hugs the flaps* wraps the bezel around the board so the page — or the video — shows all around it |
+| **Size** | `board_scale` 25–100 | The board's size as a share of the screen; 85 leaves a band of the backdrop around a hugging board |
+| **Margin** | `board_margin` 0–10 | The board's own colour between the bezel and the flaps, in vmin; it also absorbs a round corner |
 | **Colour** | `frame_color` `"#rrggbb"` or `""` | The bezel's colour |
 | **Width** | `frame_width` 0–10 or `""` | In vmin (hundredths of the screen's shorter side); the themes use 3, Walnut 4 |
 | **Corners** | `frame_radius` 0–30 or `""` | The outer corner radius in vmin; the page or the backdrop shows in the rounded corners |
 | **Finish** | `frame_finish` `theme` · `matte` · `chrome` · `neon` | *Matte* is the flat colour; *chrome* a metallic bezel with a lip around the board; *neon* a glowing edge |
 | **Glow** | `frame_glow` `"#rrggbb"` or `""` | The neon edge's colour (shown for neon) |
 
-**A rounder corner needs a wider frame.** The corners never cut into a flap: the radius is
-capped at about 3.4 × the width, so at the default 3 vmin the roundest corner is 10 vmin; for a
-pill-shaped board put the width at 8 or 10 first. The slider's readout says *capped by the width*
-when it is.
+**A rounder corner needs a wider bezel or a margin.** The corners never cut into a flap: the
+radius is capped at about 3.4 × (width + margin), so a thin 2 vmin chrome bezel with a 2 vmin
+margin still takes a 13 vmin corner; for a pill-shaped board raise the margin first — it is the
+board's own colour, not chrome. The slider's readout says *capped by the width + margin* when it is.
+
+**Chrome** is drawn as a bezel with a rounded profile lit from above: a bright rim on the outer
+edge, light on top of the curve, shadow under it, a second ring where the inner edge turns down
+to the board, and a shadow onto the page. Every part scales with the width, so a thin bezel reads
+as a thin tube and a wide one as a slab.
 
 **Over a picture or video**, a matte frame (and the four classic themes' own) is 35 % see-through
 as before; a **chrome or neon** frame stays solid — the bezel reads as an object sitting over the
-moving picture. *Black chrome* is one button: `#050308`, width 4, corners 8, chrome.
+moving picture. *Black chrome* is one button: hugs the flaps at 85 %, a 2 vmin margin, `#050308`,
+width 2, corners 6, chrome.
 
 The five settings travel with a saved board (a profile) like the rest of the look.
 

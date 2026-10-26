@@ -12,11 +12,13 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models import (
+    BOARD_BOUNDS,
     COLS_BOUNDS,
     DEFAULT_SETTINGS,
     FLAP_BOUNDS,
     FRAME_BOUNDS,
     FRAME_FINISHES,
+    FRAME_FITS,
     GUEST_BOUNDS,
     PRESETS,
     ROWS_BOUNDS,
@@ -122,6 +124,15 @@ def resolve_display(raw: Mapping[str, Any]) -> dict[str, Any]:
             else DEFAULT_SETTINGS["frame_finish"]
         ),
         "frame_glow": _as_color(merged["frame_glow"]),
+        "frame_fit": (
+            str(merged["frame_fit"]).strip().lower()
+            if str(merged["frame_fit"]).strip().lower() in FRAME_FITS
+            else DEFAULT_SETTINGS["frame_fit"]
+        ),
+        **{
+            key: _clamp(_as_int(merged[key], int(DEFAULT_SETTINGS[key])), bounds)
+            for key, bounds in BOARD_BOUNDS.items()
+        },
         "guest_token": str(merged["guest_token"] or "").strip(),
         "guest_auto_approve": _as_bool(merged["guest_auto_approve"]),
         "setup_done": "1" if str(merged["setup_done"] or "").strip() == "1" else "",

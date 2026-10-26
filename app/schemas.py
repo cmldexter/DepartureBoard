@@ -12,6 +12,7 @@ Repeat = Literal["none", "daily", "weekly"]
 TimerRing = Literal["off", "own", "all"]
 BackgroundFit = Literal["cover", "contain"]
 FrameFinish = Literal["theme", "matte", "chrome", "neon"]
+FrameFit = Literal["screen", "board"]
 _BG_IMAGE = re.compile(r"^(img|builtin|video):[a-z0-9][a-z0-9-]{0,39}$")
 _HEX_COLOR = r"^(#[0-9a-fA-F]{6})?$"  # or "" = as the theme
 _GUEST_TOKEN = re.compile(r"^[A-Za-z0-9_-]{20,64}$")
@@ -187,6 +188,9 @@ class SettingsOut(BaseModel):
     )
     frame_finish: FrameFinish = Field(description="theme (its own), matte, chrome or neon")
     frame_glow: str = Field(description='The neon edge\'s colour, "#rrggbb"; "" = as the theme')
+    frame_fit: FrameFit = Field(description="screen fills the screen; board hugs the flaps")
+    board_scale: int = Field(description="The board's size, % of the screen (25–100)")
+    board_margin: int = Field(description="The board's colour between bezel and flaps, vmin")
     guest_token: str = Field(description='The guest link\'s token; "" when guests are off')
     guest_auto_approve: bool = Field(description="A guest post goes on the board at once")
     guest_priority: int = Field(description="The priority a guest post's message gets")
@@ -214,9 +218,12 @@ class SettingsPatch(BaseModel):
                 {"cell_radius": 0, "cell_gap": 10, "split_line": 0},
                 {
                     "frame_color": "#050308",
-                    "frame_width": 4,
-                    "frame_radius": 8,
+                    "frame_width": 2,
+                    "frame_radius": 6,
                     "frame_finish": "chrome",
+                    "frame_fit": "board",
+                    "board_scale": 80,
+                    "board_margin": 2,
                 },
             ]
         }
@@ -271,6 +278,25 @@ class SettingsPatch(BaseModel):
     )
     frame_glow: str | None = Field(
         None, pattern=_HEX_COLOR, description='The neon edge\'s colour "#rrggbb"; "" = as the theme'
+    )
+    frame_fit: FrameFit | None = Field(
+        None,
+        description=(
+            "screen = the frame fills the screen (the classic slab); board = it hugs the flaps and "
+            "the page or the backdrop shows around it"
+        ),
+    )
+    board_scale: int | None = Field(
+        None, ge=25, le=100, description="The board's size as % of the screen (default 100)"
+    )
+    board_margin: int | None = Field(
+        None,
+        ge=0,
+        le=10,
+        description=(
+            "The board's own colour between the bezel and the flaps, vmin; a round corner is "
+            "capped at about 3.4 × (frame_width + board_margin)"
+        ),
     )
     setup_done: Literal["", "1"] | None = Field(
         None, description='"1" = the first-run walkthrough is done; "" shows it again'
@@ -365,6 +391,9 @@ class BoardSettings(BaseModel):
     frame_radius: int | Literal[""]
     frame_finish: FrameFinish
     frame_glow: str
+    frame_fit: FrameFit
+    board_scale: int
+    board_margin: int
 
 
 class ProfileFile(BaseModel):

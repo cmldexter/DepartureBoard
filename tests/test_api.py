@@ -712,6 +712,9 @@ FRAME_DEFAULTS = {
     "frame_radius": "",
     "frame_finish": "theme",
     "frame_glow": "",
+    "frame_fit": "screen",
+    "board_scale": 100,
+    "board_margin": 0,
 }
 
 
@@ -726,6 +729,9 @@ def test_frame_settings(client, auth):
         "frame_radius": 8,
         "frame_finish": "chrome",
         "frame_glow": "#01FDFE",
+        "frame_fit": "board",
+        "board_scale": 80,
+        "board_margin": 2,
     }
     r = client.patch("/api/settings", json=black_chrome, headers=auth)
     assert r.status_code == 200, r.text
@@ -735,7 +741,8 @@ def test_frame_settings(client, auth):
     assert after.status_code == 200, "the TV learns about the frame on its next poll"
     assert after.json()["settings"]["frame_finish"] == "chrome"
     html = client.get("/").text
-    assert 'data-finish="chrome"' in html
+    assert 'data-finish="chrome"' in html and 'data-fit="board"' in html
+    assert "--board-scale: 80;" in html and "--board-margin: 2;" in html
     assert "--frame-color: #050308;" in html and "--frame-n: 4;" in html
     assert "--frame-radius: 8;" in html and "--frame-glow: #01fdfe;" in html
     # "" puts a key back to the theme's own
@@ -764,6 +771,10 @@ def test_frame_settings(client, auth):
         {"frame_color": "black"},
         {"frame_color": "#fff"},
         {"frame_glow": "01fdfe"},
+        {"frame_fit": "window"},
+        {"board_scale": 24},
+        {"board_scale": 101},
+        {"board_margin": 11},
     ):
         assert client.patch("/api/settings", json=bad, headers=auth).status_code == 422, bad
     # a profile carries the frame
@@ -792,3 +803,5 @@ def test_display_resolves_frame_garbage_to_the_theme():
     ) == ("", "", 30, "theme", "#abcdef")
     assert resolve_display({})["frame_width"] == ""
     assert resolve_display({"frame_width": "0"})["frame_width"] == 0
+    d = resolve_display({"frame_fit": "Board", "board_scale": "7", "board_margin": "x"})
+    assert (d["frame_fit"], d["board_scale"], d["board_margin"]) == ("board", 25, 0)
