@@ -2,8 +2,8 @@
   <img src="docs/media/logo.png" alt="The DepartureBoard logo: nine flaps spelling DEP, O7:, LA with a green tick, mid-flip" width="160">
   <h1>DepartureBoard</h1>
   <p><b>An open-source split-flap departure board for any TV. One command, one board.</b></p>
-  <img src="docs/media/board-demo.gif" alt="The board flipping from a departures list to a message, one column after another" width="800">
-  <p><sub>The Compact preset (6 × 22) running the built-in demo — <code>http://&lt;host&gt;:8080/?demo</code></sub></p>
+  <img src="docs/media/board-demo.gif" alt="The board on GSX Terminal, cyan mono flaps in a black chrome pill bezel over a drifting purple nebula, flipping from a departures list to a birthday message one column after another" width="800">
+  <p><sub>The Compact preset (6 × 22) on the GSX Terminal theme, a black chrome bezel that hides the corners, a clip playing behind it — all of it Look &amp; feel settings. The built-in demo: <code>http://&lt;host&gt;:8080/?demo</code></sub></p>
 </div>
 
 ---
@@ -275,3 +275,8 @@ thread about the real boards — *"come find me when that exists."* It exists.
 
 [GPL-3.0](LICENSE). Bundled third-party work — the fonts (SIL OFL) and `segno` (BSD-3-Clause), which
 draws the QR codes — is listed in [THIRD_PARTY.md](THIRD_PARTY.md).
+
+## The clip behind the board
+
+The clip playing behind the board at the top of this page is not part of DepartureBoard and does not
+ship with it. If you want to know where to find it, [ask me](https://github.com/cmldexter).
