@@ -120,12 +120,14 @@ body { background: var(--bg); color: var(--fg); font-family: var(--font); }
 .page .effects select { width: auto; padding: .3rem .4rem; }
 .page .effects output { min-width: 3.4rem; color: var(--muted); font-variant-numeric: tabular-nums; }
 .page .backdrop .row button { margin-top: .75rem; }
-.page .flaps output { min-width: 4.6rem; } /* "0.35 vmin" */
+.page .flaps output { min-width: 5.6rem; } /* "as the theme" */
 .page .frame output { min-width: 7rem; } /* "as the theme" */
 .page .frame input[type="color"] { width: 2.6rem; height: 1.9rem; margin: 0; padding: .1rem; border-radius: .4rem; background: #000; border: 1px solid #444; cursor: pointer; }
 .page .frame input[type="color"]:disabled { opacity: .35; cursor: default; }
-.page .frame label.inline { display: inline-flex; align-items: center; gap: .3rem; margin: 0; font-size: .85rem; color: var(--muted); }
-.page .frame label.inline input { width: auto; margin: 0; }
+.page .frame label.inline,
+.page .flaps label.inline { display: inline-flex; align-items: center; gap: .3rem; margin: 0; font-size: .85rem; color: var(--muted); }
+.page .frame label.inline input,
+.page .flaps label.inline input { width: auto; margin: 0; }
 .page .frame .chips { margin: 0; flex-basis: 100%; }
 @media (max-width: 36rem) { .page .backdrops { grid-template-columns: repeat(3, 1fr); } .page .effects input[type="range"] { width: 7rem; } }
 .page #live .row { align-items: center; }

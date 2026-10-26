@@ -141,10 +141,11 @@ message has left.
 next poll, nothing to save. Below them, *Behind the board*: a picture under the frame — one of
 the four that ship, or a poster snip uploaded right there — or a **video** of your own (MP4 or
 WebM up to 250 MB) playing muted in a loop, with blur and dim sliders the live card follows as
-they move. *Save* sends it to the TV; *Clear* takes it off. Then *The flaps*: three sliders —
-corners (0–12 % of a cell), gap (0–1 vmin) and the split line (0–3 px) — and a *Picture mode*
-button that tightens all three, so a banner across the board loses less to the grid; *Classic*
-puts them back. Then *The frame*: where the board sits (filling the screen, or hugging the flaps at any size so
+they move. *Save* sends it to the TV; *Clear* takes it off. Then *The flaps*: four sliders —
+corners (0–12 % of a cell), gap (0–1 vmin), the split line (0–3 px) and depth (a lit top half, a
+shadow under the lip and under each flap; each theme's own until you set it) — and a *Picture
+mode* button that tightens all four, so a banner across the board loses less to the grid;
+*Classic* puts them back. Then *The frame*: where the board sits (filling the screen, or hugging the flaps at any size so
 the backdrop shows around it), the bezel's colour, width, corners and a finish — matte, chrome or
 neon with a glow colour — each theme's own until you override it; *Black chrome* is one button.
 

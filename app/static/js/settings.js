@@ -871,13 +871,14 @@
     }
   });
 
-  // ---- look & feel: the shape of a flap. Three sliders the frames follow at once through
-  // board:settings; Save writes the three settings in one PATCH; two presets set the draft.
+  // ---- look & feel: the shape of a flap. Four sliders the frames follow at once through
+  // board:settings ("" on the depth = as the theme, the box beside it); Save writes the four
+  // settings in one PATCH; two presets set the draft.
   const flapForm = $("#flaps-form");
   const flapStatus = $("#flaps-status");
-  const FLAPS = ["cell_radius", "cell_gap", "split_line"];
-  const FLAP_CLASSIC = { cell_radius: 6, cell_gap: 35, split_line: 1 };
-  const FLAP_PICTURE = { cell_radius: 0, cell_gap: 10, split_line: 0 };
+  const FLAPS = ["cell_radius", "cell_gap", "split_line", "cell_depth"];
+  const FLAP_CLASSIC = { cell_radius: 6, cell_gap: 35, split_line: 1, cell_depth: "" };
+  const FLAP_PICTURE = { cell_radius: 0, cell_gap: 10, split_line: 0, cell_depth: 0 };
   const flapDraft = { ...FLAP_CLASSIC };
   let flapSaved = { ...flapDraft };
   const flapDirty = () => FLAPS.some((k) => flapDraft[k] !== flapSaved[k]);
@@ -885,13 +886,17 @@
     $("#radius-value").textContent = `${flapDraft.cell_radius} %`;
     $("#gap-value").textContent = `${(flapDraft.cell_gap / 100).toFixed(2)} vmin`;
     $("#split-value").textContent = `${flapDraft.split_line} px`;
-    FLAPS.forEach((k) => (flapForm[k].value = flapDraft[k]));
+    $("#depth-value").textContent = flapDraft.cell_depth === "" ? "as the theme" : `${flapDraft.cell_depth} %`;
+    flapForm.cell_depth_theme.checked = flapDraft.cell_depth === "";
+    FLAPS.forEach((k) => {
+      if (flapDraft[k] !== "") flapForm[k].value = flapDraft[k];
+    });
     const msg = { type: "board:settings", settings: { ...flapDraft } };
     post(liveFrame, msg);
     post(previewFrame, msg);
   }
   function fillFlapForm(s) {
-    FLAPS.forEach((k) => (flapSaved[k] = Number(s[k])));
+    FLAPS.forEach((k) => (flapSaved[k] = s[k] === "" || s[k] === null || s[k] === undefined ? "" : Number(s[k])));
     Object.assign(flapDraft, flapSaved);
     showFlapDraft();
   }
@@ -901,6 +906,10 @@
       showFlapDraft();
     }),
   );
+  flapForm.cell_depth_theme.addEventListener("change", () => {
+    flapDraft.cell_depth = flapForm.cell_depth_theme.checked ? "" : Number(flapForm.cell_depth.value);
+    showFlapDraft();
+  });
   function presetFlaps(values, said) {
     Object.assign(flapDraft, values);
     showFlapDraft();

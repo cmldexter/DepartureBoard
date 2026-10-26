@@ -77,6 +77,12 @@ def test_animation_bounds(raw, expected):
         ("split_line", "3", 3),
         ("split_line", "9", 3),
         ("split_line", None, 1),
+        ("cell_depth", "", ""),
+        ("cell_depth", None, ""),
+        ("cell_depth", "45", 45),
+        ("cell_depth", "150", 100),
+        ("cell_depth", "-5", 0),
+        ("cell_depth", "deep", ""),
     ],
 )
 def test_flap_shape_bounds(key, raw, expected):
@@ -87,6 +93,7 @@ def test_flap_shape_bounds(key, raw, expected):
 def test_flap_shape_defaults_are_the_classic_look():
     d = resolve_display({})
     assert (d["cell_radius"], d["cell_gap"], d["split_line"]) == (6, 35, 1)
+    assert d["cell_depth"] == "", "the depth is the theme's own until set"
 
 
 def test_display_settings_reads_the_table(client):
@@ -197,6 +204,7 @@ CONFIG_KEYS = {
     "cell_radius",
     "cell_gap",
     "split_line",
+    "cell_depth",
     "frame_color",
     "frame_width",
     "frame_radius",
@@ -301,14 +309,17 @@ def test_board_page_carries_the_flap_shape(client):
     c = _config(html)
     assert (c["cell_radius"], c["cell_gap"], c["split_line"]) == (6, 35, 1)
     assert "--cell-radius: 6; --cell-gap: 35; --split-line: 1;" in html
+    assert c["cell_depth"] == "" and "--cell-depth" not in html, "as the theme: no inline depth"
     with next(client.app.state.db.session()) as session:
         session.add(Setting(key="cell_gap", value="0"))
         session.add(Setting(key="split_line", value="0"))
+        session.add(Setting(key="cell_depth", value="40"))
         session.commit()
     html = client.get("/?embed").text
     c = _config(html)
     assert (c["cell_radius"], c["cell_gap"], c["split_line"]) == (6, 0, 0), "the live card too"
-    assert "--cell-radius: 6; --cell-gap: 0; --split-line: 0;" in html
+    assert "--cell-radius: 6; --cell-gap: 0; --split-line: 0; --cell-depth: 40;" in html
+    assert c["cell_depth"] == 40
 
 
 def test_flap_shape_is_variables_not_constants():
@@ -321,5 +332,7 @@ def test_flap_shape_is_variables_not_constants():
     assert "border-radius: var(--r)" in css
     assert "height: var(--split)" in css
     assert "--gap: calc(var(--cell-gap, 35) * 0.01vmin)" in css
+    assert "--depth: calc(var(--cell-depth, var(--flap-depth, 0)) / 100)" in css
+    assert "--flap-depth: 45" in (static / "themes" / "gsx-terminal.css").read_text()
     js = (static / "js" / "board.js").read_text()
     assert "applyFlapShape" in js and "repaintPictures()" in js

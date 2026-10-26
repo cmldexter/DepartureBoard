@@ -179,6 +179,9 @@ class SettingsOut(BaseModel):
     cell_radius: int
     cell_gap: int
     split_line: int
+    cell_depth: int | Literal[""] = Field(
+        description='The depth of a flap (its shading), 0–100; "" = as the theme'
+    )
     frame_color: str = Field(description='The frame\'s colour, "#rrggbb"; "" = as the theme')
     frame_width: int | Literal[""] = Field(
         description='The frame\'s width, vmin; "" = as the theme'
@@ -215,7 +218,7 @@ class SettingsPatch(BaseModel):
                 {"theme": "walnut", "idle_text": "WELCOME HOME"},
                 {"background_image": "img:poster", "background_blur": 20, "background_dim": 40},
                 {"background_image": "video:rain", "background_blur": 0},
-                {"cell_radius": 0, "cell_gap": 10, "split_line": 0},
+                {"cell_radius": 0, "cell_gap": 10, "split_line": 0, "cell_depth": 0},
                 {
                     "frame_color": "#050308",
                     "frame_width": 2,
@@ -259,6 +262,13 @@ class SettingsPatch(BaseModel):
     )
     split_line: int | None = Field(
         None, ge=0, le=3, description="The line across a flap's middle, px (0 hides it)"
+    )
+    cell_depth: Annotated[int, Field(ge=0, le=100)] | Literal[""] | None = Field(
+        None,
+        description=(
+            "The depth of a flap: a lit top half, a shadowed bottom half and a shadow under it, "
+            '0 (flat) to 100; "" = as the theme'
+        ),
     )
     frame_color: str | None = Field(
         None, pattern=_HEX_COLOR, description='The frame\'s colour "#rrggbb"; "" = as the theme'
@@ -386,6 +396,7 @@ class BoardSettings(BaseModel):
     cell_radius: int
     cell_gap: int
     split_line: int
+    cell_depth: int | Literal[""]
     frame_color: str
     frame_width: int | Literal[""]
     frame_radius: int | Literal[""]

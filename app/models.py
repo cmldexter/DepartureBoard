@@ -73,6 +73,8 @@ COLS_BOUNDS = (16, 36)
 # The shape of a flap: corner radius in % of the cell's width, the gap between cells in
 # hundredths of a vmin, the split line across the middle in px (0 hides it).
 FLAP_BOUNDS = {"cell_radius": (0, 12), "cell_gap": (0, 100), "split_line": (0, 3)}
+# The depth of a flap: its shading and the shadow under it, 0–100; "" = as the theme.
+CELL_DEPTH_BOUNDS = (0, 100)
 
 # Built-in themes: app/static/themes/<id>.css. The first is the default.
 THEMES = ("classic-black", "walnut", "arctic-white", "midnight", "gsx-terminal")
@@ -113,6 +115,7 @@ DEFAULT_SETTINGS = {
     "cell_radius": "6",
     "cell_gap": "35",
     "split_line": "1",
+    "cell_depth": "",
     # The frame (FRAME_BOUNDS / FRAME_FINISHES): colour, width, corner radius, finish and the neon
     # glow colour; "" = as the theme, finish "theme" = the theme's own.
     "frame_color": "",

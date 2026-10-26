@@ -96,6 +96,7 @@ html.has-backdrop .frame {
   --frame-surface: initial;
   --frame-shadow: initial;
   --board-lip: initial;
+  --board-recess: initial;
 }
 /* Chrome: a bezel with a rounded profile, lit from above — a bright rim on the outer edge, light
    on the top of the curve, dark under it, a second bright ring where the inner edge turns down to
@@ -116,11 +117,15 @@ html.has-backdrop .frame {
     inset 0 calc(var(--frame) * -0.3) calc(var(--frame) * 0.55) rgba(0, 0, 0, 0.75),
     inset 0 0 calc(var(--frame) * 0.2) rgba(0, 0, 0, 0.35),
     0 calc(var(--frame) * 0.35) calc(var(--frame) * 1.4) rgba(0, 0, 0, 0.6);
+  /* The board hides under the bezel: a dark groove where the chrome curls down over it, and the
+     bezel's shadow falling onto the panel (the recess, drawn over the flaps by .board::after). */
   --board-lip:
     0 0 0 1px rgba(0, 0, 0, 0.95),
-    0 0 0 max(2px, calc(var(--frame) * 0.12)) rgba(255, 255, 255, 0.22),
-    0 0 0 max(3px, calc(var(--frame) * 0.16)) rgba(0, 0, 0, 0.5),
-    inset 0 0 calc(var(--frame) * 0.6) rgba(0, 0, 0, 0.85);
+    0 0 calc(var(--frame) * 0.45) calc(var(--frame) * 0.05) rgba(0, 0, 0, 0.7);
+  --board-recess:
+    inset 0 calc(var(--frame) * 0.35) calc(var(--frame) * 0.9) rgba(0, 0, 0, 0.75),
+    inset 0 0 calc(var(--frame) * 0.5) rgba(0, 0, 0, 0.6),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.6);
 }
 .frame[data-finish="neon"] {
   --frame-surface: var(--frame-color);
@@ -154,6 +159,7 @@ html.has-backdrop .frame {
 @media (prefers-reduced-motion: reduce) { .overlay { transition: none; } }
 
 .board {
+  position: relative;
   display: grid;
   grid-template-columns: repeat(var(--cols), var(--cell-w));
   grid-auto-rows: var(--cell-h);
@@ -164,13 +170,28 @@ html.has-backdrop .frame {
   border-radius: max(0.6vmin, calc((var(--frame-r) - var(--frame-n, 3)) * 1vmin));
   box-shadow: var(--board-lip, none);
 }
+/* The recess: the bezel's shadow over the panel's edge, flaps included, so the board reads as
+   tucked under the bezel rather than laid beside it (a finish's --board-recess token). */
+.board::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 4;
+  box-shadow: var(--board-recess, none);
+}
 
 .cell {
+  /* The depth of a flap (display setting cell_depth, else the theme's --flap-depth, else flat):
+     0–100 → 0–1, the strength of the shading below and of the shadow under each flap. */
+  --depth: calc(var(--cell-depth, var(--flap-depth, 0)) / 100);
   position: relative;
   width: var(--cell-w);
   height: var(--cell-h);
   border-radius: var(--r);
   overflow: hidden;
+  box-shadow: 0 calc(var(--cell-h) * 0.02 * var(--depth)) calc(var(--cell-h) * 0.05 * var(--depth)) rgba(0, 0, 0, calc(0.6 * var(--depth)));
   perspective: calc(var(--cell-h) * 4);
   font-family: var(--flap-font);
   font-weight: var(--flap-weight, 700);
@@ -221,6 +242,35 @@ html.has-backdrop .frame {
 }
 .cell .half.top { top: 0; border-radius: var(--r) var(--r) 0 0; }
 .cell .half.bottom { bottom: 0; border-radius: 0 0 var(--r) var(--r); }
+
+/* The shading (--depth): the top half is lit from above and darkens toward the split; the bottom
+   half sits in the shadow of the leaf's lip. Drawn over the glyph and over a picture alike, as
+   light would; the leaf's faces carry the same so a flip never changes the look. */
+.cell .half::after,
+.cell .face::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.cell .half.top::after,
+.cell .face.front::after {
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, calc(0.11 * var(--depth))),
+    rgba(255, 255, 255, 0) 45%,
+    rgba(0, 0, 0, calc(0.2 * var(--depth)))
+  );
+}
+.cell .half.bottom::after,
+.cell .face.back::after {
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, calc(0.55 * var(--depth))),
+    rgba(0, 0, 0, calc(0.14 * var(--depth))) 40%,
+    rgba(0, 0, 0, calc(0.05 * var(--depth)))
+  );
+}
 
 .cell .glyph {
   position: absolute;

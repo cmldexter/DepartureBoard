@@ -104,7 +104,7 @@ setting at a time, and *As the theme* gives any of them back:
 | **Colour** | `frame_color` `"#rrggbb"` or `""` | The bezel's colour |
 | **Width** | `frame_width` 0–10 or `""` | In vmin (hundredths of the screen's shorter side); the themes use 3, Walnut 4 |
 | **Corners** | `frame_radius` 0–30 or `""` | The outer corner radius in vmin; the page or the backdrop shows in the rounded corners |
-| **Finish** | `frame_finish` `theme` · `matte` · `chrome` · `neon` | *Matte* is the flat colour; *chrome* a metallic bezel with a lip around the board; *neon* a glowing edge |
+| **Finish** | `frame_finish` `theme` · `matte` · `chrome` · `neon` | *Matte* is the flat colour; *chrome* a metallic bezel the board tucks under; *neon* a glowing edge |
 | **Glow** | `frame_glow` `"#rrggbb"` or `""` | The neon edge's colour (shown for neon) |
 
 **A rounder corner needs a wider bezel or a margin.** The corners never cut into a flap: the
@@ -113,9 +113,16 @@ margin still takes a 13 vmin corner; for a pill-shaped board raise the margin fi
 board's own colour, not chrome. The slider's readout says *capped by the width + margin* when it is.
 
 **Chrome** is drawn as a bezel with a rounded profile lit from above: a bright rim on the outer
-edge, light on top of the curve, shadow under it, a second ring where the inner edge turns down
-to the board, and a shadow onto the page. Every part scales with the width, so a thin bezel reads
-as a thin tube and a wide one as a slab.
+edge, light on top of the curve, shadow under it, and a shadow onto the page. The board **hides
+under it**: a dark groove where the chrome curls down, and the bezel's shadow falling onto the
+panel's edge, flaps included, so the board reads as recessed rather than laid beside the bezel.
+Every part scales with the width, so a thin bezel reads as a thin tube and a wide one as a slab.
+
+**The flaps' depth** goes with it: **Look & feel → The flaps → Depth** (`cell_depth` 0–100, `""` =
+as the theme) lights the top half of every flap, shadows the bottom half under the leaf's lip and
+drops a soft shadow under each flap. The four classic themes are flat until you raise it; GSX
+Terminal carries 45 of its own. *Picture mode* sets it to 0 so a banner across the flaps stays
+clean.
 
 **Over a picture or video**, a matte frame (and the four classic themes' own) is 35 % see-through
 as before; a **chrome or neon** frame stays solid — the bezel reads as an object sitting over the

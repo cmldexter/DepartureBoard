@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 
 from app.models import (
     BOARD_BOUNDS,
+    CELL_DEPTH_BOUNDS,
     COLS_BOUNDS,
     DEFAULT_SETTINGS,
     FLAP_BOUNDS,
@@ -115,6 +116,7 @@ def resolve_display(raw: Mapping[str, Any]) -> dict[str, Any]:
             key: _clamp(_as_int(merged[key], int(DEFAULT_SETTINGS[key])), bounds)
             for key, bounds in FLAP_BOUNDS.items()
         },
+        "cell_depth": _opt_int(merged["cell_depth"], CELL_DEPTH_BOUNDS),
         "frame_color": _as_color(merged["frame_color"]),
         "frame_width": _opt_int(merged["frame_width"], FRAME_BOUNDS["frame_width"]),
         "frame_radius": _opt_int(merged["frame_radius"], FRAME_BOUNDS["frame_radius"]),

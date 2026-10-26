@@ -13,6 +13,7 @@
   --flap-split: rgba(170, 85, 255, 0.65);
   --flap-font: "JetBrains Mono", ui-monospace, Menlo, monospace;
   --flap-weight: 700;
+  --flap-depth: 45; /* the flaps' shading, 0–100 (cell_depth overrides it) */
   --ui-fg: #01fdfe;
   --ui-bg: rgba(7, 3, 14, 0.75);
   --accent: #ffef00;

@@ -570,10 +570,10 @@ def test_background_settings(client, auth):
 def test_flap_shape_settings(client, auth):
     """Corners, gap and split line: defaults, one PATCH, the TV learns on its next poll, bounds."""
     s = client.get("/api/settings", headers=auth).json()
-    assert (s["cell_radius"], s["cell_gap"], s["split_line"]) == (6, 35, 1)
+    assert (s["cell_radius"], s["cell_gap"], s["split_line"], s["cell_depth"]) == (6, 35, 1, "")
     before = client.get("/api/board/current")
     assert before.json()["settings"]["cell_gap"] == 35
-    picture_mode = {"cell_radius": 0, "cell_gap": 10, "split_line": 0}
+    picture_mode = {"cell_radius": 0, "cell_gap": 10, "split_line": 0, "cell_depth": 0}
     r = client.patch("/api/settings", json=picture_mode, headers=auth)
     assert r.status_code == 200
     assert {k: r.json()[k] for k in picture_mode} == picture_mode
@@ -587,10 +587,20 @@ def test_flap_shape_settings(client, auth):
         {"cell_gap": -1},
         {"split_line": 4},
         {"split_line": "thick"},
+        {"cell_depth": 101},
+        {"cell_depth": -1},
+        {"cell_depth": "deep"},
     ):
         assert client.patch("/api/settings", json=bad, headers=auth).status_code == 422, bad
     r = client.patch("/api/settings", json={"cell_gap": 100}, headers=auth)
     assert r.json()["cell_gap"] == 100 and r.json()["cell_radius"] == 0, "one key at a time"
+    # the depth: a number renders inline, "" gives the theme's own back
+    r = client.patch("/api/settings", json={"cell_depth": 45}, headers=auth)
+    assert r.status_code == 200 and r.json()["cell_depth"] == 45
+    assert "--cell-depth: 45;" in client.get("/").text
+    r = client.patch("/api/settings", json={"cell_depth": ""}, headers=auth)
+    assert r.status_code == 200 and r.json()["cell_depth"] == ""
+    assert "--cell-depth" not in client.get("/").text
 
 
 def test_qr_code_is_a_picture_the_server_makes(client, auth, settings):

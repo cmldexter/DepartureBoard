@@ -103,6 +103,7 @@ def board(request: Request):
         "cell_radius": display["cell_radius"],
         "cell_gap": display["cell_gap"],
         "split_line": display["split_line"],
+        "cell_depth": display["cell_depth"],
         "frame_color": display["frame_color"],
         "frame_width": display["frame_width"],
         "frame_radius": display["frame_radius"],

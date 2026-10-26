@@ -37,11 +37,11 @@
   const STEP_MS_MAX = 50;
   const STAGGER_RATIO = 0.7;
 
-  const settings = { rows: 0, cols: 0, animation: 60, theme: "classic-black", timer_ring: "off", cell_radius: 6, cell_gap: 35, split_line: 1, frame_color: "", frame_width: "", frame_radius: "", frame_finish: "theme", frame_glow: "", frame_fit: "screen", board_scale: 100, board_margin: 0 };
+  const settings = { rows: 0, cols: 0, animation: 60, theme: "classic-black", timer_ring: "off", cell_radius: 6, cell_gap: 35, split_line: 1, cell_depth: "", frame_color: "", frame_width: "", frame_radius: "", frame_finish: "theme", frame_glow: "", frame_fit: "screen", board_scale: 100, board_margin: 0 };
   const BG_KEYS = ["background_image", "background_blur", "background_dim", "background_fit"];
   // The shape of a flap: unitless numbers board.css turns into lengths (see .frame).
-  const FLAP_KEYS = ["cell_radius", "cell_gap", "split_line"];
-  const FLAP_BOUNDS = { cell_radius: [0, 12], cell_gap: [0, 100], split_line: [0, 3] };
+  const FLAP_KEYS = ["cell_radius", "cell_gap", "split_line", "cell_depth"];
+  const FLAP_BOUNDS = { cell_radius: [0, 12], cell_gap: [0, 100], split_line: [0, 3], cell_depth: [0, 100] };
   // The frame: "" on any key = as the theme (no inline var); finish is an attribute on .frame.
   const FRAME_KEYS = ["frame_color", "frame_width", "frame_radius", "frame_finish", "frame_glow", "frame_fit", "board_scale", "board_margin"];
   const FRAME_BOUNDS = { frame_width: [0, 10], frame_radius: [0, 30], board_scale: [25, 100], board_margin: [0, 10] };
@@ -331,18 +331,25 @@
     frameEl.dataset.fit = settings.frame_fit;
   }
 
-  // Corners, gap and split line go on the frame, where the server rendered them inline for the first
-  // paint. A new gap resizes every cell, so the picture slices are measured and painted again.
+  // Corners, gap, split line and depth go on the frame, where the server rendered them inline for
+  // the first paint ("" on the depth = the theme's own: no inline var). A new gap resizes every
+  // cell, so the picture slices are measured and painted again.
   function applyFlapShape(s) {
     const oldGap = settings.cell_gap;
     FLAP_KEYS.forEach((k) => {
       if (s[k] === undefined) return;
       const [lo, hi] = FLAP_BOUNDS[k];
+      if (k === "cell_depth" && (s[k] === "" || s[k] === null)) {
+        settings[k] = "";
+        return;
+      }
       settings[k] = Math.max(lo, Math.min(hi, Number(s[k]) || 0));
     });
     frameEl.style.setProperty("--cell-radius", String(settings.cell_radius));
     frameEl.style.setProperty("--cell-gap", String(settings.cell_gap));
     frameEl.style.setProperty("--split-line", String(settings.split_line));
+    if (settings.cell_depth === "") frameEl.style.removeProperty("--cell-depth");
+    else frameEl.style.setProperty("--cell-depth", String(settings.cell_depth));
     if (settings.cell_gap !== oldGap) repaintPictures();
   }
 
