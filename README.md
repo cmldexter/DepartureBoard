@@ -21,8 +21,16 @@ cd DepartureBoard
 docker compose up -d
 ```
 
-That pulls the published image (`ghcr.io/cmldexter/departureboard`, amd64 and arm64, so a
-Raspberry Pi can host it) and serves on port 8080. Then:
+or, on a Kubernetes cluster, the same board from the chart that ships with every release:
+
+```bash
+helm install board oci://ghcr.io/cmldexter/charts/departureboard --version 0.5.0
+```
+
+Compose pulls the published image (`ghcr.io/cmldexter/departureboard`, amd64 and arm64, so a
+Raspberry Pi can host it) and serves on port 8080; the chart gives the same image a Service, a
+volume and an optional Ingress — [docs/kubernetes.md](docs/kubernetes.md) has the name, the TLS and
+the token in that mode. Then:
 
 Open `http://<this machine>:8080/settings` on your laptop or phone. The token it asks for was
 printed in the server log on first boot; to get it again without reading logs:

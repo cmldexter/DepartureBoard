@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "departureboard.fullname" . }}-test-connection
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "departureboard.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/hook: test
+    # No delete policy: `helm test --logs` reads the pod afterwards; `helm uninstall` removes it.
+spec:
+  restartPolicy: Never
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65534
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: health
+      image: busybox:1.37.0
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop: ["ALL"]
+      command: ["sh", "-c"]
+      args:
+        - wget -qO- "http://{{ include "departureboard.fullname" . }}:{{ .Values.service.port }}/api/health" | grep -q '"ok":true'

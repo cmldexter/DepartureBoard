@@ -1,0 +1,141 @@
+---
+# Source: departureboard/templates/pvc.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: departureboard-data
+  namespace: departureboard
+  labels:
+    helm.sh/chart: departureboard-0.5.0
+    app.kubernetes.io/name: departureboard
+    app.kubernetes.io/instance: departureboard
+    app.kubernetes.io/version: "0.5.0"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    # The board's data outlives the release: `helm uninstall` leaves the claim behind.
+    helm.sh/resource-policy: keep
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+
+---
+# Source: departureboard/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: departureboard
+  namespace: departureboard
+  labels:
+    helm.sh/chart: departureboard-0.5.0
+    app.kubernetes.io/name: departureboard
+    app.kubernetes.io/instance: departureboard
+    app.kubernetes.io/version: "0.5.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: departureboard
+    app.kubernetes.io/instance: departureboard
+
+---
+# Source: departureboard/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: departureboard
+  namespace: departureboard
+  labels:
+    helm.sh/chart: departureboard-0.5.0
+    app.kubernetes.io/name: departureboard
+    app.kubernetes.io/instance: departureboard
+    app.kubernetes.io/version: "0.5.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  # SQLite on one volume: one replica, and the old pod is gone before the new one starts.
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: departureboard
+      app.kubernetes.io/instance: departureboard
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: departureboard
+        app.kubernetes.io/instance: departureboard
+    spec:
+      securityContext:
+        fsGroup: 10001
+        fsGroupChangePolicy: OnRootMismatch
+        runAsGroup: 10001
+        runAsNonRoot: true
+        runAsUser: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: departureboard
+          image: "ghcr.io/cmldexter/departureboard:0.5.0"
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          env:
+            - name: DEPARTUREBOARD_CALENDAR_TICK_SECONDS
+              value: "30"
+            - name: DEPARTUREBOARD_CORS_ORIGINS
+              value: ""
+            - name: DEPARTUREBOARD_HOST
+              value: ""
+            - name: TZ
+              value: "UTC"
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 3
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+          startupProbe:
+            failureThreshold: 30
+            httpGet:
+              path: /api/health
+              port: http
+            periodSeconds: 2
+          resources:
+            limits:
+              memory: 512Mi
+            requests:
+              cpu: 50m
+              memory: 128Mi
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: departureboard-data
+        - name: tmp
+          emptyDir: {}

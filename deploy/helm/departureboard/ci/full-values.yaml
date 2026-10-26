@@ -1,0 +1,59 @@
+# Every option on, for `helm lint` and `helm template` in CI. Not a recommendation.
+image:
+  tag: "0.5.0"
+  pullPolicy: Always
+imagePullSecrets:
+  - name: ghcr
+env:
+  TZ: "America/Los_Angeles"
+  DEPARTUREBOARD_HOST: "board.example.com"
+  DEPARTUREBOARD_CORS_ORIGINS: "https://dash.example.com"
+  DEPARTUREBOARD_CALENDAR_TICK_SECONDS: "10"
+extraEnv:
+  - name: EXAMPLE_FROM_CONFIGMAP
+    valueFrom:
+      configMapKeyRef:
+        name: example
+        key: value
+existingSecret: departureboard-token
+persistence:
+  storageClass: longhorn
+  size: 5Gi
+  annotations:
+    example.com/backup: "daily"
+service:
+  annotations:
+    example.com/note: "ci"
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: board.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: board-tls
+      hosts:
+        - board.example.com
+podAnnotations:
+  example.com/note: "ci"
+podLabels:
+  tier: board
+priorityClassName: system-cluster-critical
+nodeSelector:
+  kubernetes.io/arch: amd64
+tolerations:
+  - key: example
+    operator: Exists
+affinity:
+  nodeAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 1
+        preference:
+          matchExpressions:
+            - key: kubernetes.io/arch
+              operator: In
+              values: [amd64]

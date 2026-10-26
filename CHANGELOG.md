@@ -7,6 +7,10 @@ and a container image `ghcr.io/cmldexter/departureboard:X.Y.Z`.
 
 ## [Unreleased]
 
+### Added
+
+- **Kubernetes, the second way to run the board** (#126, #128). A Helm chart at `deploy/helm/departureboard` — one replica on a PVC (SQLite), a Service, an optional Ingress, a non-root read-only pod, probes on `/api/health`, the token from your own Secret or minted into `/data` — published with every release as `oci://ghcr.io/cmldexter/charts/departureboard`; `deploy/kubernetes.yaml` is the same chart rendered for `kubectl apply`. CI lints and templates it and installs it on a kind cluster with the PR's image; `docs/kubernetes.md` goes from an empty cluster to a board on a name, and the README's Quick start shows both modes.
+
 ### Changed
 
 - **The logo in the app, and its colours on the buttons** (#159). The mark sits before the title on the settings page, above the sign-in form, in the walkthrough's header and beside the board's name on the guest page. The settings pages take the logo's palette: buttons fill with its frame's blue-to-violet and white text, links, outlines and the selected swatch use the same blue; the board's themes are untouched.

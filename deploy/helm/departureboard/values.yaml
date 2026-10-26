@@ -1,0 +1,113 @@
+# DepartureBoard — Helm values. Everything here has a default that runs; the ones a board on a
+# wall wants are `env.TZ`, `env.DEPARTUREBOARD_HOST`, `ingress.*` and `persistence.size`.
+# docs/kubernetes.md walks through them.
+
+image:
+  repository: ghcr.io/cmldexter/departureboard
+  # Empty = the chart's appVersion, so a chart release pins its own image.
+  tag: ""
+  pullPolicy: IfNotPresent
+imagePullSecrets: []
+
+nameOverride: ""
+fullnameOverride: ""
+
+# Environment the app reads (the same names as .env.example; DEPARTUREBOARD_DATA_DIR is /data in the image).
+# Values are strings. DEPARTUREBOARD_TLS is deliberately not here: on a cluster the Ingress ends TLS,
+# and the probes below speak plain http to the pod.
+env:
+  # Timezone schedules are evaluated in (IANA name). Also sets the container's TZ.
+  TZ: "UTC"
+  # A name for the board: shown on the settings page, pre-filled on the integrate page. Put the
+  # Ingress host here. Bare name only — no scheme, port or path.
+  DEPARTUREBOARD_HOST: ""
+  # CORS is off. Comma-separated origins to let a browser app elsewhere call the API.
+  DEPARTUREBOARD_CORS_ORIGINS: ""
+  # How often the calendar of boards checks whether today's board changed (seconds; "0" = off).
+  DEPARTUREBOARD_CALENDAR_TICK_SECONDS: "30"
+# Extra env entries, verbatim (name/value or valueFrom).
+extraEnv: []
+
+# Bring your own token from a Secret you manage: the key's value becomes DEPARTUREBOARD_API_TOKEN.
+# Empty = the app mints one on first boot, prints it once in the log and keeps it in /data/api_token.
+existingSecret: ""
+secretKey: DEPARTUREBOARD_API_TOKEN
+
+# /data: the SQLite database, the token, uploaded pictures, saved boards and the calendar.
+# SQLite ⇒ one replica, ReadWriteOnce, strategy Recreate. The PVC is kept on `helm uninstall`.
+persistence:
+  enabled: true
+  existingClaim: ""
+  storageClass: ""
+  accessModes:
+    - ReadWriteOnce
+  size: 2Gi
+  annotations: {}
+
+service:
+  type: ClusterIP
+  port: 80
+  annotations: {}
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: board.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+    # - secretName: board-tls
+    #   hosts: [board.example.com]
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    memory: 512Mi
+
+# The image runs as uid/gid 10001 (user `board`); fsGroup lets it write the volume.
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+  fsGroup: 10001
+  fsGroupChangePolicy: OnRootMismatch
+  seccompProfile:
+    type: RuntimeDefault
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: ["ALL"]
+
+# /api/health answers {"ok": true, "version": "…"}; migrations run before it does.
+livenessProbe:
+  httpGet:
+    path: /api/health
+    port: http
+  periodSeconds: 30
+  timeoutSeconds: 3
+readinessProbe:
+  httpGet:
+    path: /api/health
+    port: http
+  periodSeconds: 10
+  timeoutSeconds: 3
+startupProbe:
+  httpGet:
+    path: /api/health
+    port: http
+  periodSeconds: 2
+  failureThreshold: 30
+
+podAnnotations: {}
+podLabels: {}
+priorityClassName: ""
+nodeSelector: {}
+tolerations: []
+affinity: {}

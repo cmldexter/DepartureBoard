@@ -13,7 +13,8 @@ The latest minor release. Older releases are not patched.
 ## What the app assumes
 
 - It is meant to run on a home or office network. Nothing in the container terminates TLS; if you
-  expose it beyond the LAN, put a reverse proxy with HTTPS in front of it.
+  expose it beyond the LAN, put a reverse proxy with HTTPS in front of it (on Kubernetes, the
+  chart's Ingress and its certificate).
 - Every write needs the bearer token. The token is generated on first boot, stored in the data
   volume, and printed once in the server log. Treat the log and the settings page as secrets.
 - The board endpoint (`GET /api/board/current`) and the board page are public by design, so a TV
