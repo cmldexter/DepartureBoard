@@ -194,3 +194,51 @@ def test_rendered_manifest_is_the_chart():
     assert "kind: Deployment" in rendered and "kind: PersistentVolumeClaim" in rendered
     assert "kind: Ingress" not in rendered
     assert "namespace: departureboard" in rendered
+
+
+def test_every_doc_knows_about_living_backgrounds():
+    """The living backgrounds are written down where the pictures are, with the honest OLED
+    sentence beside the claim and every key the API takes."""
+    from app.models import GRADIENT_PRESETS
+
+    doc = (ROOT / "docs" / "backgrounds.md").read_text()
+    assert "## Living backgrounds" in doc
+    for name in GRADIENT_PRESETS:
+        assert f"`gradient:{name}`" in doc, name
+        assert (ROOT / "docs" / "media" / f"living-{name}.png").is_file(), name
+    for needle in (
+        "**OLED, honestly.**",
+        "not a burn-in cure",
+        "**On a TV stick.**",
+        "lower **Motion** first",
+        "**Reduced motion.**",
+        "background_motion",
+        "background_colors",
+        "holds a video on its first frame",
+    ):
+        assert needle in doc, needle
+    for path, needles in (
+        (
+            "README.md",
+            (
+                "**living background**",
+                "kind to an OLED panel",
+                "board-living.gif",
+                "settings-look.png",
+            ),
+        ),
+        (
+            "llms.txt",
+            ("gradient:aurora|ember|ocean|dusk|mono", "background_motion", "background_colors"),
+        ),
+        (
+            "integrations/skills/departureboard/SKILL.md",
+            ('"gradient:aurora"', '"background_motion": 0–100', '"background_colors"'),
+        ),
+        ("integrations/curl/examples.sh", ("living)", "db_living", "background_motion")),
+        ("CHANGELOG.md", ("#165", "#166", "#167", "**Living backgrounds**")),
+    ):
+        text = (ROOT / path).read_text()
+        for needle in needles:
+            assert needle in text, (path, needle)
+    assert "prevents burn-in" not in (ROOT / "README.md").read_text() + doc

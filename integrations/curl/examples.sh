@@ -15,11 +15,12 @@
 #   ./examples.sh list [live|scheduled|expired|disabled]
 #   ./examples.sh delete 12
 #   ./examples.sh preset large|compact|custom [rows cols]
+#   ./examples.sh living aurora [40] ["#0e7c7b,#5b2a86,#0a1a3f"]  # a living background: preset, motion 0–100, your own colours; `living off` takes it down
 #   ./examples.sh board                                          # what the TV sees (no token)
 #   ./examples.sh --demo                                         # only checks the host answers
 set -euo pipefail
 
-usage() { sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'; }
 
 need() {
   if [ -z "${DB_URL:-}" ]; then echo "DB_URL is not set (e.g. http://192.168.1.20:8080)" >&2; exit 2; fi
@@ -39,6 +40,7 @@ db_weekly()  { need; json -X POST "$DB_URL/api/messages" -d "$(jq -cn --arg t "$
 db_image()   { need; curl -fsS -X POST "$DB_URL/api/images" -H "$(auth)" -F "file=@$1" ${2:+-F "slug=$2"}; echo; }
 db_qr()      { need; json -X POST "$DB_URL/api/images/qr" -d "$(jq -cn --arg s "$1" --arg d "$2" '{slug:$s, data:$d}')"; }
 db_list()    { need; curl -fsS "$DB_URL/api/messages${1:+?state=$1}" -H "$(auth)"; echo; }
+db_living()  { need; if [ "$1" = off ]; then json -X PATCH "$DB_URL/api/settings" -d '{"background_image":""}'; else json -X PATCH "$DB_URL/api/settings" -d "$(jq -cn --arg p "gradient:$1" --argjson m "${2:-40}" --arg c "${3:-}" '{background_image:$p, background_motion:$m, background_colors:$c}')"; fi; }
 db_calendar() { need; case "${1:-}" in
   list) curl -fsS "$DB_URL/api/calendar" -H "$(auth)"; echo ;;
   add) json -X POST "$DB_URL/api/calendar" -d "$(jq -cn --arg p "$2" --arg s "$3" --arg e "${4:-}" '{profile:$p, start:$s, end:(if $e == "" then null else $e end)}')" ;;
@@ -67,6 +69,7 @@ case "${1:-}" in
   list)    db_list "${2:-}" ;;
   delete)  db_delete "$2" ;;
   preset)  db_preset "$2" "${3:-}" "${4:-}" ;;
+  living)  db_living "$2" "${3:-}" "${4:-}" ;;
   board)   db_board ;;
   health)  db_health ;;
   *)       usage; exit 1 ;;

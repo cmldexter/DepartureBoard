@@ -2,7 +2,8 @@
 
 The board can sit on a picture: a poster from your phone, blurred into a mood for a party, or
 one of the four that ship with the app for a quieter look. It can sit on a **video** of your own,
-playing muted in a loop. The flaps keep their theme; a matte frame turns translucent over the
+playing muted in a loop, or on a **living background** — colours the board draws itself and
+drifts like slow weather. The flaps keep their theme; a matte frame turns translucent over the
 picture; the board stays readable. And the **frame** itself — the bezel around the board — has
 its colour, width, corners and finish in your hands.
 
@@ -89,6 +90,46 @@ the file (a video that is on the TV comes off it as it goes).
   `DELETE /api/videos/{slug}`; the TV plays `GET /videos/{slug}`, which answers Range requests.
   `PATCH /api/settings` with `{"background_image": "video:<slug>", "background_blur": 0}` puts
   it behind the board.
+
+## Living backgrounds
+
+A backdrop the board **draws** instead of loads: two to four soft colour fields drifting across
+the screen under the frame, so the whole picture shifts hue over a minute or two. Nothing is
+downloaded and nothing is decoded — the TV's compositor slides a few pre-blurred shapes, which is
+the cheapest moving thing a browser can do.
+
+**Settings → Look & feel → Behind the board → the Living row.** Five tiles, drawn from the same
+colours; pick one and the live card drifts. Two controls appear with it and two step aside:
+
+- **Motion** (0–100) is how fast the fields drift: at 100 a field crosses the screen in 15 s, at
+  40 — the default — in about a minute, and back again. **Still** (0) holds them where they are;
+  it also holds a video on its first frame, if that is what is behind the board.
+- **Colours** are the preset's own until you touch a well. Change any, add a fourth with
+  **+ colour**, take one away with the ×, or **Reset to preset**. The last colour is the ground
+  the others float over, so keep that one dark if the flaps are to read.
+- **Dim** still applies. **Blur** and **Fit** hide — there is nothing to blur or fit.
+
+| `gradient:aurora` | `gradient:ember` | `gradient:ocean` |
+|---|---|---|
+| ![Aurora](media/living-aurora.png) teal, violet, deep blue | ![Ember](media/living-ember.png) amber, rose, plum | ![Ocean](media/living-ocean.png) cyan, navy, ink |
+| **`gradient:dusk`** | **`gradient:mono`** | |
+| ![Dusk](media/living-dusk.png) coral, mauve, slate | ![Mono](media/living-mono.png) one hue, three depths | |
+
+- **Reduced motion.** A TV or browser set to reduce motion shows the fields where they start and
+  nothing moves — a still gradient, like a picture.
+- **OLED, honestly.** Burn-in comes from static, bright content. A board shows the same flaps for
+  minutes, and a backdrop that drifts lowers the *static* part of the picture behind them, which
+  is kind to an OLED panel. The flaps themselves still sit still; the panel's own pixel shift is
+  what looks after those. A living background is not a burn-in cure, and the app does not claim
+  one.
+- **On a TV stick.** The fields cost the compositor almost nothing (a quarter of a millisecond of
+  main thread a frame on a laptop, no layout, no repaint), but a weak stick has a small GPU. If
+  the flips stutter over a gradient, lower **Motion** first, then raise **Dim**; a stick that
+  still struggles gets a picture instead.
+- **On the API:** `PATCH /api/settings` with `{"background_image": "gradient:aurora",
+  "background_motion": 40, "background_colors": ""}` — `background_colors` takes two to four
+  `#rrggbb` separated by commas, `""` means the preset's; `background_motion` 0–100. The same
+  keys travel with a saved board.
 
 ## The frame
 
