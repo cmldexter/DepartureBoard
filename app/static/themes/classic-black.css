@@ -2,7 +2,7 @@
 :root {
   --bg: #000;
   --frame-color: #1c1c1c;
-  --frame-width: 3vmin;
+  --frame-n: 3; /* the frame's width, vmin */
   --board-bg: #0a0a0a;
   --flap-bg: #151515;
   --flap-text: #f4f4f4;

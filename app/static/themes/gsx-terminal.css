@@ -1,0 +1,27 @@
+/* GSX Terminal — neon cyan on the void: mono glyphs, a magenta split line, a black chrome bezel
+   with a cyan edge. The frame tokens below are the theme's own finish (frame_finish "theme"); the
+   frame settings override them. */
+:root {
+  --bg: #07030e;
+  --frame-color: #050308;
+  --frame-n: 3; /* the frame's width, vmin */
+  --frame-radius: 5;
+  --frame-glow: #01fdfe;
+  --board-bg: #0a0514;
+  --flap-bg: #110a1f;
+  --flap-text: #01fdfe;
+  --flap-split: rgba(170, 85, 255, 0.65);
+  --flap-font: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --flap-weight: 700;
+  --flap-depth: 45; /* the flaps' shading, 0–100 (cell_depth overrides it) */
+  --ui-fg: #01fdfe;
+  --ui-bg: rgba(7, 3, 14, 0.75);
+  --accent: #ffef00;
+  /* neon, as board.css draws it for frame_finish "neon" */
+  --frame-surface: var(--frame-color);
+  --frame-shadow:
+    0 0 1.5vmin var(--frame-glow),
+    inset 0 0 0 0.25vmin var(--frame-glow),
+    inset 0 0 1.2vmin color-mix(in srgb, var(--frame-glow) 45%, transparent);
+  --board-lip: 0 0 1vmin color-mix(in srgb, var(--frame-glow) 60%, transparent);
+}

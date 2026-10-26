@@ -4,6 +4,7 @@ Reads the `settings` table, overlays the defaults, and resolves the grid preset 
 columns. Pure over a session so the board page, and later the board and settings APIs, share it.
 """
 
+import re
 from collections.abc import Mapping
 from typing import Any
 
@@ -11,9 +12,15 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models import (
+    BOARD_BOUNDS,
+    CELL_DEPTH_BOUNDS,
     COLS_BOUNDS,
     DEFAULT_SETTINGS,
     FLAP_BOUNDS,
+    FRAME_BOUNDS,
+    FRAME_CORNERS,
+    FRAME_FINISHES,
+    FRAME_FITS,
     GUEST_BOUNDS,
     PRESETS,
     ROWS_BOUNDS,
@@ -45,6 +52,25 @@ def _as_float(value: Any, default: float) -> float:
 
 def _as_bool(value: Any) -> bool:
     return str(value).strip().lower() in {"1", "true", "yes", "on"}
+
+
+_HEX = re.compile(r"^#[0-9a-f]{6}$")
+
+
+def _as_color(value: Any) -> str:
+    """A "#rrggbb" colour lowercased, else "" (as the theme)."""
+    v = str(value or "").strip().lower()
+    return v if _HEX.match(v) else ""
+
+
+def _opt_int(value: Any, bounds: tuple[int, int]) -> int | str:
+    """ "" stays "" (as the theme); anything else is an int clamped to the bounds."""
+    if value is None or str(value).strip() == "":
+        return ""
+    try:
+        return _clamp(int(value), bounds)
+    except (TypeError, ValueError):
+        return ""
 
 
 def resolve_display(raw: Mapping[str, Any]) -> dict[str, Any]:
@@ -90,6 +116,30 @@ def resolve_display(raw: Mapping[str, Any]) -> dict[str, Any]:
         **{
             key: _clamp(_as_int(merged[key], int(DEFAULT_SETTINGS[key])), bounds)
             for key, bounds in FLAP_BOUNDS.items()
+        },
+        "cell_depth": _opt_int(merged["cell_depth"], CELL_DEPTH_BOUNDS),
+        "frame_color": _as_color(merged["frame_color"]),
+        "frame_width": _opt_int(merged["frame_width"], FRAME_BOUNDS["frame_width"]),
+        "frame_radius": _opt_int(merged["frame_radius"], FRAME_BOUNDS["frame_radius"]),
+        "frame_finish": (
+            str(merged["frame_finish"]).strip().lower()
+            if str(merged["frame_finish"]).strip().lower() in FRAME_FINISHES
+            else DEFAULT_SETTINGS["frame_finish"]
+        ),
+        "frame_glow": _as_color(merged["frame_glow"]),
+        "frame_fit": (
+            str(merged["frame_fit"]).strip().lower()
+            if str(merged["frame_fit"]).strip().lower() in FRAME_FITS
+            else DEFAULT_SETTINGS["frame_fit"]
+        ),
+        "frame_corners": (
+            str(merged["frame_corners"]).strip().lower()
+            if str(merged["frame_corners"]).strip().lower() in FRAME_CORNERS
+            else DEFAULT_SETTINGS["frame_corners"]
+        ),
+        **{
+            key: _clamp(_as_int(merged[key], int(DEFAULT_SETTINGS[key])), bounds)
+            for key, bounds in BOARD_BOUNDS.items()
         },
         "guest_token": str(merged["guest_token"] or "").strip(),
         "guest_auto_approve": _as_bool(merged["guest_auto_approve"]),

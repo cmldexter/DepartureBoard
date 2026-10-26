@@ -57,6 +57,7 @@
     <button type="button" data-sheet="look-theme" data-title="Theme">Theme</button>
     <button type="button" data-sheet="backdrop-form" data-title="Behind the board">Behind the board</button>
     <button type="button" data-sheet="flaps-form" data-title="The flaps">The flaps</button>
+    <button type="button" data-sheet="frame-form" data-title="The frame">The frame</button>
     <button type="button" data-sheet="display-form" data-title="Display">Display</button>
   </nav>
   <section id="look" class="sheet-host" aria-labelledby="look-heading">
@@ -67,7 +68,7 @@
       {% for t in themes %}
       <button type="button" class="swatch" role="radio" aria-checked="false" data-theme="{{ t }}" tabindex="-1">
         <img src="/static/themes/{{ t }}.png" alt="" width="320" height="180">
-        <span>{{ t.replace('-', ' ').title() }}</span>
+        <span>{{ theme_names.get(t) or t.replace('-', ' ').title() }}</span>
       </button>
       {% endfor %}
     </div>
@@ -76,8 +77,9 @@
 
     <form id="backdrop-form" class="backdrop sheet-block" aria-labelledby="backdrop-heading">
       <h3 id="backdrop-heading">Behind the board</h3>
-      <p class="muted">A picture under the frame: a poster snip blurred into a mood for a party, or one of ours for a
-        quieter look. The card above follows every choice; <em>Save</em> sends it to the TV.
+      <p class="muted">A picture or a video under the frame: a poster snip blurred into a mood for a party, one of ours
+        for a quieter look, or a clip of your own playing muted in a loop. The card above follows every choice;
+        <em>Save</em> sends it to the TV.
         <a href="https://github.com/cmldexter/DepartureBoard/blob/main/docs/backgrounds.md" rel="noopener" target="_blank">Making your own</a>.</p>
       <fieldset>
         <legend>Picture</legend>
@@ -92,8 +94,9 @@
           </button>
           {% endfor %}
         </div>
-        <p class="upload"><label class="file-button">Upload…<input type="file" name="file" accept="image/png,image/jpeg,image/gif,image/webp" class="sr-only"></label>
-          <span class="muted">Your uploads from the Images panel are in the row too. Up to 5 MB.</span></p>
+        <p class="upload"><label class="file-button">Upload a picture…<input type="file" name="file" accept="image/png,image/jpeg,image/gif,image/webp" class="sr-only"></label>
+          <label class="file-button">Upload a video…<input type="file" name="video" accept="video/mp4,video/webm" class="sr-only"></label>
+          <span class="muted">Pictures up to 5 MB — your uploads from the Images panel are in the row too. Videos MP4 or WebM up to 250 MB; a 1080p file without sound plays on the weakest TV.</span></p>
       </fieldset>
       <fieldset class="effects">
         <legend>Effect</legend>
@@ -107,17 +110,58 @@
 
     <form id="flaps-form" class="backdrop flaps sheet-block" aria-labelledby="flaps-heading">
       <h3 id="flaps-heading">The flaps</h3>
-      <p class="muted">How round, how far apart, how thick the line across. Tighter flaps lose less of a picture
-        spread over them; <em>Picture mode</em> sets all three at once, <em>Classic</em> puts them back. The card
+      <p class="muted">How round, how far apart, how thick the line across, and how deep: a lit top half, a
+        shadow under the lip and a shadow under each flap. Tighter flaps lose less of a picture spread over
+        them; <em>Picture mode</em> sets all four at once (flat), <em>Classic</em> puts them back. The card
         above follows every move; <em>Save</em> sends it to the TV.</p>
       <fieldset class="effects">
         <legend>Shape</legend>
         <label>Corners <input type="range" name="cell_radius" min="0" max="12" step="1" value="6"> <output id="radius-value">6 %</output></label>
         <label>Gap <input type="range" name="cell_gap" min="0" max="100" step="5" value="35"> <output id="gap-value">0.35 vmin</output></label>
         <label>Split line <input type="range" name="split_line" min="0" max="3" step="1" value="1"> <output id="split-value">1 px</output></label>
+        <label>Depth <input type="range" name="cell_depth" min="0" max="100" step="5" value="40"> <output id="depth-value">as the theme</output> <label class="inline"><input type="checkbox" name="cell_depth_theme" checked> as the theme</label></label>
       </fieldset>
       <div class="row"><span><button type="submit">Save flaps</button> <button type="button" class="small" id="flaps-picture">Picture mode</button> <button type="button" class="small" id="flaps-classic">Classic</button></span>
         <span class="muted" id="flaps-status" role="status"></span></div>
+    </form>
+
+    <form id="frame-form" class="backdrop frame sheet-block" aria-labelledby="frame-heading">
+      <h3 id="frame-heading">The frame</h3>
+      <p class="muted">The bezel around the board: where it sits, its colour, how wide, how round, and a finish. Every
+        theme has its own; what you set here overrides it, and <em>As the theme</em> gives it back. A rounder corner
+        needs a wider bezel or margin while the flaps stay whole; <em>Bezel hides the corners</em> lets the bezel cover what it rounds over, at any radius. The card above follows every move;
+        <em>Save</em> sends it to the TV.</p>
+      <fieldset class="effects">
+        <legend>Where it sits</legend>
+        <div class="chips" role="radiogroup" aria-label="Fit">
+          <label class="chip"><input type="radio" name="frame_fit" value="screen" checked> Fills the screen</label>
+          <label class="chip"><input type="radio" name="frame_fit" value="board"> Hugs the flaps</label>
+        </div>
+        <label>Size <input type="range" name="board_scale" min="25" max="100" step="5" value="100"> <output id="board-scale-value">100 %</output></label>
+        <label>Margin <input type="range" name="board_margin" min="0" max="10" step="1" value="0"> <output id="board-margin-value">0 vmin</output></label>
+      </fieldset>
+      <fieldset class="effects">
+        <legend>The bezel</legend>
+        <label>Colour <input type="color" name="frame_color" value="#1c1c1c"> <label class="inline"><input type="checkbox" name="frame_color_theme" checked> as the theme</label></label>
+        <label>Width <input type="range" name="frame_width" min="0" max="10" step="1" value="3"> <output id="frame-width-value">as the theme</output></label>
+        <label>Corners <input type="range" name="frame_radius" min="0" max="30" step="1" value="0"> <output id="frame-radius-value">as the theme</output></label>
+        <div class="chips" role="radiogroup" aria-label="Corner flaps">
+          <label class="chip"><input type="radio" name="frame_corners" value="whole" checked> Flaps stay whole</label>
+          <label class="chip"><input type="radio" name="frame_corners" value="hide"> Bezel hides the corners</label>
+        </div>
+      </fieldset>
+      <fieldset class="effects">
+        <legend>Finish</legend>
+        <div class="chips" role="radiogroup" aria-label="Finish">
+          <label class="chip"><input type="radio" name="frame_finish" value="theme" checked> As the theme</label>
+          <label class="chip"><input type="radio" name="frame_finish" value="matte"> Matte</label>
+          <label class="chip"><input type="radio" name="frame_finish" value="chrome"> Chrome</label>
+          <label class="chip"><input type="radio" name="frame_finish" value="neon"> Neon</label>
+        </div>
+        <label id="frame-glow-row">Glow <input type="color" name="frame_glow" value="#01fdfe"> <label class="inline"><input type="checkbox" name="frame_glow_theme" checked> as the theme</label></label>
+      </fieldset>
+      <div class="row"><span><button type="submit">Save frame</button> <button type="button" class="small" id="frame-black-chrome">Black chrome</button> <button type="button" class="small" id="frame-theme">As the theme</button></span>
+        <span class="muted" id="frame-status" role="status"></span></div>
     </form>
   </section>
 
@@ -380,7 +424,7 @@
         {% for t in themes %}
         <button type="button" class="swatch" role="radio" aria-checked="false" data-theme="{{ t }}" tabindex="-1">
           <img src="/static/themes/{{ t }}.png" alt="" width="320" height="180">
-          <span>{{ t.replace('-', ' ').title() }}</span>
+          <span>{{ theme_names.get(t) or t.replace('-', ' ').title() }}</span>
         </button>
         {% endfor %}
       </div>

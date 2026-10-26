@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from app.config import Settings
 from app.models import DEFAULT_SETTINGS, Message, Setting
 from app.schemas import MessageIn, ProfileFile, SettingsPatch
-from app.services import images
+from app.services import images, videos
 from app.services.display import display_settings, resolve_display
 from app.services.scheduler import as_utc
 from app.services.text import capacity_error, layout, tokenize
@@ -154,6 +154,8 @@ def load(
     values = {k: v for k, v in patch.model_dump(exclude_unset=True).items() if v is not None}
     bg = str(values.get("background_image") or "")
     if bg.startswith("img:") and images.find(settings, bg[4:]) is None:
+        values["background_image"] = ""
+    if bg.startswith("video:") and videos.find(settings, bg[6:]) is None:
         values["background_image"] = ""
     for key in PROFILE_SETTINGS:
         _set(session, key, values[key] if key in values else DEFAULT_SETTINGS[key])

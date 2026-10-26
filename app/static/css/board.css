@@ -4,15 +4,19 @@
 
 html.board-page, .board-page { overflow: hidden; }
 .board-page { background: var(--bg); text-size-adjust: none; -webkit-text-size-adjust: none; }
+/* The frame is centred on the page: filling it (frame_fit screen) or hugging the flaps (board). */
+body.board-page { display: grid; place-items: center; height: 100vh; }
 
-/* ---- a picture behind the board (display settings background_*): a fixed layer under the
-   frame, blurred and dimmed; the frame turns translucent over it, the board keeps its own colour. */
+/* ---- behind the board (display settings background_*): a fixed layer under the frame — a
+   picture (background-image) or a video (the <video> child, muted in a loop) — blurred and
+   dimmed; a matte frame turns translucent over it, the board keeps its own colour. */
 #backdrop {
   display: none;
   position: fixed;
   inset: 0;
   z-index: 0;
   pointer-events: none;
+  overflow: hidden;
   background: var(--bg) center / cover no-repeat;
 }
 html.has-backdrop #backdrop {
@@ -22,38 +26,131 @@ html.has-backdrop #backdrop {
   background-size: var(--bg-fit, cover);
   filter: blur(var(--bg-blur, 0px));
 }
+#backdrop video {
+  display: none;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: var(--bg-fit, cover);
+  background: var(--bg);
+}
+html.has-video #backdrop video { display: block; }
 #backdrop::after {
   content: "";
   position: absolute;
   inset: 0;
   background: rgba(0, 0, 0, var(--bg-dim, 0));
 }
+/* A matte bezel lets the picture through (--frame-alpha, read by the default surface below);
+   chrome and neon surfaces are opaque by construction, so they stay solid objects over it. */
 html.has-backdrop .frame {
   position: relative;
   z-index: 1;
-  background: transparent;
-  background: color-mix(in srgb, var(--frame-color) 35%, transparent);
+  --frame-alpha: 35%;
 }
 
 .frame {
-  --frame: var(--frame-width, 3vmin);
+  /* The frame's shape (display settings frame_*, else the theme's): --frame-n is the width in vmin
+     as a number; the outer corner radius is capped at 3.4 × the width — a rounder corner would clip
+     the corner flaps. The page (or the backdrop) shows in the rounded corners. */
+  --frame: calc(var(--frame-n, 3) * 1vmin);
+  /* Where it sits (display settings frame_fit / board_scale / board_margin): the board's size as a
+     share of the screen, and the board's own colour between the bezel and the flaps — which also
+     absorbs a round corner, so the cap counts it. */
+  --s: calc(var(--board-scale, 100) / 100);
+  --margin: calc(var(--board-margin, 0) * 1vmin);
+  --frame-r: min(var(--frame-radius, 0), calc((var(--frame-n, 3) + var(--board-margin, 0)) * 3.4));
+  border-radius: calc(var(--frame-r) * 1vmin);
+  /* The board's inner corner (frame_corners "whole"): it follows the frame's outer curve as far
+     as the margin allows — its cut (0.3 × the radius) never exceeds the margin + gap, so the corner
+     flaps sit on the board's colour and the recess shadow stays in the margin band; the bezel
+     thickens at the corners instead, as a screen's does. */
+  --board-r: max(
+    0.6vmin,
+    min(calc((var(--frame-r) - var(--frame-n, 3)) * 1vmin), calc((var(--margin, 0px) + var(--gap)) * 3.4))
+  );
+  /* The finish: a surface, a shadow and a lip around the board, as tokens. The default is matte
+     (the colour, see-through over a backdrop); a theme may carry its own tokens on :root;
+     frame_finish (data-finish on this element) overrides both. */
+  background: var(--frame-color);
+  background: var(--frame-surface, color-mix(in srgb, var(--frame-color) var(--frame-alpha, 100%), transparent));
+  box-shadow: var(--frame-shadow, none);
   /* The shape of a flap (display settings cell_radius / cell_gap / split_line, rendered inline on
      this element and set by board.js applyFlapShape): unitless numbers, the classic look as fallback. */
   --gap: calc(var(--cell-gap, 35) * 0.01vmin);
   --r: calc(var(--cell-w) * var(--cell-radius, 6) / 100); /* 6 % of a cell ≈ the old 0.5vmin at 1080p */
   --split: calc(var(--split-line, 1) * 1px);
   --cell-w: min(
-    calc((100vw - 2 * var(--frame) - 2 * var(--gap) - (var(--cols) - 1) * var(--gap)) / var(--cols)),
-    calc((100vh - 2 * var(--frame) - 2 * var(--gap) - (var(--rows) - 1) * var(--gap)) / var(--rows) / 1.45)
+    calc((100vw * var(--s) - 2 * var(--frame) - 2 * var(--margin) - 2 * var(--gap) - (var(--cols) - 1) * var(--gap)) / var(--cols)),
+    calc((100vh * var(--s) - 2 * var(--frame) - 2 * var(--margin) - 2 * var(--gap) - (var(--rows) - 1) * var(--gap)) / var(--rows) / 1.45)
   );
   --cell-h: calc(var(--cell-w) * 1.45);
-  height: 100vh;
-  width: 100vw;
+  height: calc(100vh * var(--s));
+  width: calc(100vw * var(--s));
   display: grid;
   place-items: center;
   padding: var(--frame);
-  background: var(--frame-color);
   overflow: hidden;
+  box-sizing: border-box;
+}
+/* frame_corners "hide": the bezel's inner curve follows its outer one, the cap is lifted, and the
+   board clips whatever of the corner flaps the bezel rounds over — a screen's bezel hiding the
+   panel's corners. */
+.frame[data-corners="hide"] {
+  --frame-r: var(--frame-radius, 0);
+  --board-r: max(0.6vmin, calc((var(--frame-r) - var(--frame-n, 3)) * 1vmin));
+}
+.frame[data-corners="hide"] .board,
+.frame[data-corners="hide"] #overlays { overflow: hidden; }
+.frame[data-fit="board"] {
+  width: max-content;
+  height: max-content;
+  width: fit-content;
+  height: fit-content;
+}
+.frame[data-finish="matte"] {
+  --frame-surface: initial;
+  --frame-shadow: initial;
+  --board-lip: initial;
+  --board-recess: initial;
+}
+/* Chrome: a bezel with a rounded profile, lit from above — a bright rim on the outer edge, light
+   on the top of the curve, dark under it, a second bright ring where the inner edge turns down to
+   the board, and a shadow onto the page. Everything scales with the bezel's width. */
+.frame[data-finish="chrome"] {
+  --frame-surface: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--frame-color) 55%, white) 0%,
+    color-mix(in srgb, var(--frame-color) 88%, white) 20%,
+    var(--frame-color) 40%,
+    color-mix(in srgb, var(--frame-color) 78%, black) 62%,
+    color-mix(in srgb, var(--frame-color) 86%, white) 84%,
+    color-mix(in srgb, var(--frame-color) 65%, white) 100%
+  );
+  --frame-shadow:
+    inset 0 0 0 max(1px, calc(var(--frame) * 0.07)) rgba(255, 255, 255, 0.5),
+    inset 0 calc(var(--frame) * 0.3) calc(var(--frame) * 0.55) rgba(255, 255, 255, 0.28),
+    inset 0 calc(var(--frame) * -0.3) calc(var(--frame) * 0.55) rgba(0, 0, 0, 0.75),
+    inset 0 0 calc(var(--frame) * 0.2) rgba(0, 0, 0, 0.35),
+    0 calc(var(--frame) * 0.35) calc(var(--frame) * 1.4) rgba(0, 0, 0, 0.6);
+  /* The board hides under the bezel: a dark groove where the chrome curls down over it, and the
+     bezel's shadow falling onto the panel (the recess, drawn over the flaps by .board::after). */
+  --board-lip:
+    0 0 0 1px rgba(0, 0, 0, 0.95),
+    0 0 calc(var(--frame) * 0.45) calc(var(--frame) * 0.05) rgba(0, 0, 0, 0.7);
+  --board-recess:
+    inset 0 calc(var(--frame) * 0.35) calc(var(--frame) * 0.9) rgba(0, 0, 0, 0.75),
+    inset 0 0 calc(var(--frame) * 0.5) rgba(0, 0, 0, 0.6),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.6);
+}
+.frame[data-finish="neon"] {
+  --frame-surface: var(--frame-color);
+  --frame-shadow:
+    0 0 1.5vmin var(--frame-glow, #01fdfe),
+    inset 0 0 0 0.25vmin var(--frame-glow, #01fdfe),
+    inset 0 0 1.2vmin color-mix(in srgb, var(--frame-glow, #01fdfe) 45%, transparent);
+  --board-lip: 0 0 1vmin color-mix(in srgb, var(--frame-glow, #01fdfe) 60%, transparent);
 }
 
 /* The stage holds the grid and, over it, the overlays: pictures drawn whole over their block
@@ -62,6 +159,7 @@ html.has-backdrop .frame {
 #overlays {
   position: absolute;
   inset: 0;
+  border-radius: var(--board-r); /* clipped with the flaps under a hiding bezel */
   overflow: hidden; /* a block cut at the board's bottom edge stays cut */
   pointer-events: none;
   z-index: 3;
@@ -79,21 +177,38 @@ html.has-backdrop .frame {
 @media (prefers-reduced-motion: reduce) { .overlay { transition: none; } }
 
 .board {
+  position: relative;
   display: grid;
   grid-template-columns: repeat(var(--cols), var(--cell-w));
   grid-auto-rows: var(--cell-h);
   gap: var(--gap);
-  padding: var(--gap);
+  padding: calc(var(--gap) + var(--margin, 0px));
   background: var(--board-bg);
-  border-radius: 0.6vmin;
+  border-radius: var(--board-r); /* set on .frame, by frame_corners */
+  box-shadow: var(--board-lip, none);
+}
+/* The recess: the bezel's shadow over the panel's edge, flaps included, so the board reads as
+   tucked under the bezel rather than laid beside it (a finish's --board-recess token). */
+.board::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 4;
+  box-shadow: var(--board-recess, none);
 }
 
 .cell {
+  /* The depth of a flap (display setting cell_depth, else the theme's --flap-depth, else flat):
+     0–100 → 0–1, the strength of the shading below and of the shadow under each flap. */
+  --depth: calc(var(--cell-depth, var(--flap-depth, 0)) / 100);
   position: relative;
   width: var(--cell-w);
   height: var(--cell-h);
   border-radius: var(--r);
   overflow: hidden;
+  box-shadow: 0 calc(var(--cell-h) * 0.02 * var(--depth)) calc(var(--cell-h) * 0.05 * var(--depth)) rgba(0, 0, 0, calc(0.6 * var(--depth)));
   perspective: calc(var(--cell-h) * 4);
   font-family: var(--flap-font);
   font-weight: var(--flap-weight, 700);
@@ -144,6 +259,35 @@ html.has-backdrop .frame {
 }
 .cell .half.top { top: 0; border-radius: var(--r) var(--r) 0 0; }
 .cell .half.bottom { bottom: 0; border-radius: 0 0 var(--r) var(--r); }
+
+/* The shading (--depth): the top half is lit from above and darkens toward the split; the bottom
+   half sits in the shadow of the leaf's lip. Drawn over the glyph and over a picture alike, as
+   light would; the leaf's faces carry the same so a flip never changes the look. */
+.cell .half::after,
+.cell .face::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.cell .half.top::after,
+.cell .face.front::after {
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, calc(0.11 * var(--depth))),
+    rgba(255, 255, 255, 0) 45%,
+    rgba(0, 0, 0, calc(0.2 * var(--depth)))
+  );
+}
+.cell .half.bottom::after,
+.cell .face.back::after {
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, calc(0.55 * var(--depth))),
+    rgba(0, 0, 0, calc(0.14 * var(--depth))) 40%,
+    rgba(0, 0, 0, calc(0.05 * var(--depth)))
+  );
+}
 
 .cell .glyph {
   position: absolute;

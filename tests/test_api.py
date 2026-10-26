@@ -570,10 +570,10 @@ def test_background_settings(client, auth):
 def test_flap_shape_settings(client, auth):
     """Corners, gap and split line: defaults, one PATCH, the TV learns on its next poll, bounds."""
     s = client.get("/api/settings", headers=auth).json()
-    assert (s["cell_radius"], s["cell_gap"], s["split_line"]) == (6, 35, 1)
+    assert (s["cell_radius"], s["cell_gap"], s["split_line"], s["cell_depth"]) == (6, 35, 1, "")
     before = client.get("/api/board/current")
     assert before.json()["settings"]["cell_gap"] == 35
-    picture_mode = {"cell_radius": 0, "cell_gap": 10, "split_line": 0}
+    picture_mode = {"cell_radius": 0, "cell_gap": 10, "split_line": 0, "cell_depth": 0}
     r = client.patch("/api/settings", json=picture_mode, headers=auth)
     assert r.status_code == 200
     assert {k: r.json()[k] for k in picture_mode} == picture_mode
@@ -587,10 +587,20 @@ def test_flap_shape_settings(client, auth):
         {"cell_gap": -1},
         {"split_line": 4},
         {"split_line": "thick"},
+        {"cell_depth": 101},
+        {"cell_depth": -1},
+        {"cell_depth": "deep"},
     ):
         assert client.patch("/api/settings", json=bad, headers=auth).status_code == 422, bad
     r = client.patch("/api/settings", json={"cell_gap": 100}, headers=auth)
     assert r.json()["cell_gap"] == 100 and r.json()["cell_radius"] == 0, "one key at a time"
+    # the depth: a number renders inline, "" gives the theme's own back
+    r = client.patch("/api/settings", json={"cell_depth": 45}, headers=auth)
+    assert r.status_code == 200 and r.json()["cell_depth"] == 45
+    assert "--cell-depth: 45;" in client.get("/").text
+    r = client.patch("/api/settings", json={"cell_depth": ""}, headers=auth)
+    assert r.status_code == 200 and r.json()["cell_depth"] == ""
+    assert "--cell-depth" not in client.get("/").text
 
 
 def test_qr_code_is_a_picture_the_server_makes(client, auth, settings):
@@ -704,3 +714,108 @@ def test_a_remade_picture_reaches_the_tv(client, auth):
         if isinstance(c, dict)
     )
     assert part["v"] == 3 and "qr" not in part
+
+
+FRAME_DEFAULTS = {
+    "frame_color": "",
+    "frame_width": "",
+    "frame_radius": "",
+    "frame_finish": "theme",
+    "frame_glow": "",
+    "frame_fit": "screen",
+    "frame_corners": "whole",
+    "board_scale": 100,
+    "board_margin": 0,
+}
+
+
+def test_frame_settings(client, auth):
+    s = client.get("/api/settings", headers=auth).json()
+    assert {k: s[k] for k in FRAME_DEFAULTS} == FRAME_DEFAULTS, "as the theme, out of the box"
+    before = client.get("/api/board/current")
+    assert {k: before.json()["settings"][k] for k in FRAME_DEFAULTS} == FRAME_DEFAULTS
+    black_chrome = {
+        "frame_color": "#050308",
+        "frame_width": 4,
+        "frame_radius": 8,
+        "frame_finish": "chrome",
+        "frame_glow": "#01FDFE",
+        "frame_fit": "board",
+        "frame_corners": "hide",
+        "board_scale": 80,
+        "board_margin": 2,
+    }
+    r = client.patch("/api/settings", json=black_chrome, headers=auth)
+    assert r.status_code == 200, r.text
+    got = {k: r.json()[k] for k in FRAME_DEFAULTS}
+    assert got == {**black_chrome, "frame_glow": "#01fdfe"}, "colours are lowercased"
+    after = client.get("/api/board/current", headers={"If-None-Match": before.headers["ETag"]})
+    assert after.status_code == 200, "the TV learns about the frame on its next poll"
+    assert after.json()["settings"]["frame_finish"] == "chrome"
+    html = client.get("/").text
+    assert 'data-finish="chrome"' in html and 'data-fit="board"' in html
+    assert 'data-corners="hide"' in html
+    assert "--board-scale: 80;" in html and "--board-margin: 2;" in html
+    assert "--frame-color: #050308;" in html and "--frame-n: 4;" in html
+    assert "--frame-radius: 8;" in html and "--frame-glow: #01fdfe;" in html
+    # "" puts a key back to the theme's own
+    r = client.patch(
+        "/api/settings",
+        json={"frame_width": "", "frame_color": "", "frame_finish": "theme"},
+        headers=auth,
+    )
+    assert r.status_code == 200
+    assert (r.json()["frame_width"], r.json()["frame_color"], r.json()["frame_finish"]) == (
+        "",
+        "",
+        "theme",
+    )
+    html = client.get("/").text
+    assert (
+        'data-finish="theme"' in html and "--frame-n:" not in html and "--frame-color:" not in html
+    )
+    assert "--frame-radius: 8;" in html, "the radius stayed"
+    # bounds and shapes
+    for bad in (
+        {"frame_width": 11},
+        {"frame_width": -1},
+        {"frame_radius": 31},
+        {"frame_finish": "glossy"},
+        {"frame_color": "black"},
+        {"frame_color": "#fff"},
+        {"frame_glow": "01fdfe"},
+        {"frame_fit": "window"},
+        {"frame_corners": "clip"},
+        {"board_scale": 24},
+        {"board_scale": 101},
+        {"board_margin": 11},
+    ):
+        assert client.patch("/api/settings", json=bad, headers=auth).status_code == 422, bad
+    # a profile carries the frame
+    assert client.post("/api/profiles/f/save", json={"name": "F"}, headers=auth).status_code == 201
+    assert client.get("/api/profiles/f", headers=auth).json()["settings"]["frame_radius"] == 8
+
+
+def test_display_resolves_frame_garbage_to_the_theme():
+    from app.services.display import resolve_display
+
+    d = resolve_display(
+        {
+            "frame_color": "red",
+            "frame_width": "abc",
+            "frame_radius": "99",
+            "frame_finish": "Glossy",
+            "frame_glow": "#ABCDEF",
+        }
+    )
+    assert (
+        d["frame_color"],
+        d["frame_width"],
+        d["frame_radius"],
+        d["frame_finish"],
+        d["frame_glow"],
+    ) == ("", "", 30, "theme", "#abcdef")
+    assert resolve_display({})["frame_width"] == ""
+    assert resolve_display({"frame_width": "0"})["frame_width"] == 0
+    d = resolve_display({"frame_fit": "Board", "board_scale": "7", "board_margin": "x"})
+    assert (d["frame_fit"], d["board_scale"], d["board_margin"]) == ("board", 25, 0)

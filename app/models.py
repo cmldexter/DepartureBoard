@@ -73,9 +73,28 @@ COLS_BOUNDS = (16, 36)
 # The shape of a flap: corner radius in % of the cell's width, the gap between cells in
 # hundredths of a vmin, the split line across the middle in px (0 hides it).
 FLAP_BOUNDS = {"cell_radius": (0, 12), "cell_gap": (0, 100), "split_line": (0, 3)}
+# The depth of a flap: its shading and the shadow under it, 0–100; "" = as the theme.
+CELL_DEPTH_BOUNDS = (0, 100)
 
 # Built-in themes: app/static/themes/<id>.css. The first is the default.
-THEMES = ("classic-black", "walnut", "arctic-white", "midnight")
+THEMES = ("classic-black", "walnut", "arctic-white", "midnight", "gsx-terminal")
+
+# The frame (the bezel around the board): width and outer corner radius in vmin when set; "" on
+# any frame key means "as the theme" — the theme's stylesheet carries its native look.
+# A theme's name on the settings page when title-casing its id is not it.
+THEME_NAMES = {"gsx-terminal": "GSX Terminal"}
+
+FRAME_BOUNDS = {"frame_width": (0, 10), "frame_radius": (0, 30)}
+FRAME_FINISHES = ("theme", "matte", "chrome", "neon")
+# Where the frame sits: filling the screen (the classic slab) or hugging the flaps so the page
+# or the backdrop shows around it; the board's size as % of the screen; the board's own colour
+# between the bezel and the flaps, in vmin (it also absorbs a round corner).
+FRAME_FITS = ("screen", "board")
+# The corner flaps: "whole" = the board's inner corner rounds only as far as the margin allows
+# (the bezel thickens at the corners); "hide" = the bezel's inner curve follows its outer one and
+# hides whatever of the corner flaps it covers — and the corner cap is lifted.
+FRAME_CORNERS = ("whole", "hide")
+BOARD_BOUNDS = {"board_scale": (25, 100), "board_margin": (0, 10)}
 
 DEFAULT_SETTINGS = {
     "grid_preset": "compact",
@@ -89,8 +108,9 @@ DEFAULT_SETTINGS = {
     "rotate_seconds": "20",
     "idle_text": "",
     "timer_ring": "off",
-    # A picture behind the board: "" (none), "img:<slug>" (uploaded) or "builtin:<name>";
-    # blurred by background_blur px, dimmed by background_dim %, cover or contain.
+    # Behind the board: "" (none), "img:<slug>" (an uploaded picture), "builtin:<name>" (a shipped
+    # one) or "video:<slug>" (an uploaded clip, muted in a loop); blurred by background_blur px,
+    # dimmed by background_dim %, cover or contain.
     "background_image": "",
     "background_blur": "12",
     "background_dim": "30",
@@ -99,6 +119,18 @@ DEFAULT_SETTINGS = {
     "cell_radius": "6",
     "cell_gap": "35",
     "split_line": "1",
+    "cell_depth": "",
+    # The frame (FRAME_BOUNDS / FRAME_FINISHES): colour, width, corner radius, finish and the neon
+    # glow colour; "" = as the theme, finish "theme" = the theme's own.
+    "frame_color": "",
+    "frame_width": "",
+    "frame_radius": "",
+    "frame_finish": "theme",
+    "frame_glow": "",
+    "frame_fit": "screen",
+    "frame_corners": "whole",
+    "board_scale": "100",
+    "board_margin": "0",
     # The first-run walkthrough: "" shows it when the settings page opens, "1" once Done or
     # skipped. DELETE /api/settings/setup_done brings it back. Never sent to the TV.
     "setup_done": "",

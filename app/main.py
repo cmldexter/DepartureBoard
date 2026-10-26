@@ -13,7 +13,18 @@ from fastapi.templating import Jinja2Templates
 from app import __version__
 from app.config import Settings, get_settings
 from app.db import Database, migrate
-from app.routers import board, calendar, guest, health, images, messages, pages, posts, profiles
+from app.routers import (
+    board,
+    calendar,
+    guest,
+    health,
+    images,
+    messages,
+    pages,
+    posts,
+    profiles,
+    videos,
+)
 from app.routers import settings as settings_api
 from app.services import calendar as calendar_service
 from app.services.auth import load_or_create_token
@@ -25,8 +36,8 @@ An open-source split-flap departure board for any TV. Everything the settings pa
 API does — the integrations are yours.
 
 **Auth.** `Authorization: Bearer <token>` on every call except `GET /api/board/current` and
-`GET /images/{slug}`, which the TV polls and must never need a secret for. The token is printed
-in the server log on first boot and shown on `/settings`.
+`GET /images/{slug}` and `GET /videos/{slug}`, which the TV polls and must never need a secret
+for. The token is printed in the server log on first boot and shown on `/settings`.
 
 **The shortest call.** `POST /api/messages/now` with a JSON `{"text": "…"}` or a `text/plain`
 body puts a message on the board immediately, above everything else.
@@ -135,6 +146,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(settings_api.router)
     app.include_router(images.api)
     app.include_router(images.public)
+    app.include_router(videos.api)
+    app.include_router(videos.public)
     app.include_router(guest.api)
     app.include_router(guest.public)
     app.include_router(posts.router)

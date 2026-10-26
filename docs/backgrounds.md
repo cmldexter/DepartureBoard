@@ -1,8 +1,10 @@
-# A picture behind the board
+# Behind the board, and the frame around it
 
 The board can sit on a picture: a poster from your phone, blurred into a mood for a party, or
-one of the four that ship with the app for a quieter look. The flaps keep their theme; the frame
-turns translucent over the picture; the board stays readable.
+one of the four that ship with the app for a quieter look. It can sit on a **video** of your own,
+playing muted in a loop. The flaps keep their theme; a matte frame turns translucent over the
+picture; the board stays readable. And the **frame** itself — the bezel around the board — has
+its colour, width, corners and finish in your hands.
 
 ## The four-click version
 
@@ -54,6 +56,85 @@ They are drawn by the project, 1920 × 1080, 20–110 KB each, under `app/static
 
 `docs/background-template.png` is that template at full size — open it in any editor, put your
 picture on a layer beneath, and keep the subject outside the dashed boxes.
+
+## A video behind the board
+
+**Settings → Look & feel → Behind the board → Upload a video…** takes an MP4 or WebM up to
+250 MB. It appears as a tile with its first frame and is selected; the live card plays it; **Save
+background** sends it to the TV, where it plays muted, in a loop, under the frame. **Dim** works
+over it as over a picture; **Fit** is *fill the screen* or *fit inside*; the × on the tile deletes
+the file (a video that is on the TV comes off it as it goes).
+
+- **Blur starts at 0 for a video.** Picking a video sets the Blur slider to 0; you can raise it,
+  but a blur filter over a moving 1080p picture is the one thing a TV stick cannot afford. Keep it
+  at 0 on a Fire TV Stick or a Chromecast; a Raspberry Pi 4 or a laptop manages some.
+- **The file is stored as it is** — the server never re-encodes. What plays on the weakest TV
+  browser is **1080p h264, no sound, fast start**. From any clip, one line:
+
+  ```sh
+  ffmpeg -i in.mp4 -vf scale=1920:-2 -an -c:v libx264 -crf 23 -movflags +faststart out.mp4
+  ```
+
+  A three-minute 1440p phone clip of 150 MB comes out around 60 MB at 1080p; `-crf 28` halves
+  that again at a small cost in detail. `-an` drops the sound the TV never plays; `+faststart`
+  puts the index first so the TV starts before the whole file is down.
+- **The loop seam.** A clip that ends where it starts (a slow pan that returns, a loop made for
+  it) loops without a cut; anything else jumps once per lap. The length does not matter.
+- **Reduced motion.** A TV or browser set to reduce motion shows the video's first frame and
+  nothing moves — a still, like a picture.
+- **The cost.** The TV decodes the video for as long as the board is up. Every TV browser decodes
+  1080p h264 in hardware; 4K or VP9 depends on the device. Pictures stay the cheaper choice for a
+  board that is up all day on a stick.
+- **On the API:** `POST /api/videos` (multipart `file`, optional `slug`), `GET /api/videos`,
+  `DELETE /api/videos/{slug}`; the TV plays `GET /videos/{slug}`, which answers Range requests.
+  `PATCH /api/settings` with `{"background_image": "video:<slug>", "background_blur": 0}` puts
+  it behind the board.
+
+## The frame
+
+The bezel around the board is each theme's own: Classic Black's dark grey, Walnut's wood, GSX
+Terminal's black chrome with a cyan edge. **Settings → Look & feel → The frame** overrides it, one
+setting at a time, and *As the theme* gives any of them back:
+
+| Setting | On the API | What it does |
+|---|---|---|
+| **Fit** | `frame_fit` `screen` · `board` | *Fills the screen* is the classic slab; *Hugs the flaps* wraps the bezel around the board so the page — or the video — shows all around it |
+| **Size** | `board_scale` 25–100 | The board's size as a share of the screen; 85 leaves a band of the backdrop around a hugging board |
+| **Margin** | `board_margin` 0–10 | The board's own colour between the bezel and the flaps, in vmin; it also absorbs a round corner |
+| **Colour** | `frame_color` `"#rrggbb"` or `""` | The bezel's colour |
+| **Width** | `frame_width` 0–10 or `""` | In vmin (hundredths of the screen's shorter side); the themes use 3, Walnut 4 |
+| **Corners** | `frame_radius` 0–30 or `""` | The outer corner radius in vmin; the page or the backdrop shows in the rounded corners |
+| **Corner flaps** | `frame_corners` `whole` · `hide` | *Flaps stay whole*: the board's inner corner rounds only as far as the margin allows and the bezel thickens at the corners; *Bezel hides the corners*: the inner curve follows the outer one and the bezel covers what it rounds over, at any radius |
+| **Finish** | `frame_finish` `theme` · `matte` · `chrome` · `neon` | *Matte* is the flat colour; *chrome* a metallic bezel the board tucks under; *neon* a glowing edge |
+| **Glow** | `frame_glow` `"#rrggbb"` or `""` | The neon edge's colour (shown for neon) |
+
+**A rounder corner needs a wider bezel or a margin.** The corners never cut into a flap: the
+radius is capped at about 3.4 × (width + margin), so a thin 2 vmin chrome bezel with a 2 vmin
+margin still takes a 13 vmin corner; for a pill-shaped board raise the margin first — it is the
+board's own colour, not chrome, and the board's own inner corner only rounds as far as the margin
+allows (the bezel thickens at the corners, as a screen's does). The slider's readout says *capped
+by the width + margin* when it is. **Bezel hides the corners** is the other look: the cap is
+lifted, the inner curve stays concentric with the outer one, and the corner flaps — and a picture
+across them — are clipped under the bezel, as a screen's bezel hides the panel's corners.
+
+**Chrome** is drawn as a bezel with a rounded profile lit from above: a bright rim on the outer
+edge, light on top of the curve, shadow under it, and a shadow onto the page. The board **hides
+under it**: a dark groove where the chrome curls down, and the bezel's shadow falling onto the
+panel's edge, flaps included, so the board reads as recessed rather than laid beside the bezel.
+Every part scales with the width, so a thin bezel reads as a thin tube and a wide one as a slab.
+
+**The flaps' depth** goes with it: **Look & feel → The flaps → Depth** (`cell_depth` 0–100, `""` =
+as the theme) lights the top half of every flap, shadows the bottom half under the leaf's lip and
+drops a soft shadow under each flap. The four classic themes are flat until you raise it; GSX
+Terminal carries 45 of its own. *Picture mode* sets it to 0 so a banner across the flaps stays
+clean.
+
+**Over a picture or video**, a matte frame (and the four classic themes' own) is 35 % see-through
+as before; a **chrome or neon** frame stays solid — the bezel reads as an object sitting over the
+moving picture. *Black chrome* is one button: hugs the flaps at 85 %, a 2 vmin margin, `#050308`,
+width 2, corners 6, chrome.
+
+The five settings travel with a saved board (a profile) like the rest of the look.
 
 ## Where the pictures live
 
