@@ -2,6 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <script>/* the device's appearance choice, applied before the first paint */
+    try { var a = localStorage.getItem("departureboard.appearance"); if (a === "light" || a === "dark") document.documentElement.dataset.theme = a; } catch (e) {}
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}DepartureBoard{% endblock %}</title>
   <link rel="stylesheet" href="/static/css/base.css">

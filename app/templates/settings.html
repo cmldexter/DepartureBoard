@@ -359,6 +359,15 @@
 
   <div id="panel-setup" class="panel" role="tabpanel" aria-labelledby="tab-setup" tabindex="0" hidden>
     <h2 id="setup-heading">Setup</h2>
+  <section id="appearance" aria-labelledby="appearance-heading">
+    <h3 id="appearance-heading">Appearance</h3>
+    <div class="chips" role="radiogroup" aria-label="Appearance">
+      <label class="chip"><input type="radio" name="appearance" value="system" checked> {{ icon("monitor") }} System</label>
+      <label class="chip"><input type="radio" name="appearance" value="light"> {{ icon("sun") }} Light</label>
+      <label class="chip"><input type="radio" name="appearance" value="dark"> {{ icon("moon") }} Dark</label>
+    </div>
+    <p class="hint">Light or dark for these pages, remembered on this device only — not a board setting, and the TV keeps its theme.</p>
+  </section>
   <p class="muted">Server time now: <span id="server-time">{{ server_time }}</span> ({{ tz }}). Schedules follow it.
     Set <code>TZ</code> in <code>.env</code> to change it.</p>
   <section id="addresses" aria-labelledby="addresses-heading">
