@@ -121,7 +121,7 @@ curl -X POST ${h}/api/messages/now \\
       const s = SNIPPETS[el.dataset.kind];
       if (!s) return;
       if (!el.firstChild) {
-        el.innerHTML = `<div class="row"><h3></h3><button type="button" class="link copy">Copy</button></div><pre class="code"></pre><p class="muted response"></p>`;
+        el.innerHTML = `<div class="row"><h3></h3><button type="button" class="link copy"><svg class="icon" aria-hidden="true"><use href="#lucide-copy"/></svg> Copy</button></div><pre class="code" tabindex="0"></pre><p class="muted response"></p>`;
         el.querySelector("h3").textContent = s.title;
         el.querySelector(".response").textContent = s.response;
         el.querySelector(".copy").addEventListener("click", async () => {

@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Post to {{ name }}{% endblock %}
 {% block body_class %}page guest{% endblock %}
+{% block icons %}{% endblock %}{# a guest's phone form uses no icon — and must not name the settings page #}
 {% block body %}
 <main class="narrow">
   <h1><img class="mark" src="/static/icons/icon-192.png" alt="" width="28" height="28">{{ name }}</h1>

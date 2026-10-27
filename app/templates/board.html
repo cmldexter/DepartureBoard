@@ -7,6 +7,7 @@
 {% endblock %}
 {% block body_class %}board-page{% if embed %} embed{% endif %}{% endblock %}
 {% block body %}
+{% from "_icons.html" import icon %}
 <div id="backdrop" aria-hidden="true" data-presets='{{ gradient_presets | tojson }}'><video id="backdrop-video" muted playsinline loop autoplay preload="auto" tabindex="-1"{% if video_src %} src="{{ video_src }}"{% endif %}></video></div>
 <main class="frame" data-finish="{{ config.frame_finish }}" data-fit="{{ config.frame_fit }}" data-corners="{{ config.frame_corners }}" style="--rows: {{ rows }}; --cols: {{ cols }}; --board-scale: {{ config.board_scale }}; --board-margin: {{ config.board_margin }}; --cell-radius: {{ config.cell_radius }}; --cell-gap: {{ config.cell_gap }}; --split-line: {{ config.split_line }};{% if config.cell_depth != '' %} --cell-depth: {{ config.cell_depth }};{% endif %}{% if config.frame_color %} --frame-color: {{ config.frame_color }};{% endif %}{% if config.frame_width != '' %} --frame-n: {{ config.frame_width }};{% endif %}{% if config.frame_radius != '' %} --frame-radius: {{ config.frame_radius }};{% endif %}{% if config.frame_glow %} --frame-glow: {{ config.frame_glow }};{% endif %}">
   <div class="stage">
@@ -33,9 +34,9 @@
   <circle class="left" cx="18" cy="18" r="15.5" pathLength="100"></circle>
 </svg>
 {% if not embed %}
-<a id="settings-link" class="hud" href="/settings" target="_blank" rel="noopener" aria-label="Settings (opens in a new tab)" title="Settings · opens in a new tab · or press s">⚙</a>
-<button type="button" id="cast" class="hud" aria-label="Cast to the TV" title="Cast to the TV · this computer stays on" aria-pressed="false" hidden><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-7"/><path d="M3 12a9 9 0 0 1 9 9"/><path d="M3 16a5 5 0 0 1 5 5"/><path d="M3 20h.01"/></svg></button>
-<button type="button" id="fullscreen" class="hud" aria-label="Fullscreen and keep the screen awake" title="Fullscreen · keeps the TV awake · turns the sound on">⛶</button>
+<a id="settings-link" class="hud" href="/settings" target="_blank" rel="noopener" aria-label="Settings (opens in a new tab)" title="Settings · opens in a new tab · or press s">{{ icon("settings") }}</a>
+<button type="button" id="cast" class="hud" aria-label="Cast to the TV" title="Cast to the TV · this computer stays on" aria-pressed="false" hidden>{{ icon("cast") }}</button>
+<button type="button" id="fullscreen" class="hud" aria-label="Fullscreen and keep the screen awake" title="Fullscreen · keeps the TV awake · turns the sound on">{{ icon("maximize") }}</button>
 <div id="status" class="hud" role="status" aria-live="polite" hidden></div>
 <div id="net" class="hud" role="status" aria-label="Cannot reach the server; retrying" hidden></div>
 <video id="keep-awake" muted playsinline loop preload="none" width="1" height="1" aria-hidden="true" tabindex="-1">

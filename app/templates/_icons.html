@@ -1,0 +1,6 @@
+{#- The chrome's icons: Lucide symbols from the sprite base.html inlines (app/static/icons/lucide.svg).
+    icon("tv")                    decorative, beside a label
+    icon("copy", label="Copy")    the whole meaning of an icon-only button -#}
+{% macro icon(name, label=None) -%}
+<svg class="icon"{% if label %} role="img" aria-label="{{ label }}"{% else %} aria-hidden="true"{% endif %}><use href="#lucide-{{ name }}"/></svg>
+{%- endmacro %}

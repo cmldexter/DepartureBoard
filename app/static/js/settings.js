@@ -25,6 +25,33 @@
     return data;
   }
 
+
+  // ---- the chrome's icons (the sprite base.html inlines) and the busy state of a button (#161, #162)
+  const ico = (name) => `<svg class="icon" aria-hidden="true"><use href="#lucide-${name}"/></svg>`;
+  function setBusy(btn, on) {
+    if (!btn || btn.tagName !== "BUTTON") return;
+    if (on) {
+      btn.setAttribute("aria-busy", "true");
+      btn.insertAdjacentHTML("afterbegin", '<svg class="icon spin" aria-hidden="true"><use href="#lucide-loader-circle"/></svg>');
+    } else {
+      btn.removeAttribute("aria-busy");
+      btn.querySelector(":scope > .spin")?.remove();
+    }
+  }
+  // Wrap a submit or click handler: the button that fired it (the form's submitter, or the clicked
+  // button) spins and ignores clicks until the handler settles, success or not.
+  function busy(fn, pick) {
+    return async function (ev) {
+      const btn = pick ? pick(ev) : ev.submitter || ev.currentTarget;
+      setBusy(btn, true);
+      try {
+        return await fn.call(this, ev);
+      } finally {
+        setBusy(btn, false);
+      }
+    };
+  }
+
   let toastTimer = 0;
   function toast(text, isError) {
     const el = $("#toast");
@@ -214,7 +241,7 @@
   // ---- show something now: the line a host types from the sofa
   const nowForm = $("#now-form");
   const NOW_LABEL = { 30: "30 seconds", 120: "2 minutes", 600: "10 minutes" };
-  nowForm.addEventListener("submit", async (ev) => {
+  nowForm.addEventListener("submit", busy(async (ev) => {
     ev.preventDefault();
     const text = nowForm.text.value.trim();
     if (!text) return;
@@ -229,7 +256,7 @@
     } catch (e) {
       toast(e.message, true);
     }
-  });
+  }));
 
   // ---- Copy buttons: the addresses, the walkthrough's address and token.
   document.addEventListener("click", async (ev) => {
@@ -289,10 +316,10 @@
       toast(e.message, true);
     }
   }
-  $("#board-save").addEventListener("click", () => {
-    if (activeBoard) saveBoard(activeBoard.slug, null, `${activeBoard.name} saved.`);
-    else $("#board-save-as").click();
-  });
+  $("#board-save").addEventListener("click", busy(() => {
+    if (activeBoard) return saveBoard(activeBoard.slug, null, `${activeBoard.name} saved.`);
+    $("#board-save-as").click();
+  }));
   $("#board-save-as").addEventListener("click", () => {
     const name = prompt("Save this board as…", activeBoard ? activeBoard.name : "Party");
     if (!name || !name.trim()) return;
@@ -475,7 +502,7 @@
   async function loadMessages() {
     messages = await api("/api/messages");
     if (!messages.length) {
-      rowsEl.innerHTML = '<tr><td colspan="4"><p class="empty" id="messages-empty"><span>Nothing scheduled yet.</span> <button type="button" class="small">Write your first message</button></p></td></tr>';
+      rowsEl.innerHTML = '<tr><td colspan="4"><p class="empty" id="messages-empty"><span>Nothing scheduled yet.</span> <button type="button" class="small secondary">Write your first message</button></p></td></tr>';
       $("#messages-empty button").addEventListener("click", () => $("#new-message").click());
       renderLive();
       return;
@@ -486,7 +513,7 @@
       tr.dataset.id = m.id;
       tr.innerHTML = `<td class="state"><label class="switch"><input type="checkbox" role="switch"><span class="track" aria-hidden="true"></span></label><span class="badge ${m.state}">${m.state}</span></td>
         <td class="text"></td><td class="muted"></td>
-        <td class="actions"><button type="button" class="link edit">Edit</button> <button type="button" class="link delete">Delete</button></td>`;
+        <td class="actions"><button type="button" class="link edit">${ico("pencil")} Edit</button> <button type="button" class="link danger delete">${ico("trash-2")} Delete</button></td>`;
       $(".text", tr).textContent = m.text;
       $(".muted", tr).textContent = `${fmtWhen(m)} · p${m.priority}${m.show_seconds ? ` · ${m.show_seconds} s` : ""}`;
       const sw = $(".switch input", tr);
@@ -594,7 +621,7 @@
   $("#message-cancel").addEventListener("click", closeForm);
   form.repeat.addEventListener("change", syncRepeatUi);
 
-  form.addEventListener("submit", async (ev) => {
+  form.addEventListener("submit", busy(async (ev) => {
     ev.preventDefault();
     const days = $$('input[name="day"]:checked', form).reduce((n, cb) => n + Number(cb.value), 0);
     const body = {
@@ -627,7 +654,7 @@
       err.textContent = e.message;
       err.hidden = false;
     }
-  });
+  }));
 
   // ---- look & feel: the theme swatches apply at once (one PATCH, the row-switch pattern)
   let currentTheme = "classic-black";
@@ -697,7 +724,7 @@
     colors.forEach((c, i) => {
       const w = document.createElement("span");
       w.className = "well";
-      w.innerHTML = `<input type="color" aria-label="Colour ${i + 1}"><button type="button" class="remove" aria-label="Remove colour ${i + 1}" title="Remove">×</button>`;
+      w.innerHTML = `<input type="color" aria-label="Colour ${i + 1}"><button type="button" class="remove" aria-label="Remove colour ${i + 1}" title="Remove">${ico("x")}</button>`;
       $("input", w).value = c;
       $(".remove", w).hidden = colors.length <= 2;
       wells.appendChild(w);
@@ -777,7 +804,7 @@
     for (const v of items) {
       const tile = document.createElement("div");
       tile.className = "tile";
-      tile.innerHTML = '<button type="button" class="swatch video" role="radio" aria-checked="false" tabindex="-1"><video muted playsinline preload="metadata" aria-hidden="true"></video><span class="play" aria-hidden="true">▶ video</span><span></span></button><button type="button" class="remove" aria-label="Delete this video" title="Delete this video">×</button>';
+      tile.innerHTML = '<button type="button" class="swatch video" role="radio" aria-checked="false" tabindex="-1"><video muted playsinline preload="metadata" aria-hidden="true"></video><span class="play" aria-hidden="true">▶ video</span><span></span></button><button type="button" class="remove" aria-label="Delete this video" title="Delete this video">' + ico("x") + '</button>';
       const b = $(".swatch", tile);
       b.dataset.bg = `video:${v.slug}`;
       $("video", b).src = `${v.url}?v=${v.bytes}#t=0.5`;
@@ -878,12 +905,12 @@
       toast(e.message, true);
     }
   }
-  bgForm.addEventListener("submit", (ev) => {
+  bgForm.addEventListener("submit", busy((ev) => {
     ev.preventDefault();
     const body = { ...bgDraft };
-    saveBg(body, body.background_image ? "Saved — the TV picks it up on its next poll." : "Saved with no picture.");
-  });
-  $("#backdrop-clear").addEventListener("click", () => saveBg({ background_image: "" }, "Cleared — the blur, dim and motion are kept for next time."));
+    return saveBg(body, body.background_image ? "Saved — the TV picks it up on its next poll." : "Saved with no picture.");
+  }));
+  $("#backdrop-clear").addEventListener("click", busy(() => saveBg({ background_image: "" }, "Cleared — the blur, dim and motion are kept for next time.")));
   // A video is big: XMLHttpRequest for its upload progress; the token header as api() sends it.
   function uploadVideo(file) {
     return new Promise((resolve, reject) => {
@@ -986,7 +1013,7 @@
   }
   $("#flaps-picture").addEventListener("click", () => presetFlaps(FLAP_PICTURE, "Picture mode on the card — Save to put it on the TV."));
   $("#flaps-classic").addEventListener("click", () => presetFlaps(FLAP_CLASSIC, "Classic flaps on the card — Save to put them on the TV."));
-  flapForm.addEventListener("submit", async (ev) => {
+  flapForm.addEventListener("submit", busy(async (ev) => {
     ev.preventDefault();
     try {
       const saved = await api("/api/settings", { method: "PATCH", body: { ...flapDraft } });
@@ -997,7 +1024,7 @@
     } catch (e) {
       toast(e.message, true);
     }
-  });
+  }));
 
   // ---- look & feel: the frame. Five settings the frames follow at once through board:settings;
   // "" on a key = as the theme (the colour wells have an "as the theme" box beside them); Save
@@ -1076,7 +1103,7 @@
   }
   $("#frame-black-chrome").addEventListener("click", () => presetFrame(FRAME_BLACK_CHROME, "Black chrome on the card — Save to put it on the TV."));
   $("#frame-theme").addEventListener("click", () => presetFrame(FRAME_THEME, "The theme's own frame on the card — Save to put it on the TV."));
-  frameForm.addEventListener("submit", async (ev) => {
+  frameForm.addEventListener("submit", busy(async (ev) => {
     ev.preventDefault();
     try {
       const saved = await api("/api/settings", { method: "PATCH", body: { ...frameDraft } });
@@ -1087,7 +1114,7 @@
     } catch (e) {
       toast(e.message, true);
     }
-  });
+  }));
 
   // ---- preview (the server lays the text out, so it can never differ from the board)
   let previewTimer = 0;
@@ -1148,7 +1175,7 @@
   }
   $$('input[name="grid_preset"]', display).forEach((r) => r.addEventListener("change", syncCustom));
   display.animation.addEventListener("input", () => ($("#animation-value").value = display.animation.value));
-  display.addEventListener("submit", async (ev) => {
+  display.addEventListener("submit", busy(async (ev) => {
     ev.preventDefault();
     const body = {
       grid_preset: display.grid_preset.value,
@@ -1175,7 +1202,7 @@
     } catch (e) {
       toast(e.message, true);
     }
-  });
+  }));
 
   // ---- images
   const imageList = $("#image-list");
@@ -1184,15 +1211,15 @@
     renderBgUploads(items);
     imageList.textContent = "";
     if (!items.length) {
-      imageList.innerHTML = '<li class="plain"><p class="empty" id="images-empty"><span>No pictures yet.</span> <button type="button" class="small" data-reach="image-form" data-sel="input[name=file]">Upload a picture</button> <button type="button" class="small" data-reach="qr-form" data-sel="input[name=data]">Make a QR code</button></p></li>';
+      imageList.innerHTML = '<li class="plain"><p class="empty" id="images-empty"><span>No pictures yet.</span> <button type="button" class="small secondary" data-reach="image-form" data-sel="input[name=file]">Upload a picture</button> <button type="button" class="small secondary" data-reach="qr-form" data-sel="input[name=data]">Make a QR code</button></p></li>';
       return;
     }
     for (const img of items) {
       const li = document.createElement("li");
       li.innerHTML = `<img alt=""><div class="meta"><code class="token"></code>
-        <button type="button" class="link copy">Copy token</button> <button type="button" class="link delete">Delete</button>
+        <button type="button" class="link copy">${ico("copy")} Copy token</button> <button type="button" class="link danger delete">${ico("trash-2")} Delete</button>
         <span class="muted size"></span><span class="muted qr-text" hidden></span> <button type="button" class="link edit" hidden>Edit text</button></div>
-        <button type="button" class="link phone-only size-open">Size ›</button>
+        <button type="button" class="link phone-only size-open">Size ${ico("chevron-right")}</button>
         <form class="sizing sheet-block" aria-label="Size on the board">
           <label>Wide <input type="number" name="w" min="1" max="36" required></label>
           <span class="muted">×</span>
@@ -1297,7 +1324,7 @@
       imageList.appendChild(li);
     }
   }
-  $("#image-form").addEventListener("submit", async (ev) => {
+  $("#image-form").addEventListener("submit", busy(async (ev) => {
     ev.preventDefault();
     const f = ev.target;
     const fd = new FormData();
@@ -1313,7 +1340,7 @@
     } catch (e) {
       toast(e.message, true);
     }
-  });
+  }));
 
   // the camera on a phone: a photo uploads the moment it is taken
   $("#image-form").camera.addEventListener("change", async () => {
@@ -1337,7 +1364,7 @@
   // ---- a QR code from text or a link: the server makes the picture; the same slug remakes it
   const qrForm = $("#qr-form");
   const qrStatus = $("#qr-status");
-  qrForm.addEventListener("submit", async (ev) => {
+  qrForm.addEventListener("submit", busy(async (ev) => {
     ev.preventDefault();
     const body = { slug: qrForm.slug.value.trim().toLowerCase(), data: qrForm.data.value.trim() };
     try {
@@ -1352,7 +1379,7 @@
     } catch (e) {
       toast(e.message, true);
     }
-  });
+  }));
   $("#qr-board").addEventListener("click", () => {
     const first = $("#addresses .addresses code");
     if (!first) return;
@@ -1381,7 +1408,7 @@
     $("#guest-qr-row").hidden = !token;
     guestUrl.textContent = token ? `${boardUrl()}/guest/${token}` : "";
   }
-  $("#guest-qr").addEventListener("click", async () => {
+  $("#guest-qr").addEventListener("click", busy(async () => {
     try {
       const out = await api("/api/guest/qr", { method: "POST" });
       const where = out.enabled ? `is on the board (${out.state})` : "is in the Messages list, disabled — switch it on when the party starts";
@@ -1394,7 +1421,7 @@
     } catch (e) {
       toast(e.message, true);
     }
-  });
+  }));
   async function rotateGuest(said) {
     try {
       const link = await api("/api/guest/rotate", { method: "POST" });
@@ -1406,9 +1433,9 @@
       toast(e.message, true);
     }
   }
-  $("#guest-make").addEventListener("click", () => rotateGuest("Guests are on — put the link in a QR code (Images panel) or send it."));
-  $("#guest-rotate").addEventListener("click", () => rotateGuest("New link — the old one stopped working."));
-  $("#guest-close").addEventListener("click", async () => {
+  $("#guest-make").addEventListener("click", busy(() => rotateGuest("Guests are on — put the link in a QR code (Images panel) or send it.")));
+  $("#guest-rotate").addEventListener("click", busy(() => rotateGuest("New link — the old one stopped working.")));
+  $("#guest-close").addEventListener("click", busy(async () => {
     if (!confirm("Turn guests off? The link stops working; the posts stay.")) return;
     try {
       const s = await api("/api/settings", { method: "PATCH", body: { guest_token: "" } });
@@ -1420,7 +1447,7 @@
     } catch (e) {
       toast(e.message, true);
     }
-  });
+  }));
   $("#guest-copy").addEventListener("click", async () => {
     const url = guestUrl.textContent;
     try {
@@ -1493,7 +1520,7 @@
         badge.className = `badge ${state}`;
         badge.textContent = state === "disabled" ? "did not fit" : state;
         if (state === "disabled") badge.title = "The message is in the list, disabled — make the board bigger or edit it.";
-        actions.innerHTML = '<button type="button" class="link remove">Remove</button>';
+        actions.innerHTML = '<button type="button" class="link danger remove">Remove</button>';
         const b = $(".remove", actions);
         b.setAttribute("aria-label", `Remove ${who} from the board`);
         b.addEventListener("click", async () => {
@@ -1502,7 +1529,7 @@
           $("#guest-approved-heading").focus();
         });
       } else {
-        actions.innerHTML = '<button type="button" class="small approve">Approve</button> <button type="button" class="link reject">Reject</button>';
+        actions.innerHTML = '<button type="button" class="small approve">Approve</button> <button type="button" class="link danger reject">Reject</button>';
         $(".approve", actions).setAttribute("aria-label", `Approve ${who}`);
         $(".reject", actions).setAttribute("aria-label", `Reject ${who}`);
         $(".approve", actions).addEventListener("click", async () => {
@@ -1691,7 +1718,7 @@
     for (const e of plan.entries) {
       const li = document.createElement("li");
       li.dataset.id = e.id;
-      li.innerHTML = '<span class="swatch-dot"></span><span class="when"></span> · <strong class="board"></strong><span class="note muted"></span><span class="actions"><button type="button" class="link edit">Edit</button> <button type="button" class="link delete">Delete</button></span>';
+      li.innerHTML = '<span class="swatch-dot"></span><span class="when"></span> · <strong class="board"></strong><span class="note muted"></span><span class="actions"><button type="button" class="link edit">' + ico("pencil") + ' Edit</button> <button type="button" class="link danger delete">' + ico("trash-2") + ' Delete</button></span>';
       $(".swatch-dot", li).style.setProperty("--tint", e.missing ? "transparent" : tint(e.profile));
       $(".when", li).textContent = fmtRange(e);
       $(".board", li).textContent = e.missing ? `${e.profile} (board deleted — skipped)` : e.name || e.profile;
@@ -1761,7 +1788,7 @@
       calStatus.textContent = said;
     }
   }
-  calForm.addEventListener("submit", async (ev) => {
+  calForm.addEventListener("submit", busy(async (ev) => {
     ev.preventDefault();
     const body = { profile: calForm.profile.value, start: calForm.start.value, end: calForm.end.value || null, note: calForm.note.value.trim() };
     const id = calForm.id.value;
@@ -1778,7 +1805,7 @@
     } catch (err) {
       toast(err.message, true);
     }
-  });
+  }));
   $("#calendar-cancel").addEventListener("click", () => {
     calForm.reset();
     calForm.id.value = "";
@@ -1896,7 +1923,7 @@
       }),
     );
     // 2 · the first message: on the board for two minutes, the way Show something now does it
-    $("#welcome-now").addEventListener("click", async () => {
+    $("#welcome-now").addEventListener("click", busy(async () => {
       const text = $("#welcome-text").value.trim();
       if (!text) return;
       try {
@@ -1907,7 +1934,7 @@
       } catch (e) {
         toast(e.message, true);
       }
-    });
+    }));
     api("/api/settings")
       .then((s) => {
         const r = welcome.querySelector(`input[name="welcome_preset"][value="${s.grid_preset}"]`);

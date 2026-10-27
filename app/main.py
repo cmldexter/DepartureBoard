@@ -9,6 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from markupsafe import Markup
 
 from app import __version__
 from app.config import Settings, get_settings
@@ -139,6 +140,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         )
     app.state.settings = settings
     app.state.templates = Jinja2Templates(directory=APP_DIR / "templates")
+    # the chrome's icons: one Lucide sprite, printed once at the top of every page (see _icons.html)
+    app.state.templates.env.globals["icon_sprite"] = Markup(
+        (APP_DIR / "static" / "icons" / "lucide.svg").read_text(encoding="utf-8")
+    )
     app.mount("/static", StaticFiles(directory=APP_DIR / "static"), name="static")
     app.include_router(health.router)
     app.include_router(board.router)
