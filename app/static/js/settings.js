@@ -1031,9 +1031,9 @@
   // writes the five in one PATCH; two presets set the draft.
   const frameForm = $("#frame-form");
   const frameStatus = $("#frame-status");
-  const FRAME = ["frame_color", "frame_width", "frame_radius", "frame_finish", "frame_glow", "frame_fit", "frame_corners", "board_scale", "board_margin"];
-  const FRAME_THEME = { frame_color: "", frame_width: "", frame_radius: "", frame_finish: "theme", frame_glow: "", frame_fit: "screen", frame_corners: "whole", board_scale: 100, board_margin: 0 };
-  const FRAME_BLACK_CHROME = { frame_color: "#050308", frame_width: 2, frame_radius: 6, frame_finish: "chrome", frame_glow: "", frame_fit: "board", frame_corners: "whole", board_scale: 85, board_margin: 2 };
+  const FRAME = ["frame_color", "frame_width", "frame_radius", "frame_finish", "frame_glow", "frame_fit", "frame_corners", "board_scale", "board_margin", "board_position"];
+  const FRAME_THEME = { frame_color: "", frame_width: "", frame_radius: "", frame_finish: "theme", frame_glow: "", frame_fit: "screen", frame_corners: "whole", board_scale: 100, board_margin: 0, board_position: "center" };
+  const FRAME_BLACK_CHROME = { frame_color: "#050308", frame_width: 2, frame_radius: 6, frame_finish: "chrome", frame_glow: "", frame_fit: "board", frame_corners: "whole", board_scale: 85, board_margin: 2, board_position: "center" };
   const frameDraft = { ...FRAME_THEME };
   let frameSaved = { ...frameDraft };
   const frameDirty = () => FRAME.some((k) => frameDraft[k] !== frameSaved[k]);
@@ -1056,6 +1056,7 @@
     frameForm.frame_corners.value = d.frame_corners;
     frameForm.board_scale.value = d.board_scale;
     frameForm.board_margin.value = d.board_margin;
+    frameForm.board_position.value = d.board_position;
     $("#board-scale-value").textContent = `${d.board_scale} %`;
     $("#board-margin-value").textContent = `${d.board_margin} vmin`;
     $("#frame-glow-row").hidden = d.frame_finish !== "neon";
@@ -1066,8 +1067,26 @@
   function fillFrameForm(s) {
     FRAME.forEach((k) => (frameSaved[k] = s[k] === null || s[k] === undefined ? "" : s[k]));
     Object.assign(frameDraft, frameSaved);
+    frameForm.board_hidden.checked = s.board_hidden === "1";
     showFrameDraft();
   }
+  // Hide the board: a switch outside the draft — it applies at once, as the theme swatches do,
+  // and neither Save nor a preset touches it.
+  frameForm.board_hidden.addEventListener("change", async () => {
+    const on = frameForm.board_hidden.checked;
+    try {
+      const saved = await api("/api/settings", { method: "PATCH", body: { board_hidden: on ? "1" : "" } });
+      frameForm.board_hidden.checked = saved.board_hidden === "1";
+      frameStatus.textContent = saved.board_hidden === "1" ? "The board is hidden — the TV shows only what is behind it." : "The board is back on the TV.";
+      const msg = { type: "board:settings", settings: { board_hidden: saved.board_hidden } };
+      post(liveFrame, msg);
+      post(previewFrame, msg);
+      refreshLive();
+    } catch (e) {
+      frameForm.board_hidden.checked = !on;
+      toast(e.message, true);
+    }
+  });
   frameForm.frame_color.addEventListener("input", () => {
     frameDraft.frame_color = frameForm.frame_color.value;
     showFrameDraft();
@@ -1090,7 +1109,7 @@
       showFrameDraft();
     }),
   );
-  $$('input[name="frame_finish"], input[name="frame_fit"], input[name="frame_corners"]', frameForm).forEach((r) =>
+  $$('input[name="frame_finish"], input[name="frame_fit"], input[name="frame_corners"], input[name="board_position"]', frameForm).forEach((r) =>
     r.addEventListener("change", () => {
       frameDraft[r.name] = r.value;
       showFrameDraft();

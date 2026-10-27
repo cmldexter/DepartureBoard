@@ -276,6 +276,8 @@ CONFIG_KEYS = {
     "frame_corners",
     "board_scale",
     "board_margin",
+    "board_position",
+    "board_hidden",
     "demo",
     "embed",
     "preview",

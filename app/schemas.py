@@ -14,6 +14,17 @@ BackgroundFit = Literal["cover", "contain"]
 FrameFinish = Literal["theme", "matte", "chrome", "neon"]
 FrameFit = Literal["screen", "board"]
 FrameCorners = Literal["whole", "hide"]
+BoardPosition = Literal[
+    "center",
+    "top",
+    "bottom",
+    "left",
+    "right",
+    "top-left",
+    "top-right",
+    "bottom-left",
+    "bottom-right",
+]
 _BG_IMAGE = re.compile(r"^(img|builtin|video|gradient):[a-z0-9][a-z0-9-]{0,39}$")
 _COLORS = r"^(#[0-9a-fA-F]{6}(,#[0-9a-fA-F]{6}){1,3})?$"  # two to four, or "" = the preset's
 _HEX_COLOR = r"^(#[0-9a-fA-F]{6})?$"  # or "" = as the theme
@@ -201,6 +212,10 @@ class SettingsOut(BaseModel):
     )
     board_scale: int = Field(description="The board's size, % of the screen (25–100)")
     board_margin: int = Field(description="The board's colour between bezel and flaps, vmin")
+    board_position: BoardPosition = Field(description="Where a hugging or smaller board sits")
+    board_hidden: Literal["", "1"] = Field(
+        description='"1" hides the board; only the backdrop shows'
+    )
     guest_token: str = Field(description='The guest link\'s token; "" when guests are off')
     guest_auto_approve: bool = Field(description="A guest post goes on the board at once")
     guest_priority: int = Field(description="The priority a guest post's message gets")
@@ -327,6 +342,20 @@ class SettingsPatch(BaseModel):
     board_scale: int | None = Field(
         None, ge=25, le=100, description="The board's size as % of the screen (default 100)"
     )
+    board_position: BoardPosition | None = Field(
+        None,
+        description=(
+            "Where the board sits when it hugs the flaps or is smaller than the screen: center, "
+            "top, bottom, left, right or a corner (default center)"
+        ),
+    )
+    board_hidden: Literal["", "1"] | None = Field(
+        None,
+        description=(
+            '"1" hides the board and its timer so only what is behind it shows — a video or a '
+            'living background as the whole screen; "" shows the board (default)'
+        ),
+    )
     board_margin: int | None = Field(
         None,
         ge=0,
@@ -444,6 +473,8 @@ class BoardSettings(BaseModel):
     frame_corners: FrameCorners
     board_scale: int
     board_margin: int
+    board_position: BoardPosition
+    board_hidden: Literal["", "1"]
 
 
 class ProfileFile(BaseModel):
