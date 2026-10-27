@@ -221,7 +221,7 @@ and the **Board** tab opening on *Show something now*: type a line, pick 30 s, 2
 until replaced, and it is on the TV at the next poll. Approving a guest's post, switching to a
 saved board or planning tomorrow are each one tab away; a change opens a screen of its own and
 brings you back when it is saved. For a one-tap icon, **Add to Home Screen** (Safari: *Share*;
-Chrome: *⋮*) — it opens full-screen without the browser bars. The guest link (`/guest`, from the
+Chrome: *⋮*) — it opens full-screen without the browser bars. In daylight, **Setup → Appearance** turns the pages light for that phone; the TV keeps its theme. The guest link (`/guest`, from the
 **Guests** tab) is a different thing: it needs no token and lets anyone post a line or a photo.
 
 ## Casting from a laptop (Chromecast, Google TV)

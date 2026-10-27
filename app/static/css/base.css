@@ -277,7 +277,7 @@ body { background: var(--bg); color: var(--fg); font-family: var(--font); }
 .page .phone-only { display: none; }
 .page .tabs .ico { display: inline-flex; line-height: 1; }
 .page .tabs .ico .icon { width: 1.05em; height: 1.05em; }
-.page .rows { display: grid; gap: .4rem; margin: .75rem 0; }
+.page .rows { gap: .4rem; margin: .75rem 0; } /* the phone block makes it a grid; on a desk .phone-only hides it (a display here used to beat that) */
 .page .rows button { display: flex; justify-content: space-between; align-items: center; width: 100%; min-height: 3rem; margin: 0; padding: .6rem .9rem; background: var(--surface); color: var(--fg); border: 1px solid var(--border); border-radius: .5rem; font-weight: 500; font-size: 1rem; text-align: left; }
 .page .rows button .icon { width: 1.3em; height: 1.3em; color: var(--muted); }
 /* the tabs under the strip: six panels; the Board panel goes off-stage, not display:none */
@@ -465,7 +465,7 @@ body.sheet-open { overflow: hidden; }
 .page #guest-link .grid2 label { margin: .5rem 0 .25rem; }
 .page #guest-status { margin: .5rem 0 0; min-height: 1.5em; }
 .page ul.posts { list-style: none; padding: 0; margin: .5rem 0 1rem; }
-.page ul.posts li { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: .35rem .75rem; padding: .5rem 0; border-bottom: 1px solid var(--rule); }
+.page ul.posts li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: .35rem .75rem; padding: .5rem 0; border-bottom: 1px solid var(--rule); }
 .page ul.posts li.muted { display: block; border: 0; }
 .page ul.posts img, .page ul.posts .thumb { width: 3.6rem; height: 3.2rem; object-fit: contain; border-radius: .25rem; background: var(--well); }
 .page ul.posts .thumb { display: grid; place-items: center; color: var(--muted); font-size: 1.1rem; }
