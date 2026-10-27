@@ -141,6 +141,20 @@ html.has-backdrop .frame {
   width: fit-content;
   height: fit-content;
 }
+/* Where it sits (display setting board_position): a hugging or smaller board goes to an edge or a
+   corner of the body grid, with a gutter that shrinks to nothing as the board fills the screen. */
+.frame {
+  --gutter-x: min(2vmin, calc((100vw - 100vw * var(--s)) / 2));
+  --gutter-y: min(2vmin, calc((100vh - 100vh * var(--s)) / 2));
+  transition: opacity 0.5s;
+}
+.frame[data-position^="top"] { align-self: start; margin-top: var(--gutter-y); }
+.frame[data-position^="bottom"] { align-self: end; margin-bottom: var(--gutter-y); }
+.frame[data-position="left"], .frame[data-position$="-left"] { justify-self: start; margin-left: var(--gutter-x); }
+.frame[data-position="right"], .frame[data-position$="-right"] { justify-self: end; margin-right: var(--gutter-x); }
+/* board_hidden "1": the board fades out and only the backdrop shows; the timer goes with it. */
+.frame[data-hidden="1"] { opacity: 0; pointer-events: none; }
+.frame[data-hidden="1"] ~ #timer { opacity: 0; }
 .frame[data-finish="matte"] {
   --frame-surface: initial;
   --frame-shadow: initial;
@@ -206,7 +220,7 @@ html.has-backdrop .frame {
 .overlay[data-fit="cover"] { background-size: cover; }
 .overlay[data-fit="stretch"] { background-size: 100% 100%; }
 .overlay.qr { image-rendering: pixelated; } /* modules stay crisp */
-@media (prefers-reduced-motion: reduce) { .overlay { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .overlay, .frame { transition: none; } }
 
 .board {
   position: relative;

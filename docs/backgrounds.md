@@ -142,6 +142,8 @@ setting at a time, and *As the theme* gives any of them back:
 | **Fit** | `frame_fit` `screen` · `board` | *Fills the screen* is the classic slab; *Hugs the flaps* wraps the bezel around the board so the page — or the video — shows all around it |
 | **Size** | `board_scale` 25–100 | The board's size as a share of the screen; 85 leaves a band of the backdrop around a hugging board |
 | **Margin** | `board_margin` 0–10 | The board's own colour between the bezel and the flaps, in vmin; it also absorbs a round corner |
+| **Position** | `board_position` `center` · `top` · `bottom` · `left` · `right` · `top-left` · `top-right` · `bottom-left` · `bottom-right` | Where a hugging or smaller board sits on the screen — a corner leaves the rest of a video or a living background in view; a board that fills the screen does not move |
+| **Hide the board** | `board_hidden` `""` · `"1"` | The board and its timer fade out and only what is behind them shows — the clip or the gradient as the whole screen. The switch applies at once; *Save* and the presets leave it alone, and a saved board keeps it |
 | **Colour** | `frame_color` `"#rrggbb"` or `""` | The bezel's colour |
 | **Width** | `frame_width` 0–10 or `""` | In vmin (hundredths of the screen's shorter side); the themes use 3, Walnut 4 |
 | **Corners** | `frame_radius` 0–30 or `""` | The outer corner radius in vmin; the page or the backdrop shows in the rounded corners |

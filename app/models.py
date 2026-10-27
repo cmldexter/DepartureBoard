@@ -95,6 +95,18 @@ FRAME_FITS = ("screen", "board")
 # hides whatever of the corner flaps it covers — and the corner cap is lifted.
 FRAME_CORNERS = ("whole", "hide")
 BOARD_BOUNDS = {"board_scale": (25, 100), "board_margin": (0, 10)}
+# Where a hugging or smaller board sits on the screen; "center" is the classic slab's place.
+BOARD_POSITIONS = (
+    "center",
+    "top",
+    "bottom",
+    "left",
+    "right",
+    "top-left",
+    "top-right",
+    "bottom-left",
+    "bottom-right",
+)
 
 DEFAULT_SETTINGS = {
     "grid_preset": "compact",
@@ -135,6 +147,9 @@ DEFAULT_SETTINGS = {
     "frame_corners": "whole",
     "board_scale": "100",
     "board_margin": "0",
+    "board_position": "center",
+    # "1" hides the board (and its timer) so only what is behind it shows; "" shows it.
+    "board_hidden": "",
     # The first-run walkthrough: "" shows it when the settings page opens, "1" once Done or
     # skipped. DELETE /api/settings/setup_done brings it back. Never sent to the TV.
     "setup_done": "",

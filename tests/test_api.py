@@ -728,6 +728,8 @@ FRAME_DEFAULTS = {
     "frame_corners": "whole",
     "board_scale": 100,
     "board_margin": 0,
+    "board_position": "center",
+    "board_hidden": "",
 }
 
 
@@ -746,6 +748,8 @@ def test_frame_settings(client, auth):
         "frame_corners": "hide",
         "board_scale": 80,
         "board_margin": 2,
+        "board_position": "bottom-right",
+        "board_hidden": "1",
     }
     r = client.patch("/api/settings", json=black_chrome, headers=auth)
     assert r.status_code == 200, r.text
@@ -758,6 +762,7 @@ def test_frame_settings(client, auth):
     assert 'data-finish="chrome"' in html and 'data-fit="board"' in html
     assert 'data-corners="hide"' in html
     assert "--board-scale: 80;" in html and "--board-margin: 2;" in html
+    assert 'data-position="bottom-right"' in html and 'data-hidden="1"' in html
     assert "--frame-color: #050308;" in html and "--frame-n: 4;" in html
     assert "--frame-radius: 8;" in html and "--frame-glow: #01fdfe;" in html
     # "" puts a key back to the theme's own
@@ -791,11 +796,15 @@ def test_frame_settings(client, auth):
         {"board_scale": 24},
         {"board_scale": 101},
         {"board_margin": 11},
+        {"board_position": "middle"},
+        {"board_hidden": "yes"},
     ):
         assert client.patch("/api/settings", json=bad, headers=auth).status_code == 422, bad
     # a profile carries the frame
     assert client.post("/api/profiles/f/save", json={"name": "F"}, headers=auth).status_code == 201
-    assert client.get("/api/profiles/f", headers=auth).json()["settings"]["frame_radius"] == 8
+    saved = client.get("/api/profiles/f", headers=auth).json()["settings"]
+    assert saved["frame_radius"] == 8 and saved["board_position"] == "bottom-right"
+    assert saved["board_hidden"] == "1", "a hidden board is a look a profile keeps"
 
 
 def test_display_resolves_frame_garbage_to_the_theme():
@@ -821,6 +830,12 @@ def test_display_resolves_frame_garbage_to_the_theme():
     assert resolve_display({"frame_width": "0"})["frame_width"] == 0
     d = resolve_display({"frame_fit": "Board", "board_scale": "7", "board_margin": "x"})
     assert (d["frame_fit"], d["board_scale"], d["board_margin"]) == ("board", 25, 0)
+    d = resolve_display({"board_position": " Top-Left ", "board_hidden": "true"})
+    assert (d["board_position"], d["board_hidden"]) == ("top-left", "")
+    assert (
+        resolve_display({"board_position": "middle", "board_hidden": "1"})["board_position"]
+        == "center"
+    )
 
 
 def test_living_background_settings(client, auth):

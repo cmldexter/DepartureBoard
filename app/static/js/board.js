@@ -37,17 +37,18 @@
   const STEP_MS_MAX = 50;
   const STAGGER_RATIO = 0.7;
 
-  const settings = { rows: 0, cols: 0, animation: 60, theme: "classic-black", timer_ring: "off", cell_radius: 6, cell_gap: 35, split_line: 1, cell_depth: "", frame_color: "", frame_width: "", frame_radius: "", frame_finish: "theme", frame_glow: "", frame_fit: "screen", frame_corners: "whole", board_scale: 100, board_margin: 0 };
+  const settings = { rows: 0, cols: 0, animation: 60, theme: "classic-black", timer_ring: "off", cell_radius: 6, cell_gap: 35, split_line: 1, cell_depth: "", frame_color: "", frame_width: "", frame_radius: "", frame_finish: "theme", frame_glow: "", frame_fit: "screen", frame_corners: "whole", board_scale: 100, board_margin: 0, board_position: "center", board_hidden: "" };
   const BG_KEYS = ["background_image", "background_blur", "background_dim", "background_fit", "background_motion", "background_colors"];
   // The shape of a flap: unitless numbers board.css turns into lengths (see .frame).
   const FLAP_KEYS = ["cell_radius", "cell_gap", "split_line", "cell_depth"];
   const FLAP_BOUNDS = { cell_radius: [0, 12], cell_gap: [0, 100], split_line: [0, 3], cell_depth: [0, 100] };
   // The frame: "" on any key = as the theme (no inline var); finish is an attribute on .frame.
-  const FRAME_KEYS = ["frame_color", "frame_width", "frame_radius", "frame_finish", "frame_glow", "frame_fit", "frame_corners", "board_scale", "board_margin"];
+  const FRAME_KEYS = ["frame_color", "frame_width", "frame_radius", "frame_finish", "frame_glow", "frame_fit", "frame_corners", "board_scale", "board_margin", "board_position", "board_hidden"];
   const FRAME_BOUNDS = { frame_width: [0, 10], frame_radius: [0, 30], board_scale: [25, 100], board_margin: [0, 10] };
   const FRAME_FINISHES = ["theme", "matte", "chrome", "neon"];
   const FRAME_FITS = ["screen", "board"];
   const FRAME_CORNERS = ["whole", "hide"];
+  const BOARD_POSITIONS = ["center", "top", "bottom", "left", "right", "top-left", "top-right", "bottom-left", "bottom-right"];
   const HEX = /^#[0-9a-f]{6}$/i;
   let cells = []; // row-major cell records
   let target = []; // row-major sequence indices the board is heading to
@@ -356,6 +357,8 @@
       if (k === "frame_finish") settings[k] = FRAME_FINISHES.includes(v) ? v : "theme";
       else if (k === "frame_fit") settings[k] = FRAME_FITS.includes(v) ? v : "screen";
       else if (k === "frame_corners") settings[k] = FRAME_CORNERS.includes(v) ? v : "whole";
+      else if (k === "board_position") settings[k] = BOARD_POSITIONS.includes(v) ? v : "center";
+      else if (k === "board_hidden") settings[k] = v === "1" ? "1" : "";
       else if (k === "frame_color" || k === "frame_glow") settings[k] = HEX.test(v) ? v.toLowerCase() : "";
       else if (v === "" && k !== "board_scale" && k !== "board_margin") settings[k] = "";
       else {
@@ -373,6 +376,8 @@
     frameEl.dataset.finish = settings.frame_finish;
     frameEl.dataset.fit = settings.frame_fit;
     frameEl.dataset.corners = settings.frame_corners;
+    frameEl.dataset.position = settings.board_position;
+    frameEl.dataset.hidden = settings.board_hidden;
   }
 
   // Corners, gap, split line and depth go on the frame, where the server rendered them inline for

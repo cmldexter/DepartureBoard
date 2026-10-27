@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 
 from app.models import (
     BOARD_BOUNDS,
+    BOARD_POSITIONS,
     CELL_DEPTH_BOUNDS,
     COLS_BOUNDS,
     DEFAULT_SETTINGS,
@@ -159,6 +160,12 @@ def resolve_display(raw: Mapping[str, Any]) -> dict[str, Any]:
             if str(merged["frame_corners"]).strip().lower() in FRAME_CORNERS
             else DEFAULT_SETTINGS["frame_corners"]
         ),
+        "board_position": (
+            str(merged["board_position"]).strip().lower()
+            if str(merged["board_position"]).strip().lower() in BOARD_POSITIONS
+            else DEFAULT_SETTINGS["board_position"]
+        ),
+        "board_hidden": "1" if str(merged["board_hidden"]).strip() == "1" else "",
         **{
             key: _clamp(_as_int(merged[key], int(DEFAULT_SETTINGS[key])), bounds)
             for key, bounds in BOARD_BOUNDS.items()

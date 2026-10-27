@@ -115,6 +115,8 @@ def board(request: Request):
         "frame_corners": display["frame_corners"],
         "board_scale": display["board_scale"],
         "board_margin": display["board_margin"],
+        "board_position": display["board_position"],
+        "board_hidden": display["board_hidden"],
         "demo": demo,
         "embed": embed,
         "preview": preview,
