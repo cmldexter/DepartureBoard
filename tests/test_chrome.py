@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parent.parent
 APP = ROOT / "app"
 SPRITE = APP / "static" / "icons" / "lucide.svg"
 SVG = "{http://www.w3.org/2000/svg}"
-VENDORED_AHEAD = {"monitor", "sun", "moon"}  # the appearance switch, Epic 27 S2
+VENDORED_AHEAD: set[str] = set()  # every symbol is used since S2 took monitor/sun/moon
 
 
 def sprite_symbols() -> dict[str, ET.Element]:
@@ -95,6 +95,62 @@ def test_every_page_prints_the_sprite_once(client, token):
     html = client.get("/settings").text
     assert html.count('<use href="#lucide-') >= 20
     assert "wordmark" in html and 'icon-192.png" alt="" width="40"' in html
+
+
+def test_base_css_keeps_every_colour_in_a_token():
+    """Light and dark only change values: no raw colour outside the token blocks (#163)."""
+    css = (APP / "static" / "css" / "base.css").read_text(encoding="utf-8")
+    css = re.sub(r"/\*.*?\*/", "", css, flags=re.S)
+    blocks = re.findall(r"(?::root \{|\.page \{\n)[^}]*\}", css)
+    rest = css
+    for b in blocks:
+        rest = rest.replace(b, "")
+    raw = re.findall(r"#[0-9a-fA-F]{3,8}\b|rgba?\(", rest)
+    assert raw == [], f"raw colours outside the tokens: {raw[:8]}"
+    dark = re.search(r":root \{(.*?)\}", css, re.S).group(1)
+    light = re.search(r':root\[data-theme="light"\] \.page \{(.*?)\}', css, re.S).group(1)
+    system_light = re.search(
+        r':root:not\(\[data-theme="dark"\]\) \.page \{(.*?)\}', css, re.S
+    ).group(1)
+    assert light.strip() == system_light.strip(), "the two light blocks carry the same values"
+    for token in (
+        "--bg",
+        "--fg",
+        "--muted",
+        "--accent",
+        "--surface",
+        "--surface-2",
+        "--border",
+        "--rule",
+        "--danger",
+        "--input-bg",
+        "--wordmark-a",
+        "--scrim",
+    ):
+        assert f"{token}:" in dark and f"{token}:" in light, token
+    for constant in ("--accent-fill", "--accent-ink", "--white", "--well", "--ok:"):
+        assert constant in dark and constant not in light, f"{constant} is the same in both schemes"
+    assert "color-scheme: light" in light and ".page { color-scheme: dark; }" in css
+
+
+def test_appearance_is_a_device_preference_not_a_setting(client, token):
+    """R3: the switch lives in localStorage + data-theme; /api/settings never learns it."""
+    client.post("/settings/login", data={"token": token}, follow_redirects=False)
+    assert (
+        "appearance"
+        not in client.get("/api/settings", headers={"Authorization": f"Bearer {token}"}).json()
+    )
+    html = client.get("/settings").text
+    assert html.count('name="appearance"') == 3 and 'id="appearance"' in html
+    base = (APP / "templates" / "base.html").read_text(encoding="utf-8")
+    assert 'localStorage.getItem("departureboard.appearance")' in base
+    assert base.index("departureboard.appearance") < base.index("base.css"), (
+        "applied before the stylesheet"
+    )
+    board = client.get("/").text
+    assert 'class="board-page' in board and 'class="page' not in board, (
+        "the board page is never .page"
+    )
 
 
 def test_the_saves_take_the_busy_state():

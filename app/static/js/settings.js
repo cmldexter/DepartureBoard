@@ -52,6 +52,29 @@
     };
   }
 
+  // ---- appearance: a device preference (localStorage + data-theme on <html>), never a board setting
+  const APPEARANCE_KEY = "departureboard.appearance";
+  function applyAppearance(choice) {
+    if (choice === "light" || choice === "dark") document.documentElement.dataset.theme = choice;
+    else delete document.documentElement.dataset.theme;
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.content = getComputedStyle(document.body).getPropertyValue("--bg").trim() || meta.content;
+  }
+  (() => {
+    let stored = "system";
+    try { stored = localStorage.getItem(APPEARANCE_KEY) || "system"; } catch (e) { /* private mode */ }
+    const radio = $(`input[name="appearance"][value="${stored}"]`) || $('input[name="appearance"][value="system"]');
+    if (radio) radio.checked = true;
+    applyAppearance(stored);
+    $$('input[name="appearance"]').forEach((r) =>
+      r.addEventListener("change", () => {
+        try { if (r.value === "system") localStorage.removeItem(APPEARANCE_KEY); else localStorage.setItem(APPEARANCE_KEY, r.value); } catch (e) { /* private mode */ }
+        applyAppearance(r.value);
+      }),
+    );
+    matchMedia("(prefers-color-scheme: light)").addEventListener("change", () => applyAppearance(document.documentElement.dataset.theme || "system"));
+  })();
+
   let toastTimer = 0;
   function toast(text, isError) {
     const el = $("#toast");
