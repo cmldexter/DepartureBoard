@@ -45,7 +45,10 @@ def test_every_doc_knows_about_guests():
                 "docs/tv-setup.md#the-one-minute-version",
             ),
         ),
-        ("docs/tv-setup.md", ("walks you through", "## The one-minute version", "Setup → Appearance")),
+        (
+            "docs/tv-setup.md",
+            ("walks you through", "## The one-minute version", "Setup → Appearance"),
+        ),
         ("CHANGELOG.md", ("#161", "#162", "#163", "#164")),
         ("llms.txt", ("setup_done", "DELETE /api/settings/setup_done")),
         ("integrations/skills/departureboard/SKILL.md", ("setup_done",)),
