@@ -216,6 +216,10 @@ keep it on the home screen like an app:
 2. Safari: **Share** → **Add to Home Screen**. Chrome: **⋮** → **Add to Home screen**.
 3. Tap the icon. It opens full-screen, in the board's colours; sign in once and it stays signed in for a year.
 
+**Light or dark.** The pages follow your device's scheme; **Setup → Appearance** picks *System*, *Light* or *Dark* for that device only — it is not a board setting, and the TV keeps its theme. The captures on this page are the dark scheme; this is the Messages tab in light:
+
+<img src="docs/media/settings-messages-light.png" alt="The messages table in the light scheme: a white page, the same switches, badges, Edit and Delete" width="800">
+
 For the TV side, read [docs/tv-setup.md](docs/tv-setup.md); to post from a script, a calendar or an
 agent, open `/integrate` (pictured below).
 
