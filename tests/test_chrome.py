@@ -30,6 +30,8 @@ def test_the_sprite_is_stroke_only_lucide():
     root = ET.parse(SPRITE).getroot()
     assert re.fullmatch(r"\d+\.\d+\.\d+", root.get("data-lucide") or "")
     assert root.get("hidden") == "hidden" and root.get("aria-hidden") == "true"
+    # `hidden` alone does not hide an <svg>: the board page's body grid would stack it over the frame
+    assert root.get("style") == "display:none"
     symbols = sprite_symbols()
     assert len(symbols) >= 20
     for name, s in symbols.items():

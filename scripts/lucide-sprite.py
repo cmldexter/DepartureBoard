@@ -83,7 +83,9 @@ def main(version: str) -> None:
         )
     sprite = (
         f'<svg xmlns="http://www.w3.org/2000/svg" data-lucide="{version}" '
-        'hidden="hidden" aria-hidden="true" focusable="false">\n'
+        'hidden="hidden" aria-hidden="true" focusable="false" style="display:none">\n'
+        # style, not only hidden: the hidden attribute does not hide an <svg> on the board page,
+        # whose body grid would then stack the sprite above the frame
         + "\n".join(symbols)
         + "\n</svg>\n"
     )
