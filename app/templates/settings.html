@@ -2,11 +2,12 @@
 {% block title %}Settings · DepartureBoard{% endblock %}
 {% block body_class %}page{% endblock %}
 {% block body %}
+{% from "_icons.html" import icon %}
 <main class="narrow">
   <header class="row">
-    <h1><img class="mark" src="/static/icons/icon-192.png" alt="" width="28" height="28">DepartureBoard</h1>
+    <h1><img class="mark" src="/static/icons/icon-192.png" alt="" width="40" height="40"><span class="wordmark">DepartureBoard</span></h1>
     <nav><a href="/">Board</a> · <a href="/?demo">Demo</a> · <a href="/integrate">Integrate</a> · <a href="/docs">API docs</a>
-      <form method="post" action="/settings/logout" class="inline"><button type="submit" class="link">Sign out</button></form>
+      <form method="post" action="/settings/logout" class="inline"><button type="submit" class="link">{{ icon("log-out") }} Sign out</button></form>
     </nav>
   </header>
   <section id="boards" aria-labelledby="boards-heading">
@@ -17,10 +18,10 @@
       <span class="actions">
         <label class="sr-only" for="board-switch">Switch to a saved board</label>
         <select id="board-switch"><option value="">Switch…</option></select>
-        <button type="button" class="small" id="board-save">Save</button>
-        <button type="button" class="small" id="board-save-as">Save as…</button>
-        <details class="more" id="board-more"><summary aria-label="More board actions">⋯</summary>
-          <div class="menu"><button type="button" class="link" id="board-duplicate">Duplicate</button> <button type="button" class="link" id="board-rename">Rename</button> <button type="button" class="link" id="board-delete">Delete</button></div>
+        <button type="button" class="small secondary" id="board-save">Save</button>
+        <button type="button" class="small secondary" id="board-save-as">Save as…</button>
+        <details class="more" id="board-more"><summary aria-label="More board actions">{{ icon("ellipsis") }}</summary>
+          <div class="menu"><button type="button" class="link" id="board-duplicate">{{ icon("copy-plus") }} Duplicate</button> <button type="button" class="link" id="board-rename">{{ icon("pencil") }} Rename</button> <button type="button" class="link danger" id="board-delete">{{ icon("trash-2") }} Delete</button></div>
         </details>
       </span>
     </div>
@@ -29,12 +30,12 @@
   <p id="toast" class="toast" role="status" aria-live="polite" hidden></p>
 
   <div class="tabs" role="tablist" aria-label="Settings">
-    <button type="button" role="tab" id="tab-board" aria-controls="panel-board" aria-selected="true"><span class="ico" aria-hidden="true">📺</span><span class="lbl">Board</span></button>
-    <button type="button" role="tab" id="tab-messages" aria-controls="panel-messages" aria-selected="false" tabindex="-1"><span class="ico" aria-hidden="true">💬</span><span class="lbl">Messages</span></button>
-    <button type="button" role="tab" id="tab-pictures" aria-controls="panel-pictures" aria-selected="false" tabindex="-1"><span class="ico" aria-hidden="true">🖼️</span><span class="lbl">Pictures</span></button>
-    <button type="button" role="tab" id="tab-guests" aria-controls="panel-guests" aria-selected="false" tabindex="-1"><span class="ico" aria-hidden="true">🎉</span><span class="lbl">Guests</span> <span id="guests-count" class="badge pending" hidden></span></button>
-    <button type="button" role="tab" id="tab-boards" aria-controls="panel-boards" aria-selected="false" tabindex="-1"><span class="ico" aria-hidden="true">🗓️</span><span class="lbl">Boards</span> <span id="tab-boards-dot" class="tab-dot" title="This board has changes since it was saved" hidden>●</span></button>
-    <button type="button" role="tab" id="tab-setup" aria-controls="panel-setup" aria-selected="false" tabindex="-1"><span class="ico" aria-hidden="true">⚙️</span><span class="lbl">Setup</span></button>
+    <button type="button" role="tab" id="tab-board" aria-controls="panel-board" aria-selected="true"><span class="ico" aria-hidden="true">{{ icon("tv") }}</span><span class="lbl">Board</span></button>
+    <button type="button" role="tab" id="tab-messages" aria-controls="panel-messages" aria-selected="false" tabindex="-1"><span class="ico" aria-hidden="true">{{ icon("message-square") }}</span><span class="lbl">Messages</span></button>
+    <button type="button" role="tab" id="tab-pictures" aria-controls="panel-pictures" aria-selected="false" tabindex="-1"><span class="ico" aria-hidden="true">{{ icon("image") }}</span><span class="lbl">Pictures</span></button>
+    <button type="button" role="tab" id="tab-guests" aria-controls="panel-guests" aria-selected="false" tabindex="-1"><span class="ico" aria-hidden="true">{{ icon("party-popper") }}</span><span class="lbl">Guests</span> <span id="guests-count" class="badge pending" hidden></span></button>
+    <button type="button" role="tab" id="tab-boards" aria-controls="panel-boards" aria-selected="false" tabindex="-1"><span class="ico" aria-hidden="true">{{ icon("calendar-days") }}</span><span class="lbl">Boards</span> <span id="tab-boards-dot" class="tab-dot" title="This board has changes since it was saved" hidden>●</span></button>
+    <button type="button" role="tab" id="tab-setup" aria-controls="panel-setup" aria-selected="false" tabindex="-1"><span class="ico" aria-hidden="true">{{ icon("settings") }}</span><span class="lbl">Setup</span></button>
   </div>
 
   <div class="layout">
@@ -54,11 +55,11 @@
     <div class="row"><button type="submit" id="now-send">Show now</button><span class="muted" id="now-status" role="status"></span></div>
   </form>
   <nav class="rows phone-only" aria-label="Look and display">
-    <button type="button" data-sheet="look-theme" data-title="Theme">Theme</button>
-    <button type="button" data-sheet="backdrop-form" data-title="Behind the board">Behind the board</button>
-    <button type="button" data-sheet="flaps-form" data-title="The flaps">The flaps</button>
-    <button type="button" data-sheet="frame-form" data-title="The frame">The frame</button>
-    <button type="button" data-sheet="display-form" data-title="Display">Display</button>
+    <button type="button" data-sheet="look-theme" data-title="Theme"><span>Theme</span>{{ icon("chevron-right") }}</button>
+    <button type="button" data-sheet="backdrop-form" data-title="Behind the board"><span>Behind the board</span>{{ icon("chevron-right") }}</button>
+    <button type="button" data-sheet="flaps-form" data-title="The flaps"><span>The flaps</span>{{ icon("chevron-right") }}</button>
+    <button type="button" data-sheet="frame-form" data-title="The frame"><span>The frame</span>{{ icon("chevron-right") }}</button>
+    <button type="button" data-sheet="display-form" data-title="Display"><span>Display</span>{{ icon("chevron-right") }}</button>
   </nav>
   <section id="look" class="sheet-host" aria-labelledby="look-heading">
     <h2 id="look-heading">Look &amp; feel</h2>
@@ -101,8 +102,8 @@
           </button>
           {% endfor %}
         </div>
-        <p class="upload"><label class="file-button">Upload a picture…<input type="file" name="file" accept="image/png,image/jpeg,image/gif,image/webp" class="sr-only"></label>
-          <label class="file-button">Upload a video…<input type="file" name="video" accept="video/mp4,video/webm" class="sr-only"></label>
+        <p class="upload"><label class="file-button">{{ icon("upload") }} Upload a picture…<input type="file" name="file" accept="image/png,image/jpeg,image/gif,image/webp" class="sr-only"></label>
+          <label class="file-button">{{ icon("upload") }} Upload a video…<input type="file" name="video" accept="video/mp4,video/webm" class="sr-only"></label>
           <span class="muted">Pictures up to 5 MB — your uploads from the Images panel are in the row too. Videos MP4 or WebM up to 250 MB; a 1080p file without sound plays on the weakest TV.</span></p>
       </fieldset>
       <fieldset class="effects">
@@ -114,11 +115,11 @@
         <div class="colors" id="colors-row" hidden>
           <span>Colours</span>
           <span id="bg-wells" role="group" aria-label="The gradient's colours"></span>
-          <button type="button" class="small" id="bg-color-add">+ colour</button>
-          <button type="button" class="small" id="bg-color-reset">Reset to preset</button>
+          <button type="button" class="small secondary" id="bg-color-add">{{ icon("plus") }} colour</button>
+          <button type="button" class="small secondary" id="bg-color-reset">Reset to preset</button>
         </div>
       </fieldset>
-      <div class="row"><span><button type="submit">Save background</button> <button type="button" class="small" id="backdrop-clear">Clear</button></span>
+      <div class="row"><span><button type="submit">Save background</button> <button type="button" class="small secondary" id="backdrop-clear">Clear</button></span>
         <span class="muted" id="backdrop-status" role="status"></span></div>
     </form>
 
@@ -135,7 +136,7 @@
         <label>Split line <input type="range" name="split_line" min="0" max="3" step="1" value="1"> <output id="split-value">1 px</output></label>
         <label>Depth <input type="range" name="cell_depth" min="0" max="100" step="5" value="40"> <output id="depth-value">as the theme</output> <label class="inline"><input type="checkbox" name="cell_depth_theme" checked> as the theme</label></label>
       </fieldset>
-      <div class="row"><span><button type="submit">Save flaps</button> <button type="button" class="small" id="flaps-picture">Picture mode</button> <button type="button" class="small" id="flaps-classic">Classic</button></span>
+      <div class="row"><span><button type="submit">Save flaps</button> <button type="button" class="small secondary" id="flaps-picture">Picture mode</button> <button type="button" class="small secondary" id="flaps-classic">Classic</button></span>
         <span class="muted" id="flaps-status" role="status"></span></div>
     </form>
 
@@ -174,7 +175,7 @@
         </div>
         <label id="frame-glow-row">Glow <input type="color" name="frame_glow" value="#01fdfe"> <label class="inline"><input type="checkbox" name="frame_glow_theme" checked> as the theme</label></label>
       </fieldset>
-      <div class="row"><span><button type="submit">Save frame</button> <button type="button" class="small" id="frame-black-chrome">Black chrome</button> <button type="button" class="small" id="frame-theme">As the theme</button></span>
+      <div class="row"><span><button type="submit">Save frame</button> <button type="button" class="small secondary" id="frame-black-chrome">Black chrome</button> <button type="button" class="small secondary" id="frame-theme">As the theme</button></span>
         <span class="muted" id="frame-status" role="status"></span></div>
     </form>
   </section>
@@ -216,7 +217,7 @@
 
   <div id="panel-messages" class="panel" role="tabpanel" aria-labelledby="tab-messages" tabindex="0" hidden>
   <section id="messages">
-    <div class="row"><h2>Messages</h2><button type="button" class="small" id="new-message">New message</button></div>
+    <div class="row"><h2>Messages</h2><button type="button" class="small secondary" id="new-message">{{ icon("plus") }} New message</button></div>
     <table class="list" aria-label="Messages">
       <thead><tr><th scope="col">State</th><th scope="col">Text</th><th scope="col">When</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
       <tbody id="message-rows"><tr><td colspan="4" class="muted">Loading…</td></tr></tbody>
@@ -275,20 +276,20 @@
     <h2>Images</h2>
     <p class="muted">PNG, JPEG, GIF or WebP up to 5 MB. A new picture takes one cell; give it a size below — a wide one reads best across a row — and it keeps its shape inside that block unless you choose otherwise. Or make a <strong>QR code</strong> from a link or a line of text: it is drawn whole over its block so a phone can scan it from the sofa.</p>
     <nav class="rows phone-only" aria-label="Add a picture">
-      <button type="button" data-sheet="image-form" data-title="Upload a picture">Upload a picture</button>
-      <button type="button" data-sheet="qr-form" data-title="Make a QR code">Make a QR code</button>
+      <button type="button" data-sheet="image-form" data-title="Upload a picture"><span>Upload a picture</span>{{ icon("chevron-right") }}</button>
+      <button type="button" data-sheet="qr-form" data-title="Make a QR code"><span>Make a QR code</span>{{ icon("chevron-right") }}</button>
     </nav>
     <form id="image-form" class="card row sheet-block">
       <label>File <input type="file" name="file" accept="image/png,image/jpeg,image/gif,image/webp" required></label>
       <label>Slug <span class="muted">(optional)</span> <input type="text" name="slug" pattern="[a-z0-9][a-z0-9\-]{0,39}" placeholder="my-cat"></label>
-      <button type="submit">Upload</button>
-      <p class="phone-only camera"><label class="file-button">Take a photo <input type="file" name="camera" accept="image/*" capture="environment" class="sr-only"></label>
+      <button type="submit">{{ icon("upload") }} Upload</button>
+      <p class="phone-only camera"><label class="file-button">{{ icon("camera") }} Take a photo <input type="file" name="camera" accept="image/*" capture="environment" class="sr-only"></label>
         <span class="muted">— straight from the camera; it uploads at once.</span></p>
     </form>
     <form id="qr-form" class="card row sheet-block" aria-label="Make a QR code">
       <label>QR code: text or link <input type="text" name="data" maxlength="1024" placeholder="https://… or WIFI:T:WPA;S:name;P:password;;" required></label>
       <label>Slug <input type="text" name="slug" pattern="[a-z0-9][a-z0-9\-]{0,39}" placeholder="menu" required></label>
-      <span><button type="submit">Make QR</button> <button type="button" class="small" id="qr-board">Scan to open this board</button></span>
+      <span><button type="submit">{{ icon("qr-code") }} Make QR</button> <button type="button" class="small secondary" id="qr-board">Scan to open this board</button></span>
       <span class="muted" id="qr-status" role="status"></span>
     </form>
     <ul id="image-list" class="images"></ul>
@@ -303,10 +304,10 @@
       turns among themselves at the priority below, each for its seconds. <em>Rotate</em> makes a new link and kills
       the old one; <em>Turn off</em> closes the door. Photos lose their location data before they are stored.</p>
     <div class="card" id="guest-link">
-      <p id="guest-off" class="empty"><span>Guests are off — there is no link.</span> <button type="button" class="small" id="guest-make">Make a link</button></p>
+      <p id="guest-off" class="empty"><span>Guests are off — there is no link.</span> <button type="button" class="small secondary" id="guest-make">Make a link</button></p>
       <p id="guest-on" hidden><span class="muted">Guest link</span> <code class="token" id="guest-url"></code>
-        <button type="button" class="link" id="guest-copy">Copy</button> · <button type="button" class="link" id="guest-rotate">Rotate</button> · <button type="button" class="link" id="guest-close">Turn off</button></p>
-      <p id="guest-qr-row" class="row" hidden><button type="button" class="small" id="guest-qr">Put the QR on the board</button>
+        <button type="button" class="link" id="guest-copy">{{ icon("copy") }} Copy</button> · <button type="button" class="link" id="guest-rotate">{{ icon("rotate-cw") }} Rotate</button> · <button type="button" class="link danger" id="guest-close">{{ icon("power") }} Turn off</button></p>
+      <p id="guest-qr-row" class="row" hidden><button type="button" class="small secondary" id="guest-qr">{{ icon("qr-code") }} Put the QR on the board</button>
         <span class="muted" id="guest-qr-note">Makes <code>{img:guest-qr}</code> and a <em>SCAN TO POST A PHOTO</em> message you switch on when the party starts. Rotate remakes the code; Turn off takes the message off.</span></p>
       <form id="guest-form" aria-label="How guest posts show">
         <label class="check"><span class="switch"><input type="checkbox" role="switch" name="guest_auto_approve"><span class="track" aria-hidden="true"></span></span> Auto-approve — a post goes on the board at once</label>
@@ -319,14 +320,14 @@
     </div>
     <h3 id="guest-pending-heading">Waiting for you</h3>
     <ul id="guest-pending" class="posts" aria-labelledby="guest-pending-heading"></ul>
-    <div class="row"><h3 id="guest-approved-heading">On the board</h3><button type="button" class="small" id="guest-clear">Clear all</button></div>
+    <div class="row"><h3 id="guest-approved-heading">On the board</h3><button type="button" class="small danger" id="guest-clear">{{ icon("trash-2") }} Clear all</button></div>
     <ul id="guest-approved" class="posts" aria-labelledby="guest-approved-heading"></ul>
   </section>
   </div>
 
   <div id="panel-boards" class="panel" role="tabpanel" aria-labelledby="tab-boards" tabindex="0" hidden>
-    <p class="muted panel-intro">Your saved boards live in the strip at the top — <em>Switch…</em>, <em>Save as…</em>, the ⋯ menu. Here you plan them ahead.</p>
-    <p class="empty" id="boards-empty" hidden><span>No saved boards yet — the calendar plans saved boards.</span> <button type="button" class="small" id="boards-empty-save">Save this board under a name</button></p>
+    <p class="muted panel-intro">Your saved boards live in the strip at the top — <em>Switch…</em>, <em>Save as…</em>, the <em>More</em> menu. Here you plan them ahead.</p>
+    <p class="empty" id="boards-empty" hidden><span>No saved boards yet — the calendar plans saved boards.</span> <button type="button" class="small secondary" id="boards-empty-save">Save this board under a name</button></p>
   <section id="calendar" aria-labelledby="calendar-heading">
     <div class="row"><h2 id="calendar-heading">Calendar</h2><span class="muted" id="calendar-today" role="status"></span></div>
     <p class="muted">Plan the boards ahead: a saved board for a day or a range, and it comes up by itself at midnight
@@ -334,7 +335,7 @@
       the later start wins; the <em>everyday board</em> shows between planned days. Click a day to start a plan there.</p>
     <div class="months" id="calendar-months"></div>
     <p class="legend muted" id="calendar-legend"></p>
-    <nav class="rows phone-only" aria-label="Plan"><button type="button" data-sheet="calendar-form" data-title="Plan a board">Plan a board</button></nav>
+    <nav class="rows phone-only" aria-label="Plan"><button type="button" data-sheet="calendar-form" data-title="Plan a board"><span>Plan a board</span>{{ icon("chevron-right") }}</button></nav>
     <form id="calendar-form" class="card sheet-block" aria-labelledby="calendar-form-title">
       <h3 id="calendar-form-title">Plan a board</h3>
       <input type="hidden" name="id">
@@ -361,7 +362,7 @@
     <p id="addresses-heading" class="muted">Your board is at</p>
     <ul class="addresses">
       {% for a in addresses %}
-      <li><code class="token">{{ a.url }}</code> <button type="button" class="link copy" data-copy="{{ a.url }}">Copy</button> <span class="muted">{{ a.label }}</span></li>
+      <li><code class="token">{{ a.url }}</code> <button type="button" class="link copy" data-copy="{{ a.url }}">{{ icon("copy") }} Copy</button> <span class="muted">{{ a.label }}</span></li>
       {% endfor %}
     </ul>
     {% if not named %}
@@ -376,7 +377,7 @@
     <details><summary>Show token</summary><pre class="token">{{ token }}</pre></details>
   </section>
     <p class="muted">Post from a script, a calendar or an agent: <a href="/integrate">the integrate page</a> has every call pre-filled; <a href="/docs">the API docs</a> list them all.</p>
-    <p class="row"><button type="button" class="small" id="welcome-again">Run the walkthrough again</button>
+    <p class="row"><button type="button" class="small secondary" id="welcome-again">Run the walkthrough again</button>
       <span class="muted">The four steps from the first visit: your TV, a first message, the address, the token.</span></p>
   </div>
   </div>
@@ -385,7 +386,7 @@
     <div class="row">
       <h2 id="live-heading">On the TV</h2>
       <span><button type="button" class="link phone-only" id="live-toggle" aria-expanded="false" aria-controls="live-screen">Show</button>
-      <button type="button" class="small" id="cast" aria-pressed="false"><span class="label">Cast to TV</span></button></span>
+      <button type="button" class="small secondary" id="cast" aria-pressed="false">{{ icon("cast") }} <span class="label">Cast to TV</span></button></span>
     </div>
     <div id="live-screen" class="live-screen"><div class="screen" aria-hidden="true"><iframe id="live-board" src="/?embed" title="The board, live" tabindex="-1"></iframe></div></div>
     <p id="live-now" class="muted">Waiting for the board…</p>
@@ -456,7 +457,7 @@
       <p class="muted">Your board is at</p>
       <ul class="addresses">
         {% for a in addresses %}
-        <li><code class="token">{{ a.url }}</code> <button type="button" class="link copy" data-copy="{{ a.url }}">Copy</button> <span class="muted">{{ a.label }}</span></li>
+        <li><code class="token">{{ a.url }}</code> <button type="button" class="link copy" data-copy="{{ a.url }}">{{ icon("copy") }} Copy</button> <span class="muted">{{ a.label }}</span></li>
         {% endfor %}
       </ul>
       <div class="qr"><img src="{{ welcome_qr }}" alt="QR code of the first address" width="160" height="160">
@@ -465,20 +466,20 @@
     <section class="step" id="welcome-4" aria-labelledby="welcome-4-title" hidden>
       <h3 id="welcome-4-title">4 · Your token</h3>
       <p class="muted">The one you signed in with. Every write to the board needs it — a script, a calendar, an agent — as <code>Authorization: Bearer …</code>. Keep it out of screenshots.</p>
-      <div class="row"><pre class="token">{{ token }}</pre><button type="button" class="link copy" data-copy="{{ token }}">Copy</button></div>
+      <div class="row"><pre class="token">{{ token }}</pre><button type="button" class="link copy" data-copy="{{ token }}">{{ icon("copy") }} Copy</button></div>
       <p class="muted">It lives on the <strong>Setup</strong> tab. The <a href="/integrate">integrate page</a> has every call pre-filled with it; the <a href="/docs">API docs</a> list them all.</p>
     </section>
     <div class="screen" id="welcome-screen" aria-hidden="true"><iframe id="welcome-board" src="/?embed" title="The board, live" tabindex="-1"></iframe></div>
     <footer class="row">
       <button type="button" class="link" id="welcome-skip">Skip this step</button>
-      <span><button type="button" class="small" id="welcome-prev" hidden>Back</button> <button type="button" id="welcome-next">Next</button></span>
+      <span><button type="button" class="small secondary" id="welcome-prev" hidden>Back</button> <button type="button" id="welcome-next">Next</button></span>
     </footer>
   </dialog>
   {% endif %}
 
   <dialog id="sheet" class="sheet" aria-labelledby="sheet-title">
     <header class="row">
-      <button type="button" class="link" id="sheet-back">‹ Back</button>
+      <button type="button" class="link" id="sheet-back">{{ icon("chevron-left") }} Back</button>
       <h2 id="sheet-title"></h2>
       <span class="muted" id="sheet-hint">changes come back with you</span>
     </header>

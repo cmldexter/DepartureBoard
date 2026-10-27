@@ -2,8 +2,9 @@
 {% block title %}Sign in · DepartureBoard{% endblock %}
 {% block body_class %}page{% endblock %}
 {% block body %}
+{% from "_icons.html" import icon %}
 <main class="narrow">
-  <h1><img class="mark big" src="/static/icons/icon-192.png" alt="" width="56" height="56">DepartureBoard</h1>
+  <h1><img class="mark big" src="/static/icons/icon-192.png" alt="" width="56" height="56"><span class="wordmark">DepartureBoard</span></h1>
   <p>Paste the API token to open the settings. The board made it on first boot and keeps it next
      to its data, so every server has its own. The lines below print it.</p>
   {% if error %}<p class="error">{{ error }}</p>{% endif %}
@@ -21,17 +22,17 @@
       on Linux to put it straight on the clipboard instead of on the screen.</p>
     <div class="snippet">
       <div class="row"><h3>The container · <code>docker compose up</code></h3>
-        <button type="button" class="link copy" data-copy="docker compose exec departureboard cat /data/api_token">Copy</button></div>
+        <button type="button" class="link copy" data-copy="docker compose exec departureboard cat /data/api_token">{{ icon("copy") }} Copy</button></div>
       <pre class="code"><span class="prompt" aria-hidden="true">$ </span>docker compose exec departureboard cat /data/api_token</pre>
     </div>
     <div class="snippet">
       <div class="row"><h3>A server started from the checkout · <code>uv run</code></h3>
-        <button type="button" class="link copy" data-copy="cat data/api_token">Copy</button></div>
+        <button type="button" class="link copy" data-copy="cat data/api_token">{{ icon("copy") }} Copy</button></div>
       <pre class="code"><span class="prompt" aria-hidden="true">$ </span>cat data/api_token</pre>
     </div>
     <div class="snippet">
       <div class="row"><h3>Or the first-boot log, where it was printed once</h3>
-        <button type="button" class="link copy" data-copy="docker compose logs departureboard | grep -A 1 &quot;API token&quot;">Copy</button></div>
+        <button type="button" class="link copy" data-copy="docker compose logs departureboard | grep -A 1 &quot;API token&quot;">{{ icon("copy") }} Copy</button></div>
       <pre class="code"><span class="prompt" aria-hidden="true">$ </span>docker compose logs departureboard | grep -A 1 "API token"</pre>
     </div>
     <p class="muted">A token from one server does not open another: a <code>uv run</code> server
