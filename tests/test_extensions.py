@@ -66,11 +66,11 @@ def test_an_extension_plugs_in_through_every_hook(settings, monkeypatch):
         assert html.index('id="panel-hello"') > html.index('id="panel-setup"')
         assert html.index('id="panel-more"') < html.index('<aside id="side"')
         # the edition the extension named: the footer and the API
-        assert '<span id="edition">Test edition</span>' in html
+        assert '<span id="edition">TEST edition</span>' in html
         assert c.get("/api/health").json() == {
             "ok": True,
             "version": __version__,
-            "edition": "Test",
+            "edition": "TEST",
             "extensions": [{"name": "hello", "version": "0.1.0"}],
         }
         # the startup task ran after the database came up

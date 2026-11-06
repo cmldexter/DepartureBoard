@@ -524,7 +524,7 @@
   </dialog>
 
   <footer class="edition">
-    <p class="build"><img src="/static/icons/icon-192.png" alt="" width="20" height="20"><span>DepartureBoard {{ version }}</span><span class="sep">·</span><span id="edition">{{ edition|capitalize }} edition</span><span class="sep">·</span><span>GPL-3.0-or-later</span><span class="sep">·</span><a href="https://github.com/cmldexter/DepartureBoard" rel="noopener">GitHub</a></p>
+    <p class="build"><img src="/static/icons/icon-192.png" alt="" width="20" height="20"><span>DepartureBoard {{ version }}</span><span class="sep">·</span><span id="edition">{{ edition[:1]|upper ~ edition[1:] }} edition</span><span class="sep">·</span><span>GPL-3.0-or-later</span><span class="sep">·</span><a href="https://github.com/cmldexter/DepartureBoard" rel="noopener">GitHub</a></p>
     <p>Asked for by <a href="https://www.instagram.com/feltbykraft/" rel="noopener">@feltbykraft</a>
        — “come find me when that exists.”</p>
   </footer>
