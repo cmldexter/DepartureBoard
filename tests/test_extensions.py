@@ -20,10 +20,10 @@ SIX = ["board", "messages", "pictures", "guests", "boards", "setup"]
 @pytest.fixture(autouse=True)
 def _quiet_caption():
     """The fixture's board source starts and ends silent."""
-    ext_fixture.CAPTION.update(text=None, seconds=None, remaining=None, poll=None)
+    ext_fixture.CAPTION.update(text=None, seconds=None, remaining=None, poll=None, standby=False)
     ext_fixture.CAPTION["raise"] = False
     yield
-    ext_fixture.CAPTION.update(text=None, seconds=None, remaining=None, poll=None)
+    ext_fixture.CAPTION.update(text=None, seconds=None, remaining=None, poll=None, standby=False)
     ext_fixture.CAPTION["raise"] = False
 
 
@@ -163,6 +163,53 @@ def test_a_board_source_takes_the_board_for_a_moment_without_a_message(
             j = c.get("/api/board/current").json()
         assert j["rows"][0][:9] == list("SCHEDULED"), "a failing source is skipped"
         assert "skipped for this poll" in caplog.text
+
+
+def test_a_source_standing_by_keeps_the_rotation_but_quickens_the_poll(settings, monkeypatch):
+    """BoardSource(None, poll=1): the rows are the rotation's, `poll` is on the wire and in the
+    ETag, so the TV comes back every second and learns when the standby ends."""
+    installed(monkeypatch, entry("hello", ext_fixture.register))
+    cap = ext_fixture.CAPTION
+    with TestClient(create_app(settings)) as c:
+        auth = {"Authorization": f"Bearer {c.app.state.api_token}"}
+        c.post("/api/messages", json={"text": "SCHEDULED"}, headers=auth)
+        r = c.get("/api/board/current")
+        etag = r.headers["ETag"]
+        assert "poll" not in r.json()
+
+        cap.update(text=None, poll=1, standby=True)
+        r = c.get("/api/board/current", headers={"If-None-Match": etag})
+        assert r.status_code == 200, "the hint joins the stamp"
+        j = r.json()
+        assert j["rows"][0][:9] == list("SCHEDULED") and j["message_id"] is not None
+        assert j["poll"] == 1, "the rotation, with the hint"
+        standby_etag = r.headers["ETag"]
+        assert (
+            c.get("/api/board/current", headers={"If-None-Match": standby_etag}).status_code == 304
+        )
+
+        cap.update(standby=False, poll=None)
+        r = c.get("/api/board/current", headers={"If-None-Match": standby_etag})
+        assert r.status_code == 200 and "poll" not in r.json(), "the standby ends: the TV learns"
+        assert r.headers["ETag"] == etag, "and the stamp is what it was before"
+
+
+def test_ask_sources_merges_the_quickest_hint():
+    from datetime import UTC, datetime
+
+    from app.extensions import BoardSource, ask_sources
+
+    at = datetime.now(UTC)
+    standby = lambda *_: BoardSource(None, poll=2)  # noqa: E731
+    quick = lambda *_: BoardSource(None, poll=1)  # noqa: E731
+    text = lambda *_: BoardSource("HI", 10, 5, True, 3)  # noqa: E731
+    none = lambda *_: None  # noqa: E731
+    assert ask_sources([("a", none)], None, at, {}) is None
+    assert ask_sources([("a", standby), ("b", quick)], None, at, {}) == BoardSource(None, poll=1)
+    got = ask_sources([("a", standby), ("b", text)], None, at, {})
+    assert got.text == "HI" and got.poll == 2, "the text wins the board, the quicker hint rides"
+    got = ask_sources([("a", text), ("b", quick)], None, at, {})
+    assert got.text == "HI" and got.poll == 3, "the first text answers; later sources are not asked"
 
 
 def test_the_footer_names_the_build(client, token):

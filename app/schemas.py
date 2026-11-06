@@ -262,7 +262,7 @@ class SettingsPatch(BaseModel):
     sound_enabled: bool | None = None
     sound_volume: float | None = Field(None, ge=0, le=1)
     theme: str | None = Field(None, description=f"One of {', '.join(THEMES)}")
-    poll_seconds: int | None = Field(None, ge=2, le=60)
+    poll_seconds: int | None = Field(None, ge=1, le=60)
     rotate_seconds: int | None = Field(None, ge=5, le=600)
     idle_text: str | None = Field(None, max_length=2000)
     timer_ring: TimerRing | None = Field(
@@ -659,8 +659,8 @@ class BoardCurrent(BaseModel):
     poll: int | None = Field(
         None,
         description=(
-            "Poll again in this many seconds — a transient source's hint while it has the board; "
-            "absent otherwise (the display's poll_seconds applies)"
+            "Poll again in this many seconds — a transient source's hint while it has the board "
+            "or stands by for something; absent otherwise (the display's poll_seconds applies)"
         ),
     )
 

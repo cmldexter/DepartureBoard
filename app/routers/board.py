@@ -29,9 +29,10 @@ def current_board(
 ) -> BoardCurrent:
     d = display_settings(session)
     # A transient source (an extension's, app/extensions.py) is asked first: when it has rows
-    # they take the board for its slot, no message written; otherwise the rotation as always.
+    # they take the board for its slot, no message written; otherwise the rotation as always —
+    # with the source's poll hint on the wire when it is standing by for something.
     source = ask_sources(list(sources), session, at, d)
-    if source is not None:
+    if source is not None and source.text is not None:
         chosen = None
         text = source.text
         slot = Slot(None, source.seconds, source.remaining, source.own)
@@ -74,7 +75,7 @@ def current_board(
         "cells, with the display settings. While messages rotate, `timer` says how long the "
         "slot is and how much is left; it is not part of the `ETag`. Send `If-None-Match` with "
         "the last `ETag` to get `304` when nothing changed. `poll` appears only while a "
-        "transient source has the board and asks for a quicker return."
+        "transient source has the board, or stands by for something, and asks for a quicker return."
     ),
     response_model=BoardCurrent,
     response_model_exclude_unset=True,

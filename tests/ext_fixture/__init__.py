@@ -31,7 +31,7 @@ CAPTION: dict = {"text": None, "seconds": None, "remaining": None, "poll": None,
 def caption(session, at, display):
     if CAPTION["raise"]:
         raise RuntimeError("source boom")
-    if CAPTION["text"] is None:
+    if CAPTION["text"] is None and not CAPTION.get("standby"):
         return None
     return BoardSource(
         CAPTION["text"], CAPTION["seconds"], CAPTION["remaining"], True, CAPTION["poll"]

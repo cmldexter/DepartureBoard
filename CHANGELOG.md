@@ -7,6 +7,11 @@ and a container image `ghcr.io/cmldexter/departureboard:X.Y.Z`.
 
 ## [Unreleased]
 
+### Changed
+
+- **A transient source can stand by.** `BoardSource(None, poll=1)` from an extension's board source leaves the rotation as it is but puts the poll hint on the wire, so the TV comes back every second while something is expected (a caption between two sentences) and shows it within a second of its arrival instead of at the next `poll_seconds`. The quickest hint of every source rides along; the hint is part of the `ETag`. Nothing changes without a source.
+- **`poll_seconds` goes down to 1** (was 2) for a board that should react within a second to whatever is posted; the display form's floor follows.
+
 ### Added
 
 - **A transient board source for extensions** (#185). `hooks.board_source(provider)` registers a callable `GET /api/board/current` asks before the rotation; when it answers, its text takes the board — laid out as a message is, with its own slot in `timer` and a `poll` hint (seconds) the TV honours instead of `poll_seconds` — and nothing is written to the messages. `None` means the rotation as always; a provider that raises is skipped for that poll. Without a provider the feed is what it was (`poll` is absent, not null).

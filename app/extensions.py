@@ -16,7 +16,7 @@ from __future__ import annotations
 import logging
 import re
 from collections.abc import Awaitable, Callable, Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime
 from importlib.metadata import entry_points
 from pathlib import Path
@@ -35,13 +35,16 @@ Task = Callable[[FastAPI], Awaitable[None]]
 
 @dataclass(frozen=True)
 class BoardSource:
-    """What a board source answers when it has something for the board right now.
+    """What a board source answers when it has something for the board right now — or when it
+    wants the TV back soon.
 
     ``text`` is laid out as a message is (rows × cols, pictures, tokens); ``seconds`` and
     ``remaining`` describe its slot for the timer (both or neither); ``poll`` asks the TV to come
-    back in that many seconds instead of its usual ``poll_seconds``."""
+    back in that many seconds instead of its usual ``poll_seconds``. ``text=None`` with a ``poll``
+    is a *standby* hint: the rotation shows as always, but the TV polls that often — for a source
+    that expects something any moment and wants it on the flaps within a second."""
 
-    text: str
+    text: str | None
     seconds: int | None = None
     remaining: int | None = None
     own: bool = True
@@ -196,15 +199,25 @@ def load_extensions(app: FastAPI) -> Registry:
 def ask_sources(
     sources: list[tuple[str, Provider]], session: Session, at: datetime, display: Mapping[str, Any]
 ) -> BoardSource | None:
-    """The first board source with an answer; one that raises is logged and skipped this poll."""
+    """The first board source with text wins the board; the quickest poll hint of all that
+    answered rides along. Standby hints alone give ``BoardSource(None, poll=…)``. One that raises
+    is logged and skipped this poll."""
+    hints: list[int] = []
     for name, provider in sources:
         try:
             found = provider(session, at, display)
         except Exception:  # noqa: BLE001 — a source never takes the board down
             log.exception("board source of %r failed and is skipped for this poll", name)
             continue
-        if found is not None:
-            return found
+        if found is None:
+            continue
+        if found.poll:
+            hints.append(found.poll)
+        if found.text is not None:
+            quickest = min(hints) if hints else None
+            return found if found.poll == quickest else replace(found, poll=quickest)
+    if hints:
+        return BoardSource(None, poll=min(hints))
     return None
 
 
