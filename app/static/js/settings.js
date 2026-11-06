@@ -509,6 +509,12 @@
       return;
     }
     if (liveId === null) {
+      // no message, but a slot: a transient source (an extension's) has the board for a moment
+      if (liveTimer) {
+        const left = Math.max(0, Math.round(liveTimer.remaining - (performance.now() - liveTimer.at) / 1000));
+        liveNow.textContent = `On the board for a moment — not a message · ${left} s left`;
+        return;
+      }
       liveNow.innerHTML = 'Idle — the board shows the idle text. <button type="button" class="link" data-reach="display-form" data-sel="input[name=idle_text]">Set it in Display</button>';
       return;
     }
