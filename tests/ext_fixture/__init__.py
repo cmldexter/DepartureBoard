@@ -55,7 +55,7 @@ def register(app: FastAPI, hooks) -> None:
     hooks.on_startup(start)
     hooks.on_shutdown(stop)
     hooks.board_source(caption)
-    hooks.edition("Test")
+    hooks.edition("TEST")
 
 
 def register_broken(app: FastAPI, hooks) -> None:
