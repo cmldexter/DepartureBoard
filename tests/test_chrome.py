@@ -23,6 +23,8 @@ def names_used() -> set[str]:
         names |= set(re.findall(r'\bicon\("([a-z0-9-]+)"', text))
         names |= set(re.findall(r'\bico\("([a-z0-9-]+)"', text))
         names |= set(re.findall(r"#lucide-([a-z0-9-]+)", text))
+    # the default icon of an extension's tab (app/extensions.py), drawn through the macro
+    names |= set(re.findall(r'icon: str = "([a-z0-9-]+)"', (APP / "extensions.py").read_text()))
     return names
 
 
@@ -67,9 +69,9 @@ def test_no_emoji_or_text_glyph_is_left_in_the_chrome():
     settings = (APP / "templates" / "settings.html").read_text(encoding="utf-8")
     board = (APP / "templates" / "board.html").read_text(encoding="utf-8")
     tabs = re.findall(r'<button type="button" role="tab".*?</button>', settings)
-    assert len(tabs) == 6
+    assert len(tabs) == 8, "the six, the template of an extension's tab, and More (#156)"
     for tab in tabs:
-        assert 'icon("' in tab
+        assert "icon(" in tab
         assert not re.search(r"[\U0001F000-\U0001FAFF☀-➿]", tab), tab
     rows = re.findall(r'<button type="button" data-sheet=.*?</button>', settings)
     assert rows and all('icon("chevron-right")' in r and "›" not in r for r in rows)

@@ -115,6 +115,12 @@ body { background: var(--bg); color: var(--fg); font-family: var(--font); }
 .page .row { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap; }
 .page .error { color: var(--danger); }
 .page footer { margin-top: 3rem; color: var(--muted); font-size: .9rem; }
+/* the edition footer (#157): the mark, the version, the edition, the licence, the repo; the credit under it */
+.page footer.edition { padding-top: 1rem; border-top: 1px solid var(--rule); line-height: 1.6; }
+.page footer.edition .build { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; margin: 0 0 .25rem; }
+.page footer.edition .build img { width: 1.25rem; height: 1.25rem; border-radius: .25rem; }
+.page footer.edition .build .sep { opacity: .6; }
+.page footer.edition p { margin: 0; }
 .page #give { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--rule); line-height: 1.5; }
 
 /* ---- settings page */
@@ -287,6 +293,10 @@ body { background: var(--bg); color: var(--fg); font-family: var(--font); }
 .page .tabs [role="tab"]:hover { color: var(--fg); }
 .page .tabs .badge { margin-left: .35rem; vertical-align: middle; }
 .page .tabs .tab-dot { color: var(--accent); font-size: .7em; vertical-align: middle; }
+/* an extension's tab (app/extensions.py): on a desk a tab like the others, More hidden */
+.page .tabs .ext-more { display: none; }
+.page #panel-more .rows button { margin: 0; justify-content: flex-start; }
+.page #panel-more .rows button .icon:last-child { margin-left: auto; }
 .page .layout { display: flex; flex-direction: column; }
 .page .side { order: -1; } /* one column: the live card under the tabs, above the Board panel */
 .page .side .preview { margin-top: 1rem; }
@@ -353,6 +363,9 @@ body.sheet-open { overflow: hidden; }
   .page .tabs .badge { position: absolute; top: .1rem; right: 12%; width: 1.3rem; height: 1.3rem; margin: 0; padding: 0; overflow: hidden; display: grid; place-items: center; font-size: .65rem; letter-spacing: 2rem; text-indent: 0; }
   .page .tabs .badge[hidden] { display: none; }
   .page .tabs .tab-dot { position: absolute; top: .15rem; right: 18%; }
+  /* the bar holds six: extension tabs sit behind More (a page of rows; a Back row on each) */
+  .page .tabs [role="tab"].ext { display: none; }
+  .page .tabs .ext-more { display: flex; }
   .page button { min-height: max(44px, 2.75rem); } /* Apple's 44 pt, whatever the font size */
   .page button.link { min-height: max(44px, 2.75rem); display: inline-flex; align-items: center; padding: 0 .4rem; }
   .page button.small, .page #boards .actions .more summary { min-height: max(44px, 2.75rem); } /* .actions: the strip's own summary rule comes later in the file */

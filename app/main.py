@@ -9,11 +9,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from jinja2 import ChoiceLoader, Environment, FileSystemLoader, select_autoescape
 from markupsafe import Markup
 
-from app import __version__
+from app import __edition__, __version__
 from app.config import Settings, get_settings
 from app.db import Database, migrate
+from app.extensions import load_extensions
 from app.routers import (
     board,
     calendar,
@@ -111,13 +113,18 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
-        migrate(settings)
+        ext = app.state.ext
+        migrate(settings, ext.migration_dirs)
         app.state.db = Database(settings)
         app.state.api_token = load_or_create_token(settings)
+        for start in ext.startup:  # an extension's background work, once the database is up
+            await start(app)
         task = asyncio.create_task(calendar_loop(app)) if settings.calendar_tick_seconds else None
         yield
         if task:
             task.cancel()
+        for stop in reversed(ext.shutdown):
+            await stop(app)
         app.state.db.engine.dispose()
 
     app = FastAPI(
@@ -139,11 +146,29 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             allow_headers=["Authorization", "Content-Type", "If-None-Match"],
         )
     app.state.settings = settings
-    app.state.templates = Jinja2Templates(directory=APP_DIR / "templates")
+    # Extensions (app/extensions.py): packages found by an entry point. Each line below that
+    # mentions `ext` is where one of their hooks takes effect; with none installed, nothing does.
+    ext = load_extensions(app)
+    app.state.edition = ext.edition or __edition__
+    # the app's templates first, an extension's after (a package cannot replace a core page)
+    env = Environment(
+        loader=ChoiceLoader(
+            [
+                FileSystemLoader(APP_DIR / "templates"),
+                *(FileSystemLoader(d) for d in ext.template_dirs),
+            ]
+        ),
+        autoescape=select_autoescape(),
+    )
+    app.state.templates = Jinja2Templates(env=env)
     # the chrome's icons: one Lucide sprite, printed once at the top of every page (see _icons.html)
     app.state.templates.env.globals["icon_sprite"] = Markup(
         (APP_DIR / "static" / "icons" / "lucide.svg").read_text(encoding="utf-8")
     )
+    for name, directory in ext.static.items():  # before /static, which would otherwise take it
+        app.mount(
+            f"/static/ext/{name}", StaticFiles(directory=directory), name=f"static-ext-{name}"
+        )
     app.mount("/static", StaticFiles(directory=APP_DIR / "static"), name="static")
     app.include_router(health.router)
     app.include_router(board.router)
@@ -158,6 +183,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(posts.router)
     app.include_router(profiles.router)
     app.include_router(calendar.router)
+    for router in ext.routers:
+        app.include_router(router)
     app.include_router(pages.router)
     return app
 

@@ -92,7 +92,10 @@
   // while another tab shows.
   const desktop = window.matchMedia("(min-width: 1100px)");
   const side = $("#side");
-  const TABS = ["board", "messages", "pictures", "guests", "boards", "setup"];
+  // the six built-in tabs, then any an extension added (app/extensions.py) and, with those, More:
+  // on a phone the extension tabs hide behind it (the bar holds six), on a desk More hides.
+  const TABS = $$('.tabs [role="tab"]').map((b) => b.id.replace(/^tab-/, ""));
+  const isExt = (name) => !!$(`#tab-${name}`)?.classList.contains("ext");
   const TAB_OF = { live: "board", look: "board", display: "board", backdrop: "board", flaps: "board", frame: "board", images: "pictures", calendar: "boards", addresses: "setup", token: "setup" };
   const tabButtons = TABS.map((t) => $(`#tab-${t}`));
   let currentTab = "";
@@ -114,6 +117,8 @@
       btn.tabIndex = on ? 0 : -1;
       $(`#panel-${t}`).hidden = !on;
     }
+    // More stands for the extension tab it opened (its own button is hidden on a phone)
+    if (isExt(name)) $("#tab-more")?.setAttribute("aria-selected", "true");
     const off = name !== "board" && !desktop.matches;
     side.classList.toggle("offstage", off); // keeps the live frame alive while another tab shows
     side.setAttribute("aria-hidden", String(off));
@@ -143,13 +148,22 @@
       history.replaceState(null, "", `#${name}`);
     });
     btn.addEventListener("keydown", (ev) => {
-      const step = { ArrowRight: 1, ArrowLeft: -1, Home: -i, End: TABS.length - 1 - i }[ev.key];
-      if (step === undefined) return;
+      const shown = TABS.filter((t) => $(`#tab-${t}`).offsetParent !== null); // not the hidden ones
+      const at = shown.indexOf(name);
+      const step = { ArrowRight: 1, ArrowLeft: -1, Home: -at, End: shown.length - 1 - at }[ev.key];
+      if (step === undefined || at < 0) return;
       ev.preventDefault();
-      const next = TABS[(i + step + TABS.length) % TABS.length];
+      const next = shown[(at + step + shown.length) % shown.length];
       showTab(next, { focus: true });
       history.replaceState(null, "", `#${next}`);
     });
+  });
+  // a row on the More page opens an extension's tab; its Back row returns to More
+  document.addEventListener("click", (ev) => {
+    const b = ev.target.closest("[data-tab]");
+    if (!b || !TABS.includes(b.dataset.tab)) return;
+    showTab(b.dataset.tab, { focus: true });
+    history.replaceState(null, "", `#${b.dataset.tab}`);
   });
   window.addEventListener("hashchange", () => openHash(location.hash, false));
   desktop.addEventListener("change", () => {

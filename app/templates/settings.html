@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% block title %}Settings · DepartureBoard{% endblock %}
 {% block body_class %}page{% endblock %}
+{% block head %}{% for t in tabs if t.style %}<link rel="stylesheet" href="/static/ext/{{ t.ext }}/{{ t.style }}">
+{% endfor %}{% endblock %}
 {% block body %}
 {% from "_icons.html" import icon %}
 <main class="narrow">
@@ -36,6 +38,12 @@
     <button type="button" role="tab" id="tab-guests" aria-controls="panel-guests" aria-selected="false" tabindex="-1"><span class="ico" aria-hidden="true">{{ icon("party-popper") }}</span><span class="lbl">Guests</span> <span id="guests-count" class="badge pending" hidden></span></button>
     <button type="button" role="tab" id="tab-boards" aria-controls="panel-boards" aria-selected="false" tabindex="-1"><span class="ico" aria-hidden="true">{{ icon("calendar-days") }}</span><span class="lbl">Boards</span> <span id="tab-boards-dot" class="tab-dot" title="This board has changes since it was saved" hidden>●</span></button>
     <button type="button" role="tab" id="tab-setup" aria-controls="panel-setup" aria-selected="false" tabindex="-1"><span class="ico" aria-hidden="true">{{ icon("settings") }}</span><span class="lbl">Setup</span></button>
+    {% for t in tabs %}
+    <button type="button" role="tab" class="ext" id="tab-{{ t.id }}" aria-controls="panel-{{ t.id }}" aria-selected="false" tabindex="-1" data-ext="{{ t.ext }}"><span class="ico" aria-hidden="true">{{ icon(t.icon) }}</span><span class="lbl">{{ t.label }}</span></button>
+    {% endfor %}
+    {% if tabs %}
+    <button type="button" role="tab" class="ext-more" id="tab-more" aria-controls="panel-more" aria-selected="false" tabindex="-1"><span class="ico" aria-hidden="true">{{ icon("ellipsis") }}</span><span class="lbl">More</span></button>
+    {% endif %}
   </div>
 
   <div class="layout">
@@ -392,6 +400,23 @@
     <p class="row"><button type="button" class="small secondary" id="welcome-again">Run the walkthrough again</button>
       <span class="muted">The four steps from the first visit: your TV, a first message, the address, the token.</span></p>
   </div>
+  {% for t in tabs %}
+  <div id="panel-{{ t.id }}" class="panel" role="tabpanel" aria-labelledby="tab-{{ t.id }}" tabindex="0" data-ext="{{ t.ext }}" hidden>
+    <nav class="rows phone-only" aria-label="Back"><button type="button" data-tab="more">{{ icon("chevron-left") }}<span>More</span></button></nav>
+    {% include t.template %}
+  </div>
+  {% endfor %}
+  {% if tabs %}
+  <div id="panel-more" class="panel" role="tabpanel" aria-labelledby="tab-more" tabindex="0" hidden>
+    <section id="more" aria-labelledby="more-heading">
+      <h2 id="more-heading">More</h2>
+      <nav class="rows" aria-label="More tabs">
+        {% for t in tabs %}<button type="button" data-tab="{{ t.id }}"><span>{{ t.label }}</span>{{ icon("chevron-right") }}</button>
+        {% endfor %}
+      </nav>
+    </section>
+  </div>
+  {% endif %}
   </div>
   <aside id="side" class="side" aria-label="The board, live">
   <section id="live" aria-labelledby="live-heading">
@@ -498,11 +523,13 @@
     <div id="sheet-body"></div>
   </dialog>
 
-  <footer>
+  <footer class="edition">
+    <p class="build"><img src="/static/icons/icon-192.png" alt="" width="20" height="20"><span>DepartureBoard {{ version }}</span><span class="sep">·</span><span id="edition">{{ edition|capitalize }} edition</span><span class="sep">·</span><span>GPL-3.0-or-later</span><span class="sep">·</span><a href="https://github.com/cmldexter/DepartureBoard" rel="noopener">GitHub</a></p>
     <p>Asked for by <a href="https://www.instagram.com/feltbykraft/" rel="noopener">@feltbykraft</a>
        — “come find me when that exists.”</p>
   </footer>
 </main>
 <script src="/static/js/settings.js" defer></script>
 <script src="/static/js/cast.js" defer></script>
-{% endblock %}
+{% for t in tabs if t.script %}<script src="/static/ext/{{ t.ext }}/{{ t.script }}" defer></script>
+{% endfor %}{% endblock %}

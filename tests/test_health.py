@@ -6,7 +6,12 @@ from app import __version__
 def test_health(client):
     r = client.get("/api/health")
     assert r.status_code == 200
-    assert r.json() == {"ok": True, "version": __version__}
+    assert r.json() == {
+        "ok": True,
+        "version": __version__,
+        "edition": "community",
+        "extensions": [],
+    }
 
 
 def test_board_renders_placeholder(client):

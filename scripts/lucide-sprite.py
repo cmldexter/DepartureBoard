@@ -49,6 +49,8 @@ NAMES = [
     "monitor",
     "sun",
     "moon",
+    # an extension's settings tab (Epic 24)
+    "puzzle",
 ]
 
 ROOT = Path(__file__).resolve().parent.parent
