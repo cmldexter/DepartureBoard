@@ -62,6 +62,23 @@ Put `COMPOSE_FILE=compose.yaml:compose.dev.yaml` in `.env` to keep typing `docke
 Commit messages: `feat(board): …`, `fix(api): …`, `docs: …`, `infra: …`, `test: …`. Reference
 the issue as `(#N)`.
 
+## Contribution terms
+
+DepartureBoard is GPL-3.0-or-later. Its maintainer also licenses the same code under other terms —
+an edition built on this core as an extension (see `docs/extensions.md`) is distributed under a
+commercial licence — and keeping that possible as more people contribute needs one thing said once:
+
+By submitting a contribution (a pull request, a patch, a file, a translation), **you certify the
+[Developer Certificate of Origin](https://developercertificate.org/)** for it, and **you grant the
+maintainer a perpetual, worldwide, non-exclusive, royalty-free, irrevocable licence** to use,
+reproduce, modify, distribute, sublicense and relicense your contribution, under the GPL and under
+any other terms, as part of DepartureBoard or of works built on it. You keep your copyright; the
+public repository stays GPL-3.0-or-later. Say so by signing off your commits (`git commit -s`) and
+ticking the box in the pull request template.
+
+If you contribute on an employer's time or equipment, make sure they are fine with the above
+before you open the PR. This section is the project's terms, written plainly; it is not legal advice.
+
 ## Dependencies
 
 `uv.lock` is the truth; CI fails if `pyproject.toml` and the lock disagree (`uv lock --check`).

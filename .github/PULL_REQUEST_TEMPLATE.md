@@ -16,3 +16,4 @@
 - [ ] No secrets, tokens, hostnames or personal data in the diff
 - [ ] Fits the scope: two pages, zero configuration, one command (see CONTRIBUTING.md)
 - [ ] Screenshots or a short recording for anything visual
+- [ ] I agree to the **Contribution terms** in CONTRIBUTING.md (DCO + licence grant) and signed off my commits
