@@ -656,6 +656,13 @@ class BoardCurrent(BaseModel):
         None,
         description="The rotation slot; left out of the stamp, so it alone never moves the ETag",
     )
+    poll: int | None = Field(
+        None,
+        description=(
+            "Poll again in this many seconds — a transient source's hint while it has the board; "
+            "absent otherwise (the display's poll_seconds applies)"
+        ),
+    )
 
 
 Fit = Literal["contain", "cover", "stretch"]

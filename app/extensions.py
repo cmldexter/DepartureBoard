@@ -15,12 +15,15 @@ from __future__ import annotations
 
 import logging
 import re
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass, field
+from datetime import datetime
 from importlib.metadata import entry_points
 from pathlib import Path
+from typing import Any
 
 from fastapi import APIRouter, FastAPI
+from sqlalchemy.orm import Session
 
 GROUP = "departureboard.extensions"
 BUILTIN_TABS = ("board", "messages", "pictures", "guests", "boards", "setup", "more")
@@ -28,6 +31,24 @@ _NAME = re.compile(r"^[a-z][a-z0-9_-]*$")
 log = logging.getLogger("departureboard.extensions")
 
 Task = Callable[[FastAPI], Awaitable[None]]
+
+
+@dataclass(frozen=True)
+class BoardSource:
+    """What a board source answers when it has something for the board right now.
+
+    ``text`` is laid out as a message is (rows × cols, pictures, tokens); ``seconds`` and
+    ``remaining`` describe its slot for the timer (both or neither); ``poll`` asks the TV to come
+    back in that many seconds instead of its usual ``poll_seconds``."""
+
+    text: str
+    seconds: int | None = None
+    remaining: int | None = None
+    own: bool = True
+    poll: int | None = None
+
+
+Provider = Callable[[Session, datetime, Mapping[str, Any]], BoardSource | None]
 
 
 @dataclass(frozen=True)
@@ -64,6 +85,7 @@ class Registry:
     migration_dirs: list[Path] = field(default_factory=list)
     startup: list[Task] = field(default_factory=list)
     shutdown: list[Task] = field(default_factory=list)
+    sources: list[tuple[str, Provider]] = field(default_factory=list)
     edition: str | None = None
 
     def merge(self, other: Registry) -> None:
@@ -76,6 +98,7 @@ class Registry:
         self.migration_dirs += other.migration_dirs
         self.startup += other.startup
         self.shutdown += other.shutdown
+        self.sources += other.sources
         if other.edition:
             self.edition = other.edition
 
@@ -133,6 +156,12 @@ class Hooks:
         """``async def task(app)`` run before the database is disposed."""
         self._reg.shutdown.append(task)
 
+    def board_source(self, provider: Provider) -> None:
+        """``provider(session, at, display) -> BoardSource | None``: asked by ``/api/board/current``
+        before the rotation. Rows it returns show with their own slot; ``None`` means the rotation
+        runs as usual. Providers are asked in registration order; the first answer wins."""
+        self._reg.sources.append((self.name, provider))
+
     def edition(self, name: str) -> None:
         """Name the edition this build is (the footer, ``/api/health``)."""
         self._reg.edition = name.strip() or self._reg.edition
@@ -162,6 +191,21 @@ def load_extensions(app: FastAPI) -> Registry:
     app.state.ext = registry
     app.state.extensions = [{"name": x.name, "version": x.version} for x in registry.loaded]
     return registry
+
+
+def ask_sources(
+    sources: list[tuple[str, Provider]], session: Session, at: datetime, display: Mapping[str, Any]
+) -> BoardSource | None:
+    """The first board source with an answer; one that raises is logged and skipped this poll."""
+    for name, provider in sources:
+        try:
+            found = provider(session, at, display)
+        except Exception:  # noqa: BLE001 — a source never takes the board down
+            log.exception("board source of %r failed and is skipped for this poll", name)
+            continue
+        if found is not None:
+            return found
+    return None
 
 
 def _version(ep) -> str:
