@@ -175,6 +175,9 @@ def settings_page(request: Request):
             "named": bool(settings.host),
             "welcome": welcome,
             "welcome_qr": welcome_qr,
+            "tabs": request.app.state.ext.tabs,
+            "version": __version__,
+            "edition": request.app.state.edition,
         },
     )
 

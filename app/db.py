@@ -1,6 +1,7 @@
 """SQLite via SQLAlchemy 2, migrated by Alembic at startup."""
 
-from collections.abc import Iterator
+import os
+from collections.abc import Iterable, Iterator
 from pathlib import Path
 
 from alembic import command
@@ -32,13 +33,22 @@ def make_engine(settings: Settings) -> Engine:
     return engine
 
 
-def migrate(settings: Settings) -> None:
-    """Bring the database to the latest Alembic revision (creates it on first boot)."""
+def migrate(settings: Settings, extra_versions: Iterable[Path] = ()) -> None:
+    """Bring the database to the latest Alembic revision (creates it on first boot).
+
+    ``extra_versions`` are the version locations extensions bring (app/extensions.py): each is a
+    base of its own, so every head is upgraded; with none, this is the core's single head."""
     settings.data_dir.mkdir(parents=True, exist_ok=True)
     cfg = Config()
     cfg.set_main_option("script_location", str(MIGRATIONS_DIR))
     cfg.set_main_option("sqlalchemy.url", settings.database_url)
-    command.upgrade(cfg, "head")
+    extra = [str(p) for p in extra_versions]
+    if extra:
+        cfg.set_main_option("path_separator", "os")
+        cfg.set_main_option(
+            "version_locations", os.pathsep.join([str(MIGRATIONS_DIR / "versions"), *extra])
+        )
+    command.upgrade(cfg, "heads")
 
 
 class Database:

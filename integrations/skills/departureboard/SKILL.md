@@ -10,7 +10,7 @@ and a small JSON API. Everything the settings page does, the API does.
 
 ## You need
 
-- `DB_URL` — where the board is, e.g. `http://192.168.1.20:8080` (ask if unknown; `GET $DB_URL/api/health` answers `{"ok": true}`).
+- `DB_URL` — where the board is, e.g. `http://192.168.1.20:8080` (ask if unknown; `GET $DB_URL/api/health` answers `{"ok": true, "version": "…", "edition": "community", "extensions": []}` — the version and the edition tell you which build you are talking to).
 - `DB_TOKEN` — the bearer token. It is in the environment, a `.env`, or the user pastes it. Never print it back.
 
 Every call except the two public ones sends `Authorization: Bearer $DB_TOKEN`.
