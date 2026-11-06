@@ -173,9 +173,16 @@ text for now — laid out exactly as a message is (rows × cols, word-wrap, `{im
 with `message_id` null, `timer` from your slot when you give one, and your `poll` hint (seconds)
 on the wire, which the TV honours instead of its `poll_seconds` until the hint is gone. Nothing is
 written to `messages`; the `ETag` follows your text. Providers are asked in registration order;
-the first answer wins; one that raises is logged and skipped for that poll. The core's layout
-keeps the first rows of a text that is too long — trim or wrap for the board's `display["rows"]`
-and `display["cols"]` yourself if you want the tail.
+the first with text wins the board; one that raises is logged and skipped for that poll. The core's
+layout keeps the first rows of a text that is too long — trim or wrap for the board's
+`display["rows"]` and `display["cols"]` yourself if you want the tail.
+
+**Standing by.** Return `BoardSource(None, poll=1)` and the rotation shows exactly as always, but
+the TV comes back every second: for a source that expects something any moment (a live caption
+between two sentences, a sensor about to trip) and wants it on the flaps within a second of
+having it, instead of at the display's next `poll_seconds`. The quickest hint of every source
+that answered rides on the wire; the hint joins the `ETag`, so the TV learns when it is gone.
+Standing by costs the server one cheap `304` per TV per second — stop when the moment has passed.
 
 ### `hooks.edition(name)`
 
