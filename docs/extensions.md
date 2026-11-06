@@ -115,7 +115,13 @@ the bar holds six, extension tabs sit behind a **More** tab that is a page of ro
 starts with a *Back* row the core adds. `template` is the panel's fragment, included inside
 `<div id="panel-<id>" class="panel">`; `script` and `style` are files in your static directory,
 loaded once by the settings page; `icon` names a symbol in the chrome's sprite
-(`app/static/icons/lucide.svg` — `puzzle` is there for you).
+(`app/static/icons/lucide.svg` — `puzzle` is there for you). A symbol the sprite lacks can travel
+with your panel: inline a hidden `<svg><symbol id="lucide-<name>" …></symbol></svg>` at the top of
+the template and name it in `icon=` — the tab button's `<use>` resolves it wherever it sits in the
+document (keep to the sprite's conventions: `viewBox="0 0 24 24"`, stroke only, `currentColor`).
+
+A transient board source of yours (below) shows on the Board tab's live card as *On the board for
+a moment — not a message · N s left*, from the slot you return.
 
 **The panel's contract**, so it reads as part of the page (the example does all of this):
 
