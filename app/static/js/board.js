@@ -502,7 +502,7 @@
 
   // ---- live data: poll /api/board/current; 304 means nothing changed; errors back off.
   const net = document.getElementById("net");
-  const poll = { etag: null, stamp: null, message_id: null, failures: 0, timer: 0, polls: 0, notModified: 0, inFlight: false };
+  const poll = { etag: null, stamp: null, message_id: null, failures: 0, timer: 0, polls: 0, notModified: 0, inFlight: false, hint: 0 };
   const placeholderRows = cells.map((c) => c.current); // what the server rendered: keep it until there is content
 
   function schedule(seconds) {
@@ -510,10 +510,12 @@
     poll.timer = setTimeout(fetchBoard, Math.max(1, seconds) * 1000);
   }
 
-  // The usual poll, or sooner when the slot ends before it: land 300 ms after the boundary.
+  // The usual poll — or a transient source's hint while it has the board — or sooner when the
+  // slot ends before it: land 300 ms after the boundary.
   function scheduleNext() {
+    const every = poll.hint || settings.poll_seconds;
     const left = timerRemaining();
-    if (left === null || left + 0.3 >= settings.poll_seconds) schedule(settings.poll_seconds);
+    if (left === null || left + 0.3 >= every) schedule(every);
     else schedule(Math.max(1, left + 0.3));
   }
 
@@ -536,6 +538,7 @@
       poll.etag = r.headers.get("ETag");
       online();
       if (data.settings && data.settings.poll_seconds) settings.poll_seconds = data.settings.poll_seconds;
+      poll.hint = data.poll ? Math.max(1, Number(data.poll)) : 0; // gone with the source
       setTimer(data.timer || null);
       if (data.stamp !== poll.stamp) {
         poll.stamp = data.stamp;

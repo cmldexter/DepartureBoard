@@ -248,3 +248,57 @@ def test_every_doc_knows_about_living_backgrounds():
         for needle in needles:
             assert needle in text, (path, needle)
     assert "prevents burn-in" not in (ROOT / "README.md").read_text() + doc
+
+
+def test_every_doc_knows_about_extensions():
+    """#158: the extension API is written down, the example is where the doc says, the terms exist."""
+    for path, needles in (
+        ("README.md", ("docs/extensions.md", "examples/extension-hello/", "**Extensions**")),
+        (
+            "docs/extensions.md",
+            (
+                "`departureboard.extensions`",
+                "examples/extension-hello/",
+                "## Where the core comes from",
+                "### `hooks.router(router)`",
+                "### `hooks.templates(directory)`",
+                "### `hooks.static(name, directory)`",
+                "### `hooks.tab(",
+                "### `hooks.migrations(directory)`",
+                "### `hooks.on_startup(task)`",
+                "### `hooks.board_source(provider)`",
+                "### `hooks.edition(name)`",
+                "## Your own settings",
+                "## Testing against the core",
+                "data-sheet=",
+                "data-reach=",
+                "X-Requested-With: DepartureBoard",
+            ),
+        ),
+        (
+            "CONTRIBUTING.md",
+            (
+                "## Contribution terms",
+                "Developer Certificate of Origin",
+                "relicense",
+                "git commit -s",
+            ),
+        ),
+        (".github/PULL_REQUEST_TEMPLATE.md", ("Contribution terms",)),
+        (
+            "examples/extension-hello/pyproject.toml",
+            (
+                '[project.entry-points."departureboard.extensions"]',
+                'hello = "departureboard_hello:register"',
+            ),
+        ),
+        (
+            "examples/extension-hello/README.md",
+            ("docs/extensions.md", "uv pip install -e examples/extension-hello"),
+        ),
+        ("CHANGELOG.md", ("#156", "#157", "#158", "#185")),
+        ("llms.txt", ('"edition": "community"', "`poll`")),
+    ):
+        text = (ROOT / path).read_text()
+        for needle in needles:
+            assert needle in text, f"{path}: {needle}"

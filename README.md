@@ -260,6 +260,11 @@ API, and we ship three things so that your own agent, script or automation can d
 3. **The agent bundle** under [`integrations/`](integrations/): runnable `curl` examples, an
    **Agent Skill** (`SKILL.md`, the format Claude Code, Hermes Agent and others read) and
    `llms.txt` (also served at `/llms.txt`).
+4. **Extensions** — when a thing belongs *inside* the board after all (a settings tab, a route, a
+   table, a background task, something transient on the flaps), a Python package installed beside
+   the core adds it without a fork: [`docs/extensions.md`](docs/extensions.md), with a complete
+   example under [`examples/extension-hello/`](examples/extension-hello/). The footer of the
+   settings page and `GET /api/health` say which build and which extensions you are running.
 
 That keeps the app small and keeps your integrations yours. CORS is off; set
 `DEPARTUREBOARD_CORS_ORIGINS` to a comma-separated list of origins if a browser app elsewhere

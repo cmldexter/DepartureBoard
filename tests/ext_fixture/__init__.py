@@ -6,6 +6,7 @@ from pathlib import Path
 
 from fastapi import APIRouter, FastAPI
 
+from app.extensions import BoardSource
 from app.services.auth import Authenticated
 
 HERE = Path(__file__).resolve().parent
@@ -21,6 +22,20 @@ def hello() -> dict[str, str]:
 @router.get("/private", dependencies=[Authenticated], summary="The core's auth, reused")
 def private() -> dict[str, bool]:
     return {"ok": True}
+
+
+# the board source the tests drive: text → it has the board; None → the rotation; raise → skipped
+CAPTION: dict = {"text": None, "seconds": None, "remaining": None, "poll": None, "raise": False}
+
+
+def caption(session, at, display):
+    if CAPTION["raise"]:
+        raise RuntimeError("source boom")
+    if CAPTION["text"] is None:
+        return None
+    return BoardSource(
+        CAPTION["text"], CAPTION["seconds"], CAPTION["remaining"], True, CAPTION["poll"]
+    )
 
 
 async def start(app: FastAPI) -> None:
@@ -39,6 +54,7 @@ def register(app: FastAPI, hooks) -> None:
     hooks.migrations(HERE / "migrations")
     hooks.on_startup(start)
     hooks.on_shutdown(stop)
+    hooks.board_source(caption)
     hooks.edition("Test")
 
 

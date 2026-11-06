@@ -1,0 +1,15 @@
+{#- The panel of the Hello tab. The core includes it inside <div id="panel-hello" class="panel">;
+    the markup follows the core's own tabs: a phone-only row that opens the block as a sheet, and
+    a section (hidden on a phone) holding the block. The `icon` macro is the core's. -#}
+{% from "_icons.html" import icon %}
+<nav class="rows phone-only" aria-label="Hello">
+  <button type="button" data-sheet="hello-form" data-title="Greeting"><span>Greeting</span>{{ icon("chevron-right") }}</button>
+</nav>
+<section id="hello" class="sheet-host" aria-labelledby="hello-heading">
+  <h2 id="hello-heading">Hello</h2>
+  <p class="muted">An extension's tab: one key of its own, saved through its own router (<code>PUT /api/hello</code>).</p>
+  <form id="hello-form" class="sheet-block" aria-label="Greeting">
+    <label>Greeting <input name="greeting" maxlength="80" required autocomplete="off"></label>
+    <p class="row"><button type="submit">Save</button> <span class="muted" id="hello-status" role="status"></span></p>
+  </form>
+</section>

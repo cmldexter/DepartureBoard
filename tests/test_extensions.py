@@ -17,6 +17,16 @@ from tests import ext_fixture
 SIX = ["board", "messages", "pictures", "guests", "boards", "setup"]
 
 
+@pytest.fixture(autouse=True)
+def _quiet_caption():
+    """The fixture's board source starts and ends silent."""
+    ext_fixture.CAPTION.update(text=None, seconds=None, remaining=None, poll=None)
+    ext_fixture.CAPTION["raise"] = False
+    yield
+    ext_fixture.CAPTION.update(text=None, seconds=None, remaining=None, poll=None)
+    ext_fixture.CAPTION["raise"] = False
+
+
 def entry(name, register, version="0.1.0"):
     """What importlib.metadata hands back: a name, load(), the distribution's version."""
     return SimpleNamespace(name=name, load=lambda: register, dist=SimpleNamespace(version=version))
@@ -106,6 +116,53 @@ def test_without_an_extension_nothing_changes(client, token):
         assert marker not in html, marker
     assert client.app.state.ext.tabs == [] and client.app.state.extensions == []
     assert client.get("/static/ext/hello/hello.css").status_code == 404
+    board = client.get("/api/board/current").json()
+    assert set(board) == {"stamp", "message_id", "rows", "settings", "timer"}, "no poll key"
+
+
+def test_a_board_source_takes_the_board_for_a_moment_without_a_message(
+    settings, monkeypatch, caplog
+):
+    """#185: the provider is asked before the rotation; rows, slot and the poll hint on the wire;
+    the ETag follows the text; nothing written to messages; None → the rotation; raise → skipped."""
+    installed(monkeypatch, entry("hello", ext_fixture.register))
+    cap = ext_fixture.CAPTION
+    with TestClient(create_app(settings)) as c:
+        auth = {"Authorization": f"Bearer {c.app.state.api_token}"}
+        c.post("/api/messages", json={"text": "SCHEDULED"}, headers=auth)
+        r = c.get("/api/board/current")
+        assert r.json()["rows"][0][:9] == list("SCHEDULED") and "poll" not in r.json()
+        etag = r.headers["ETag"]
+
+        cap.update(text="HELLO THERE", seconds=10, remaining=7, poll=1)
+        r = c.get("/api/board/current", headers={"If-None-Match": etag})
+        assert r.status_code == 200, "the source changes the stamp"
+        j = r.json()
+        assert j["rows"][0][:11] == list("HELLO THERE")
+        assert j["message_id"] is None
+        assert j["timer"] == {"seconds": 10, "remaining": 7, "own": True}
+        assert j["poll"] == 1
+        etag2 = r.headers["ETag"]
+        assert etag2 != etag
+
+        cap.update(text="HELLO AGAIN")
+        r = c.get("/api/board/current", headers={"If-None-Match": etag2})
+        assert r.status_code == 200 and r.json()["rows"][0][:11] == list("HELLO AGAIN")
+        assert len(c.get("/api/messages", headers=auth).json()) == 1, "no message written"
+
+        cap.update(text="NO SLOT", seconds=None, remaining=None, poll=None)
+        j = c.get("/api/board/current").json()
+        assert j["rows"][0][:7] == list("NO SLOT") and j["timer"] is None and "poll" not in j
+
+        cap.update(text=None)
+        j = c.get("/api/board/current").json()
+        assert j["rows"][0][:9] == list("SCHEDULED") and "poll" not in j, "None → the rotation"
+
+        cap["raise"] = True
+        with caplog.at_level(logging.ERROR, logger="departureboard.extensions"):
+            j = c.get("/api/board/current").json()
+        assert j["rows"][0][:9] == list("SCHEDULED"), "a failing source is skipped"
+        assert "skipped for this poll" in caplog.text
 
 
 def test_the_footer_names_the_build(client, token):

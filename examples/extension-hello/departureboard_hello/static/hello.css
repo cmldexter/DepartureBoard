@@ -1,0 +1,2 @@
+/* The core's tokens are available (--surface, --border, --accent …); keep to the page's look. */
+.page #hello input[name="greeting"] { max-width: 20rem; text-transform: uppercase; }
